@@ -1,0 +1,152 @@
+<title>AQS POC — Documentation Hub</title>
+<style>
+  :root{
+    --paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;
+    --accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:70ch;
+  }
+  @media (prefers-color-scheme:dark){:root{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;--accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);}
+  :root[data-theme="dark"]{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px}
+  code,.m{font-family:var(--mono);font-size:.86em}
+  code{background:var(--card-2);border:1px solid var(--line);border-radius:5px;padding:.06em .36em}
+  h1,h2,h3{text-wrap:balance;line-height:1.16;letter-spacing:-.02em}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  p{max-width:var(--measure)}
+
+  .hero{padding:52px 0 8px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(30px,5vw,44px);font-weight:770;margin:14px 0 0}
+  .lede{font-size:clamp(17px,2.3vw,20px);color:var(--ink-soft);max-width:var(--measure);margin:16px 0 0}
+  .one{margin-top:22px;background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+  .one .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .one p{margin:8px 0 0;font-size:17px;color:var(--ink)}
+
+  section{padding:30px 0;border-top:1px solid var(--line);margin-top:26px}
+  h2{font-size:clamp(21px,3vw,26px);font-weight:740;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 14px}
+
+  .docs{display:grid;gap:14px}
+  .doc{display:flex;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px 20px;box-shadow:var(--shadow);text-decoration:none;color:inherit;transition:transform .12s,box-shadow .12s,border-color .12s}
+  .doc:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(20,30,45,.12);border-color:var(--accent);text-decoration:none}
+  .doc .ic{flex:0 0 46px;height:46px;border-radius:11px;background:var(--card-2);border:1px solid var(--line);display:grid;place-items:center;font-size:22px}
+  .doc .body{flex:1 1 auto;min-width:0}
+  .doc .t{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .doc .t .arw{color:var(--accent);font-family:var(--mono);font-weight:400}
+  .doc .d{font-size:14px;color:var(--ink-soft);margin-top:3px}
+  .doc .when{font-size:12px;color:var(--muted);margin-top:7px;font-family:var(--mono)}
+  .num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--mono);font-weight:700;font-size:13px;display:grid;place-items:center;align-self:center}
+
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+  @media (max-width:640px){.paths{grid-template-columns:1fr}}
+  .path{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .path h3{margin:0 0 8px;font-size:16px}
+  .path ol{margin:0;padding-left:20px;font-size:14px;color:var(--ink-soft)} .path li{margin:5px 0}
+
+  .assets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  @media (max-width:640px){.assets{grid-template-columns:1fr}}
+  .asset{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 16px;box-shadow:var(--shadow)}
+  .asset .h{font-weight:660;font-size:14.5px}
+  .asset .p{font-size:13px;color:var(--muted);margin-top:4px}
+  .asset code{font-size:12px}
+  footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:13px;margin-top:30px}
+</style>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Documentation Hub · AQS ASP → React Migration POC</div>
+    <h1>Everything, in one place.</h1>
+    <p class="lede">Five documents plus the running app and the reconstructed source. Start with the study path if you're learning, or the call path if you're presenting today.</p>
+    <div class="one">
+      <div class="tag">The whole thing in one sentence</div>
+      <p>The server sends each page as <b>data + commands</b>; one reusable React <b>engine</b> renders the data and obeys the commands — so all <b>156 Lines of Business</b> run on one codebase, and the legacy business logic is never rewritten.</p>
+    </div>
+  </div>
+
+  <section>
+    <h2>The documents</h2>
+    <p class="sub">Ordered from highest-level to most detailed. Each opens in a new tab.</p>
+    <div class="docs">
+      <a class="doc" href="https://claude.ai/code/artifact/caed6aa7-90b0-42c7-a242-a2f9db36e502">
+        <div class="ic">🔀</div>
+        <div class="body"><div class="t">Briefing <span class="arw">→</span></div>
+          <div class="d">The fast overview: the core idea, the stack, the two-call flow, and all 15 tasks at a glance.</div>
+          <div class="when">use: quick reference · 5-min skim before the call</div></div>
+      </a>
+      <a class="doc" href="https://claude.ai/code/artifact/de494ad8-d4e2-4bcc-8588-992ea2a95043">
+        <div class="ic">📘</div>
+        <div class="body"><div class="t">Study Guide &amp; Talk Track <span class="arw">→</span></div>
+          <div class="d">Learn it from zero. React in 8 words, all 15 tasks with <em>what to say</em>, a click-by-click demo script, a Q&amp;A bank, and 5 sentences to memorize.</div>
+          <div class="when">use: to actually learn + rehearse the talk</div></div>
+      </a>
+      <a class="doc" href="https://claude.ai/code/artifact/86675b3b-de0e-408f-86ce-4f84db5d07c2">
+        <div class="ic">🗂️</div>
+        <div class="body"><div class="t">Codebase Guide <span class="arw">→</span></div>
+          <div class="d">Every one of the 29 source files explained in data-flow order, tagged by architecture zone (engine / config / state / page / shell).</div>
+          <div class="when">use: to understand the code · answer "what does X file do?"</div></div>
+      </a>
+      <a class="doc" href="https://claude.ai/code/artifact/a149fa60-a03e-4b94-ab74-8ce6d1e33af0">
+        <div class="ic">📐</div>
+        <div class="body"><div class="t">Low-Level Design Document <span class="arw">→</span></div>
+          <div class="d">The implement-from-it spec: field-by-field data model, the 3 API contracts, the full command catalog, component &amp; store specs, sequence flows, and the add-an-LOB schema.</div>
+          <div class="when">use: for developers · the technical deep answers</div></div>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Two reading paths</h2>
+    <div class="paths">
+      <div class="path">
+        <h3>📖 To learn it (≈45 min)</h3>
+        <ol>
+          <li><b>Study Guide</b> — Part A (understand) + Part E (memorize)</li>
+          <li><b>Briefing</b> — skim to lock the structure</li>
+          <li><b>Codebase Guide</b> — see how the parts connect</li>
+          <li><b>LLD</b> — only the sections you're asked to defend</li>
+        </ol>
+      </div>
+      <div class="path">
+        <h3>🎤 On the call</h3>
+        <ol>
+          <li>Open with the <b>one sentence</b> (top of this page)</li>
+          <li>Walk the <b>Briefing</b>'s 15-task table</li>
+          <li>Run the <b>Study Guide</b>'s demo script on the live app</li>
+          <li>For deep questions, jump to the <b>LLD</b> section</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The working assets</h2>
+    <div class="assets">
+      <div class="asset"><div class="h">▶ The running POC</div><div class="p">Clean best-practices app. Run it:</div><code>cd ~/My&nbsp;code/aqs-web-ui-poc &amp;&amp; npm run dev</code><div class="p">→ localhost:5173 · Login → Dashboard → Policy</div></div>
+      <div class="asset"><div class="h">⑂ GitHub (private)</div><div class="p">Everything backed up:</div><code>github.com/harinadh70/POC</code><div class="p"><span class="m">aqs-web-ui-poc-v1</span> (POC) · <span class="m">aqs-web-ui-v1</span> (reconstructed source + study)</div></div>
+      <div class="asset"><div class="h">📄 Source design doc</div><div class="p">Solution Design Document v13 (the client's HLD) — extracted text + 32 diagrams in <code>_study/design-doc/</code>.</div></div>
+      <div class="asset"><div class="h">🧩 Reconstructed source</div><div class="p">157 files recovered from 2,502 photos — reference for the real implementation. In <code>aqs-web-ui-v1/src/</code>.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Document map</h2>
+    <p class="sub">Where each fits in the design-doc hierarchy.</p>
+    <div class="docs">
+      <div class="doc" style="cursor:default"><div class="num">1</div><div class="body"><div class="t">Solution Design Document v13 <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">HLD · provided by client</span></div><div class="d">What &amp; why — architecture, strategy, components. (Not one of the links above; it's the source doc.)</div></div></div>
+      <div class="doc" style="cursor:default"><div class="num">2</div><div class="body"><div class="t">Low-Level Design Document <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">LLD · built here</span></div><div class="d">Exactly how — the implementation blueprint that fills the gap below the SDD.</div></div></div>
+      <div class="doc" style="cursor:default"><div class="num">3</div><div class="body"><div class="t">Codebase Guide + running POC <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">the code itself</span></div><div class="d">The lowest level — the actual implementation and a file-by-file tour of it.</div></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">AQS Portal — Documentation Hub · one link for the briefing, study guide, codebase guide, LLD, the running POC, and the private GitHub backup.</div>
+</footer>

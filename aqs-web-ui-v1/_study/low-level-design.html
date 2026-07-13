@@ -1,0 +1,365 @@
+<title>AQS POC — Low-Level Design Document</title>
+<style>
+  :root{
+    --paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;
+    --accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:74ch;
+  }
+  @media (prefers-color-scheme:dark){:root{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;--accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;--shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);}
+  :root[data-theme="dark"]{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  code,.m{font-family:var(--mono);font-size:.85em}
+  code{background:var(--card-2);border:1px solid var(--line);border-radius:5px;padding:.06em .36em}
+  h1,h2,h3,h4{text-wrap:balance;line-height:1.16;letter-spacing:-.01em}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  p{max-width:var(--measure)} ul,ol{max-width:var(--measure);padding-left:22px} li{margin:5px 0}
+
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:12px;height:52px}
+  .brand{font-family:var(--mono);font-size:13px;font-weight:600} .brand b{color:var(--accent)}
+  .nav{margin-left:auto;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:66%}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding:5px 8px;border-radius:6px;white-space:nowrap}
+  .nav a:hover{color:var(--ink);background:var(--card-2);text-decoration:none}
+
+  .hero{padding:46px 0 20px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(27px,4.6vw,40px);font-weight:760;margin:12px 0 0}
+  .lede{font-size:clamp(16px,2.1vw,19px);color:var(--ink-soft);max-width:var(--measure);margin:14px 0 0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .chip{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+
+  section{padding:28px 0;border-top:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:12px;color:var(--legacy);letter-spacing:.08em;font-weight:600}
+  h2{font-size:clamp(21px,3vw,27px);font-weight:740;margin:6px 0 4px}
+  .sub{color:var(--muted);margin:0 0 6px}
+  h3{font-size:17px;font-weight:680;margin:22px 0 8px}
+  h4{font-size:14px;font-weight:680;margin:16px 0 6px;font-family:var(--mono);color:var(--accent)}
+
+  .tbl{overflow-x:auto;margin:12px 0;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:520px;background:var(--card);font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--card-2);position:sticky;top:0}
+  tr:last-child td{border-bottom:none}
+  td .m,th .m{font-size:12.5px}
+  td.k{font-family:var(--mono);font-size:12.5px;color:var(--accent-ink);white-space:nowrap}
+  @media (prefers-color-scheme:dark){td.k{color:var(--accent)}}
+  .req{color:var(--legacy);font-family:var(--mono);font-size:11px}
+  .opt{color:var(--muted);font-family:var(--mono);font-size:11px}
+
+  .flow{overflow-x:auto;margin:14px 0;padding:4px 2px 10px}
+  .flow-inner{display:flex;align-items:stretch;gap:0;min-width:640px}
+  .node{flex:1 1 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;box-shadow:var(--shadow)}
+  .node .k{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:640}
+  .node .t{font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.4}
+  .arrow{flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px}
+
+  pre{background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--ink-soft)}
+  .note{background:var(--card-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:13.5px;color:var(--ink-soft)}
+  .note b{color:var(--ink)}
+  footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:13px;margin-top:34px}
+  @media (max-width:640px){body{font-size:15.5px}.nav{max-width:46%}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <span class="brand">AQS<b>·</b>LLD</span>
+    <nav class="nav" aria-label="Sections">
+      <a href="#scope">1 Scope</a>
+      <a href="#modules">2 Modules</a>
+      <a href="#data">3 Data model</a>
+      <a href="#api">4 API contracts</a>
+      <a href="#commands">5 Commands</a>
+      <a href="#stores">6 Stores</a>
+      <a href="#components">7 Components</a>
+      <a href="#flows">8 Flows</a>
+      <a href="#routing">9 Routing</a>
+      <a href="#strategy">10 Render strategy</a>
+      <a href="#lob">11 Add an LOB</a>
+      <a href="#trace">12 Traceability</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Low-Level Design Document · AQS ASP → React POC</div>
+    <h1>The implement-from-it blueprint.</h1>
+    <p class="lede">Where the Solution Design Document v13 says <em>what and why</em>, this says <em>exactly how</em>: every data structure field-by-field, the three API contracts, the full command catalog, component and store specifications, control flows, and the rules for adding a Line of Business. Grounded in the running POC — a developer can build directly from this.</p>
+    <div class="meta">
+      <span class="chip">v1.0</span>
+      <span class="chip">complements SDD v13 (HLD)</span>
+      <span class="chip">source: aqs-web-ui-poc</span>
+      <span class="chip">stack: React · TS · Zustand · MUI · React Router · Vite</span>
+    </div>
+  </div>
+
+  <!-- 1 -->
+  <section id="scope">
+    <div class="sec-no">1 — SCOPE</div>
+    <h2>Purpose &amp; scope</h2>
+    <p>This LLD specifies the front-end engine of the AQS migration POC to implementation depth. It is the missing companion to the SDD v13 (a high-level/solution document) and the referenced-but-unshared API Design Document. Backend internals (the .NET wrapper APIs and legacy DLLs) are treated as an external contract (§4) — this document does not design them.</p>
+    <h3>Design rules the whole system obeys</h3>
+    <ul>
+      <li><b>Engine ↔ config separation.</b> Engine code is LOB-agnostic and never imports LOB specifics. An LOB is data (config), never new engine types.</li>
+      <li><b>Server-driven UI.</b> The backend returns page-data + commands; the client renders data and executes commands. No business logic on the client.</li>
+      <li><b>Code to interfaces.</b> The engine depends on the <span class="m">AqsApi</span> interface, not a concrete backend.</li>
+      <li><b>Single source of truth types.</b> All shapes live in one module (<span class="m">types/index.ts</span>) and are shared by engine and config.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section id="modules">
+    <div class="sec-no">2 — MODULES</div>
+    <h2>Module map &amp; responsibilities</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Layer</th><th>Module</th><th>Responsibility</th><th>Depends on</th></tr></thead>
+      <tbody>
+        <tr><td class="k">contract</td><td class="m">types/index.ts</td><td>All data shapes (the system vocabulary)</td><td>—</td></tr>
+        <tr><td class="k">engine·api</td><td class="m">engine/api/client.ts</td><td><span class="m">AqsApi</span> interface + active impl</td><td>types, mock</td></tr>
+        <tr><td class="k">engine·cmd</td><td class="m">engine/commands/execute-action.ts</td><td>Action choke-point; frame switch</td><td>api, dispatch, stores</td></tr>
+        <tr><td class="k">engine·cmd</td><td class="m">engine/commands/dispatch.ts</td><td>Routes commands to stores</td><td>stores</td></tr>
+        <tr><td class="k">engine·render</td><td class="m">engine/renderers/*</td><td>Field / Form / Grid / Buttons</td><td>page-store, execute-action</td></tr>
+        <tr><td class="k">engine·modal</td><td class="m">engine/modal/NotificationHost</td><td>Renders DISPLAY_* commands</td><td>browser-command store</td></tr>
+        <tr><td class="k">state</td><td class="m">stores/*</td><td>auth · app · browser-command · page</td><td>types</td></tr>
+        <tr><td class="k">config</td><td class="m">lobs/registry.ts</td><td>156-LOB registry</td><td>types, per-LOB config</td></tr>
+        <tr><td class="k">config</td><td class="m">lobs/&lt;lob&gt;/*-config.ts</td><td>Per-LOB page configs</td><td>types</td></tr>
+        <tr><td class="k">page</td><td class="m">pages/LobPage.tsx (+ loader)</td><td>Generic page host for all LOBs</td><td>api, stores, renderers</td></tr>
+        <tr><td class="k">shell</td><td class="m">shell/*, router.tsx, App.tsx</td><td>Layout, routing, error boundary</td><td>all</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><b>Dependency direction:</b> config → types ← engine → stores. The engine may read config <em>shapes</em> (types) but never a specific LOB's data. Pages compose engine + config.</div>
+  </section>
+
+  <!-- 3 -->
+  <section id="data">
+    <div class="sec-no">3 — DATA MODEL</div>
+    <h2>Data structures (field-by-field)</h2>
+    <p class="sub">Every field, its type, and whether it's required. <span class="req">req</span> = required, <span class="opt">opt</span> = optional.</p>
+
+    <h4>SessionInfo — carried on every backend call</h4>
+    <div class="tbl"><table><thead><tr><th>Field</th><th>Type</th><th>R/O</th><th>Notes</th></tr></thead><tbody>
+      <tr><td class="k">userId</td><td class="m">string</td><td class="req">req</td><td>Authenticated user id</td></tr>
+      <tr><td class="k">compLoc</td><td class="m">string</td><td class="req">req</td><td>Company/location; default <span class="m">PIHW</span></td></tr>
+      <tr><td class="k">policyId</td><td class="m">string</td><td class="opt">opt</td><td>Active policy, when in a policy flow</td></tr>
+      <tr><td class="k">nodeKey</td><td class="m">string</td><td class="opt">opt</td><td>Position in the nav tree (LOB prefix)</td></tr>
+      <tr><td class="k">lob</td><td class="m">LobCode</td><td class="opt">opt</td><td>Current LOB, e.g. <span class="m">POL</span></td></tr>
+      <tr><td class="k">action</td><td class="m">string</td><td class="opt">opt</td><td>Current action matchcode</td></tr>
+      <tr><td class="k">tab</td><td class="m">string</td><td class="opt">opt</td><td>Active tab id</td></tr>
+    </tbody></table></div>
+
+    <h4>ControlDef — one field/control (the FieldRenderer atom)</h4>
+    <div class="tbl"><table><thead><tr><th>Field</th><th>Type</th><th>R/O</th><th>Notes</th></tr></thead><tbody>
+      <tr><td class="k">matchcode</td><td class="m">string</td><td class="req">req</td><td>Stable id (e.g. <span class="m">POLSTAT</span>)</td></tr>
+      <tr><td class="k">type</td><td class="m">FieldType</td><td class="req">req</td><td>text·textarea·number·select·combo·date·checkbox·radio·label·button</td></tr>
+      <tr><td class="k">label</td><td class="m">string</td><td class="opt">opt</td><td>Display label</td></tr>
+      <tr><td class="k">value</td><td class="m">string|number|boolean|null</td><td class="opt">opt</td><td>Current value</td></tr>
+      <tr><td class="k">required·disabled·readOnly·visible</td><td class="m">boolean</td><td class="opt">opt</td><td>Control state (mutated by commands)</td></tr>
+      <tr><td class="k">maxLength</td><td class="m">number</td><td class="opt">opt</td><td>For text inputs</td></tr>
+      <tr><td class="k">options</td><td class="m">ComboOption[]</td><td class="opt">opt</td><td><span class="m">{value,label}</span> for select/combo/radio</td></tr>
+      <tr><td class="k">row·col·colSpan</td><td class="m">number</td><td class="opt">opt</td><td>Dynamic positioning (SDD §2.6)</td></tr>
+      <tr><td class="k">action·frame</td><td class="m">string · FrameType</td><td class="opt">opt</td><td>Buttons only</td></tr>
+      <tr><td class="k">meta</td><td class="m">Record&lt;string,unknown&gt;</td><td class="opt">opt</td><td>Unmodeled PageBuild extras</td></tr>
+    </tbody></table></div>
+
+    <h4>PageBuildResponse — a whole page as data</h4>
+    <div class="tbl"><table><thead><tr><th>Field</th><th>Type</th><th>R/O</th><th>Notes</th></tr></thead><tbody>
+      <tr><td class="k">pageId</td><td class="m">string</td><td class="req">req</td><td>Page identifier</td></tr>
+      <tr><td class="k">title</td><td class="m">string</td><td class="req">req</td><td>Page title</td></tr>
+      <tr><td class="k">controls</td><td class="m">ControlDef[]</td><td class="req">req</td><td>The fields to render</td></tr>
+      <tr><td class="k">tabs</td><td class="m">{id,label}[]</td><td class="opt">opt</td><td>Tab strip</td></tr>
+      <tr><td class="k">grids</td><td class="m">GridList[]</td><td class="opt">opt</td><td>Server lists → DataGrids</td></tr>
+      <tr><td class="k">actions</td><td class="m">ControlDef[]</td><td class="opt">opt</td><td>Buttons</td></tr>
+      <tr><td class="k">commands</td><td class="m">BrowserCommand[]</td><td class="opt">opt</td><td>Initial UI-setup commands</td></tr>
+    </tbody></table></div>
+
+    <h4>Supporting shapes</h4>
+    <div class="tbl"><table><thead><tr><th>Type</th><th>Shape</th></tr></thead><tbody>
+      <tr><td class="k">ComboOption</td><td class="m">{ value: string; label: string }</td></tr>
+      <tr><td class="k">GridList</td><td class="m">{ listName; columns:{field,header,width?}[]; rows:Record&lt;string,unknown&gt;[]; rowIdField }</td></tr>
+      <tr><td class="k">FrameType</td><td class="m">'MAIN' | 'MODAL' | 'NEWWINDOW' | 'HIDDEN'</td></tr>
+      <tr><td class="k">NavigationResponse</td><td class="m">{ pageId; frame:FrameType; nodeKey?; title? }</td></tr>
+      <tr><td class="k">ExecuteActionResult</td><td class="m">{ outcome:ActionOutcome; frame:FrameType; commands:BrowserCommand[]; navigateTo?; error? }</td></tr>
+      <tr><td class="k">ActionOutcome</td><td class="m">'COMMANDS_ONLY'|'CONTINUE_TO_LOADER'|'STORE_MODAL_CMD'|'STORE_WINDOW_CMD'|'EXTERNAL_REDIRECT'</td></tr>
+      <tr><td class="k">LobDefinition</td><td class="m">{ code; name; navPrefix; status:'active'|'config-ready'; color?; pages?:Record&lt;pageId,PageConfig&gt; }</td></tr>
+      <tr><td class="k">PageConfig</td><td class="m">{ pageId; title; version; strategy:RenderStrategy; tabs?; controls?; gridListNames?; permissions? }</td></tr>
+      <tr><td class="k">RenderStrategy</td><td class="m">'dynamic' | 'static' | 'hybrid'</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <!-- 4 -->
+  <section id="api">
+    <div class="sec-no">4 — API CONTRACTS</div>
+    <h2>The backend contract (AqsApi)</h2>
+    <p class="sub">Three methods. The engine depends only on this interface; the mock and the real .NET wrappers both implement it.</p>
+    <pre>interface AqsApi {
+  navigate(session: SessionInfo, target: string): Promise&lt;NavigationResponse&gt;
+  pageBuild(session: SessionInfo, pageId: string): Promise&lt;PageBuildResponse&gt;
+  pageLayout(session: SessionInfo, req: {
+    matchcode: string; action?: string; value?: unknown;
+    formData: Record&lt;string, unknown&gt;
+  }): Promise&lt;ExecuteActionResult&gt;
+}</pre>
+    <div class="tbl"><table><thead><tr><th>Method</th><th>When</th><th>Request</th><th>Response</th></tr></thead><tbody>
+      <tr><td class="k">navigate</td><td>Page open (step 1)</td><td>session, target pageId</td><td><span class="m">NavigationResponse</span> — which page/window + frame</td></tr>
+      <tr><td class="k">pageBuild</td><td>Page open (step 2)</td><td>session, resolved pageId</td><td><span class="m">PageBuildResponse</span> — controls, actions, grids, initial commands</td></tr>
+      <tr><td class="k">pageLayout</td><td>User action</td><td>session, {matchcode, action?, value?, formData}</td><td><span class="m">ExecuteActionResult</span> — outcome, frame, commands, navigateTo?</td></tr>
+    </tbody></table></div>
+    <div class="note"><b>Real backend mapping:</b> each method is a .NET 4.8 wrapper endpoint that invokes the legacy DLL in-process and converts its XML to these JSON shapes. Swap the implementation by exporting a different <span class="m">api</span> from <span class="m">client.ts</span>; no engine change.</div>
+  </section>
+
+  <!-- 5 -->
+  <section id="commands">
+    <div class="sec-no">5 — COMMAND CATALOG</div>
+    <h2>BrowserCommand verbs</h2>
+    <p class="sub">A command is <span class="m">{ type, target?, value?, options?, message?, pageId? }</span>. The dispatcher routes each to the page store (control mutation), the browser-command store (user-facing), or navigation.</p>
+    <div class="tbl"><table><thead><tr><th>Command</th><th>Uses</th><th>Effect</th><th>Routed to</th></tr></thead><tbody>
+      <tr><td class="k">SET_VISIBLE</td><td>target, value:bool</td><td>Show/hide a control</td><td>page store</td></tr>
+      <tr><td class="k">SET_DISABLED</td><td>target, value:bool</td><td>Enable/disable</td><td>page store</td></tr>
+      <tr><td class="k">SET_READONLY</td><td>target, value:bool</td><td>Read-only toggle</td><td>page store</td></tr>
+      <tr><td class="k">SET_REQUIRED</td><td>target, value:bool</td><td>Required toggle</td><td>page store</td></tr>
+      <tr><td class="k">SET_TEXT</td><td>target, value</td><td>Set a control's value/text</td><td>page store</td></tr>
+      <tr><td class="k">SET_VARIABLE</td><td>target, value</td><td>Set a value/global variable</td><td>page / app store</td></tr>
+      <tr><td class="k">LOAD_COMBO</td><td>target, options[]</td><td>Populate select/combo options</td><td>page store</td></tr>
+      <tr><td class="k">CLEAR_COMBO</td><td>target</td><td>Empty a combo's options</td><td>page store</td></tr>
+      <tr><td class="k">NAVIGATE</td><td>pageId</td><td>Go to another page</td><td>router</td></tr>
+      <tr><td class="k">NAVIGATE_CYCLING</td><td>pageId</td><td>Cycling/next-in-sequence nav</td><td>router</td></tr>
+      <tr><td class="k">OPEN_WINDOW</td><td>pageId</td><td>Open a modal/new window</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">REFRESH_PAGE</td><td>—</td><td>Reload current page</td><td>router/loader</td></tr>
+      <tr><td class="k">CLOSE_MODAL</td><td>—</td><td>Close the active modal</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">DISPLAY_ERROR</td><td>message</td><td>Error notification</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">DISPLAY_WARNING</td><td>message</td><td>Warning notification</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">DISPLAY_MESSAGE</td><td>message</td><td>Success/info message</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">DISPLAY_QUESTION</td><td>message</td><td>Confirm prompt</td><td>browser-cmd store</td></tr>
+      <tr><td class="k">DISPLAY_INFORMATION</td><td>message</td><td>Informational message</td><td>browser-cmd store</td></tr>
+    </tbody></table></div>
+    <div class="note"><b>Legacy parity:</b> this verb set mirrors the reconstructed <span class="m">command-handlers.ts</span> (the most-photographed legacy file). Additional verbs (e.g. CLEAR_ACTIONMENU, DISPLAY_TAXCITY_INFORMATION) extend this table without changing the dispatch shape.</div>
+  </section>
+
+  <!-- 6 -->
+  <section id="stores">
+    <div class="sec-no">6 — STATE STORES</div>
+    <h2>Store specifications</h2>
+    <div class="tbl"><table><thead><tr><th>Store</th><th>State</th><th>Methods</th></tr></thead><tbody>
+      <tr><td class="k">authStore</td><td>isAuthenticated, session, permissions:Set</td><td>login(session,perms) · logout() · can(perm)</td></tr>
+      <tr><td class="k">appStore</td><td>variables:Record, isDirty</td><td>setVariable · getVariable · setDirty · reset</td></tr>
+      <tr><td class="k">browserCommandStore</td><td>notifications[], pendingModal</td><td>notify(severity,msg) · dismiss(id) · openModal(cmd) · clearModal()</td></tr>
+      <tr><td class="k">pageStore</td><td>pageId, title, controls:Record&lt;matchcode,ControlDef&gt;, order:string[]</td><td>loadPage(pb,merged) · setValue(mc,val) · <b>applyCommands(cmds)</b> · clear()</td></tr>
+    </tbody></table></div>
+    <h4>pageStore.applyCommands — the server-driven core</h4>
+    <p>Iterates commands; for each control-targeting verb it produces a new control object with the mutated flag/value, replacing it in <span class="m">controls</span>. Because the store is reactive, every subscribed <span class="m">FieldRenderer</span> re-renders. Non-control verbs are ignored here (handled by the dispatcher against other stores/router).</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="components">
+    <div class="sec-no">7 — COMPONENTS</div>
+    <h2>Component specifications</h2>
+    <div class="tbl"><table><thead><tr><th>Component</th><th>Input</th><th>Behaviour</th></tr></thead><tbody>
+      <tr><td class="k">FieldRenderer</td><td>control: ControlDef</td><td>Switch on <span class="m">type</span> → MUI control. Returns null if <span class="m">visible===false</span>. Discrete types fire <span class="m">executeAction</span> on change; text on blur; writes value via <span class="m">setValue</span>.</td></tr>
+      <tr><td class="k">FormRenderer</td><td>— (reads pageStore)</td><td>Iterates <span class="m">order</span>, renders each non-button control via FieldRenderer in a 2-col grid; honors <span class="m">colSpan</span>.</td></tr>
+      <tr><td class="k">DataGridRenderer</td><td>list: GridList</td><td>Maps columns → MUI DataGrid colDefs; row id from <span class="m">rowIdField</span>; compact + paginated.</td></tr>
+      <tr><td class="k">ButtonsRenderer</td><td>actions: ControlDef[]</td><td>Renders buttons; variant by action (Save→contained, Cancel→text); click → executeAction.</td></tr>
+      <tr><td class="k">NotificationHost</td><td>— (reads browser-cmd store)</td><td>Renders DISPLAY_* notifications as MUI Alerts.</td></tr>
+      <tr><td class="k">LobPage</td><td>route params + loader data</td><td>Loads page into store, applies initial commands, renders title/tabs/Form/Grids/Buttons.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <!-- 8 -->
+  <section id="flows">
+    <div class="sec-no">8 — CONTROL FLOWS</div>
+    <h2>Sequence flows</h2>
+    <h3>8.1 Page load</h3>
+    <div class="flow"><div class="flow-inner">
+      <div class="node"><div class="k">route</div><div class="t">loader runs (dataStrategy)</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">api.navigate</div><div class="t">resolve pageId + frame</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">api.pageBuild</div><div class="t">controls+actions+commands</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">merge</div><div class="t">mergeControlsWithPageBuild</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">render</div><div class="t">loadPage + dispatch initial cmds</div></div>
+    </div></div>
+    <h3>8.2 User action (the live loop)</h3>
+    <div class="flow"><div class="flow-inner">
+      <div class="node"><div class="k">event</div><div class="t">change/click on a control</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">executeAction</div><div class="t">gather formData; call pageLayout</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">result.frame</div><div class="t">MAIN/MODAL/HIDDEN/NEWWINDOW</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">dispatch</div><div class="t">apply commands to stores</div></div><div class="arrow">→</div>
+      <div class="node"><div class="k">redraw</div><div class="t">subscribed fields re-render</div></div>
+    </div></div>
+    <h3>8.3 Login</h3>
+    <p><span class="m">Login</span> → <span class="m">authStore.login(session, permissions)</span> → navigate to <span class="m">/dashboard</span>. Every subsequent API call reads <span class="m">authStore.session</span>. Protected routes redirect to <span class="m">/login</span> when <span class="m">isAuthenticated===false</span>.</p>
+  </section>
+
+  <!-- 9 -->
+  <section id="routing">
+    <div class="sec-no">9 — ROUTING</div>
+    <h2>Route table</h2>
+    <div class="tbl"><table><thead><tr><th>Path</th><th>Element</th><th>Loader</th><th>Guard</th></tr></thead><tbody>
+      <tr><td class="k">/login</td><td>Login</td><td>—</td><td>public</td></tr>
+      <tr><td class="k">/ (layout)</td><td>AppLayout</td><td>—</td><td>redirect to /login if unauth</td></tr>
+      <tr><td class="k">/dashboard</td><td>Dashboard</td><td>—</td><td>auth</td></tr>
+      <tr><td class="k">/lob/:lob/:pageId</td><td>LobPage</td><td><b>lobPageLoader</b></td><td>auth · errorElement</td></tr>
+      <tr><td class="k">*</td><td>redirect → /login</td><td>—</td><td>—</td></tr>
+    </tbody></table></div>
+    <p><b>pageIdToPath(pageId, lob):</b> <span class="m">dashboard → /dashboard</span>; otherwise <span class="m">/lob/&lt;lob&gt;/&lt;pageId&gt;</span>. One parameterized route serves all 156 LOBs.</p>
+  </section>
+
+  <!-- 10 -->
+  <section id="strategy">
+    <div class="sec-no">10 — RENDER STRATEGY</div>
+    <h2>Strategies &amp; the merge algorithm</h2>
+    <div class="tbl"><table><thead><tr><th>Strategy</th><th>Source of truth</th><th>mergeControlsWithPageBuild</th></tr></thead><tbody>
+      <tr><td class="k">dynamic</td><td>PageBuild controls only</td><td>returns PageBuild controls unchanged</td></tr>
+      <tr><td class="k">static</td><td>Static schema (config.controls)</td><td>schema controls, each overlaid with live PageBuild <span class="m">value</span> + <span class="m">options</span></td></tr>
+      <tr><td class="k">hybrid</td><td>Static schema</td><td>same as static</td></tr>
+    </tbody></table></div>
+    <pre>mergeControlsWithPageBuild(cfg, pb):
+  if !cfg || cfg.strategy==='dynamic' || !cfg.controls: return pb.controls
+  liveByCode = map(pb.controls by matchcode)
+  return cfg.controls.map(sc =>
+    live = liveByCode[sc.matchcode]
+    live ? { ...sc, value: live.value, options: live.options ?? sc.options } : sc)</pre>
+  </section>
+
+  <!-- 11 -->
+  <section id="lob">
+    <div class="sec-no">11 — EXTENSION</div>
+    <h2>Adding a Line of Business (config schema)</h2>
+    <ol>
+      <li>Create <span class="m">src/lobs/&lt;lob&gt;/&lt;lob&gt;-config.ts</span> exporting a <span class="m">LobDefinition</span> (code, name, navPrefix, status:'active', pages).</li>
+      <li>For each page, add a <span class="m">PageConfig</span> (pageId, title, version, strategy, tabs?, controls? for static/hybrid, gridListNames?, permissions?).</li>
+      <li>Register it: import into <span class="m">registry.ts</span> and add to <span class="m">LOB_REGISTRY</span>.</li>
+      <li>Backend: ensure the wrapper APIs return PageBuild for the new pageIds. Dynamic pages need nothing more.</li>
+    </ol>
+    <div class="note"><b>Invariant:</b> no engine file is edited. Routing, rendering, events, grids, modals, and state are already provided. This is the property the POC exists to prove.</div>
+  </section>
+
+  <!-- 12 -->
+  <section id="trace">
+    <div class="sec-no">12 — TRACEABILITY</div>
+    <h2>LLD ↔ sprint tasks ↔ SDD</h2>
+    <div class="tbl"><table><thead><tr><th>Sprint task</th><th>LLD section</th><th>SDD ref</th></tr></thead><tbody>
+      <tr><td>1 Architecture</td><td>§2 Modules, §1 rules</td><td>1.4</td></tr>
+      <tr><td>3 State Management</td><td>§6 Stores</td><td>3</td></tr>
+      <tr><td>4 APIs</td><td>§4 API contracts</td><td>5.3, 5.6</td></tr>
+      <tr><td>5 TS Conversion – Load</td><td>§8.1 Page load (loader)</td><td>4.5</td></tr>
+      <tr><td>6 JSON Schema / Renderer</td><td>§3 Data model, §7 Components, §10 Strategy</td><td>2.4, 2.3.7</td></tr>
+      <tr><td>7 Event Handling</td><td>§5 Commands, §8.2 Action loop</td><td>2.3.1, 2.5</td></tr>
+      <tr><td>8 Page Renderer</td><td>§7 LobPage</td><td>4.7–4.10</td></tr>
+      <tr><td>9 Modal Renderer</td><td>§5 (OPEN_WINDOW), §8.2 frame</td><td>2.3.3, 11</td></tr>
+      <tr><td>10 Routing</td><td>§9 Routing</td><td>4</td></tr>
+      <tr><td>11–15 Login→Policy</td><td>§8.3, §7, §11</td><td>5.4, 10</td></tr>
+    </tbody></table></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">AQS Portal — Low-Level Design Document v1.0 · complements Solution Design Document v13 · grounded in the running POC.</div>
+</footer>
