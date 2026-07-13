@@ -1,0 +1,416 @@
+<title>AQS POC — Codebase Guide (every file)</title>
+<style>
+  :root{
+    --paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;
+    --accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;
+    --z-engine:#2C6BB0;--z-config:#A96C22;--z-state:#6a3fb0;--z-page:#2e7d5b;--z-shell:#0e7c86;--z-build:#69727F;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:72ch;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;
+    --accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;
+    --z-engine:#6EA9E7;--z-config:#D89E58;--z-state:#b18ce8;--z-page:#5EBE93;--z-shell:#4fc4d0;--z-build:#8A94A3;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;--accent:#2C6BB0;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;--z-engine:#2C6BB0;--z-config:#A96C22;--z-state:#6a3fb0;--z-page:#2e7d5b;--z-shell:#0e7c86;--z-build:#69727F;--shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);}
+  :root[data-theme="dark"]{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--z-engine:#6EA9E7;--z-config:#D89E58;--z-state:#b18ce8;--z-page:#5EBE93;--z-shell:#4fc4d0;--z-build:#8A94A3;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:940px;margin:0 auto;padding:0 20px}
+  code,.m{font-family:var(--mono);font-size:.86em}
+  code{background:var(--card-2);border:1px solid var(--line);border-radius:5px;padding:.06em .36em}
+  h1,h2,h3{text-wrap:balance;line-height:1.16;letter-spacing:-.02em}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  p{max-width:var(--measure)}
+
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:12px;height:52px}
+  .brand{font-family:var(--mono);font-size:13px;font-weight:600} .brand b{color:var(--accent)}
+  .nav{margin-left:auto;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:64%}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;color:var(--muted);padding:5px 8px;border-radius:6px;white-space:nowrap}
+  .nav a:hover{color:var(--ink);background:var(--card-2);text-decoration:none}
+
+  .hero{padding:48px 0 24px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(28px,4.8vw,42px);font-weight:760;margin:13px 0 0}
+  .lede{font-size:clamp(17px,2.2vw,20px);color:var(--ink-soft);max-width:var(--measure);margin:15px 0 0}
+
+  .boot{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+  .boot h3{margin:0 0 10px;font-size:15px}
+  .boot ol{margin:0;padding-left:20px;max-width:none}
+  .boot li{margin:6px 0;font-size:14.5px;color:var(--ink-soft)}
+  .boot li b{color:var(--ink)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .zt{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff}
+  .z-engine{background:var(--z-engine)}.z-config{background:var(--z-config)}.z-state{background:var(--z-state)}
+  .z-page{background:var(--z-page)}.z-shell{background:var(--z-shell)}.z-build{background:var(--z-build)}
+
+  section{padding:30px 0;border-top:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em}
+  h2{font-size:clamp(21px,3vw,27px);font-weight:740;margin:6px 0 4px}
+  .sec-sub{color:var(--muted);margin:0 0 8px}
+
+  .file{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:12px 0;box-shadow:var(--shadow)}
+  .file-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .fname{font-family:var(--mono);font-weight:670;font-size:14.5px;color:var(--ink)}
+  .fname .dir{color:var(--muted);font-weight:400}
+  .lines{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+  .zt-sm{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff}
+  .role{font-size:14px;color:var(--accent-ink);font-style:italic;margin:8px 0 0}
+  @media (prefers-color-scheme:dark){.role{color:var(--accent)}}
+  .fbody{margin-top:9px;font-size:14px;color:var(--ink-soft)}
+  .fbody b{color:var(--ink);font-weight:640}
+  .conn{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px;color:var(--muted)}
+  .conn b{color:var(--ink-soft)}
+
+  .keyrow{display:flex;gap:8px;align-items:center;background:var(--card-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:9px 13px;margin:10px 0;font-size:13.5px;color:var(--ink-soft)}
+  .keyrow b{color:var(--ink)}
+  footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:13px;margin-top:36px}
+  @media (max-width:640px){body{font-size:16px}.nav{max-width:48%}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <span class="brand">AQS<b>·</b>codebase</span>
+    <nav class="nav" aria-label="Sections">
+      <a href="#boot">Boot</a>
+      <a href="#build">1·Build</a>
+      <a href="#types">2·Contract</a>
+      <a href="#look">3·Look</a>
+      <a href="#api">4·Backend</a>
+      <a href="#state">5·State</a>
+      <a href="#cmd">6·Commands</a>
+      <a href="#render">7·Renderers</a>
+      <a href="#lobs">8·LOB config</a>
+      <a href="#route">9·Routing</a>
+      <a href="#pages">10·Pages</a>
+      <a href="#shell">11·Shell</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Codebase Guide · every file explained</div>
+    <h1>What each file does, and how they connect.</h1>
+    <p class="lede">All 29 source files of <span class="m">aqs-web-ui-poc</span>, in the order data flows through them. Each entry: its <b>role</b>, what's <b>inside</b>, and what it <b>connects to</b>. The colored chip tells you which architecture zone it lives in — that's the whole mental model.</p>
+
+    <div class="legend" id="zones">
+      <span class="zt z-build">BUILD</span>
+      <span class="zt z-engine">ENGINE · frozen</span>
+      <span class="zt z-config">CONFIG · per-LOB</span>
+      <span class="zt z-state">STATE</span>
+      <span class="zt z-page">PAGE</span>
+      <span class="zt z-shell">SHELL</span>
+    </div>
+
+    <div class="boot" id="boot">
+      <h3>How the app wakes up (the 60-second mental model)</h3>
+      <ol>
+        <li><b>index.html</b> loads <b>main.tsx</b>, which mounts <b>App.tsx</b>.</li>
+        <li><b>App.tsx</b> sets the theme, mounts the <b>router</b>, and the notification host.</li>
+        <li>The <b>router</b> shows <b>Login</b>; signing in fills the <b>auth store</b>.</li>
+        <li><b>Dashboard</b> reads the <b>LOB registry</b> and draws 156 tiles.</li>
+        <li>Clicking Policy hits the <b>/lob/:lob/:pageId</b> route; its <b>loader</b> calls the <b>API</b> (Navigation → PageBuild).</li>
+        <li>The <b>page store</b> gets the controls; <b>FormRenderer</b> + <b>FieldRenderer</b> draw them.</li>
+        <li>A field change calls <b>executeAction</b> → API → <b>dispatch</b> runs the returned commands → the store updates → the screen redraws.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- 1 BUILD -->
+  <section id="build">
+    <div class="sec-no">01</div>
+    <h2>Build &amp; entry <span class="zt-sm z-build" style="vertical-align:middle">BUILD</span></h2>
+    <p class="sec-sub">The plumbing that turns source files into a running app. You'll rarely open these, but here's what they do.</p>
+
+    <div class="file"><div class="file-head"><span class="fname">package.json</span><span class="zt-sm z-build">BUILD</span><span class="lines">33 lines</span></div>
+      <div class="role">The project's manifest — dependencies and commands.</div>
+      <div class="fbody">Lists every library the app needs (React, MUI, Zustand, React Router, Vite, Tailwind) and the scripts: <span class="m">dev</span> (run locally), <span class="m">build</span> (production), <span class="m">typecheck</span>.</div>
+      <div class="conn"><b>Connects:</b> <span class="m">npm install</span> reads it to fetch libraries into <span class="m">node_modules</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname">vite.config.ts</span><span class="zt-sm z-build">BUILD</span><span class="lines">18 lines</span></div>
+      <div class="role">Configures the Vite dev server &amp; build.</div>
+      <div class="fbody">Turns on the React and Tailwind plugins and sets the <span class="m">@/</span> path alias (so imports read <span class="m">@/engine/...</span> instead of long relative paths). Sets the dev port to 5173.</div>
+      <div class="conn"><b>Connects:</b> used by every <span class="m">npm run dev</span> / <span class="m">build</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname">tsconfig.json</span><span class="zt-sm z-build">BUILD</span><span class="lines">25 lines</span></div>
+      <div class="role">TypeScript's rulebook.</div>
+      <div class="fbody">Turns on <b>strict</b> type-checking (catches mistakes before runtime) and declares the same <span class="m">@/</span> alias so the type-checker resolves imports.</div>
+      <div class="conn"><b>Connects:</b> drives <span class="m">npm run typecheck</span> and editor type hints.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname">index.html</span><span class="zt-sm z-build">BUILD</span><span class="lines">12 lines</span></div>
+      <div class="role">The single HTML page the whole app lives in.</div>
+      <div class="fbody">Contains one empty <span class="m">&lt;div id="root"&gt;</span> and loads <span class="m">main.tsx</span>. React fills that div — this is what "Single Page Application" means.</div>
+      <div class="conn"><b>Connects:</b> loads <span class="m">src/main.tsx</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/</span>main.tsx</span><span class="zt-sm z-build">BUILD</span><span class="lines">10 lines</span></div>
+      <div class="role">The ignition — hands control to React.</div>
+      <div class="fbody">Finds the <span class="m">#root</span> div and renders <span class="m">&lt;App/&gt;</span> into it. Also imports the global CSS.</div>
+      <div class="conn"><b>Connects:</b> renders <span class="m">App.tsx</span>; imports <span class="m">index.css</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/</span>index.css</span><span class="zt-sm z-build">BUILD</span><span class="lines">16 lines</span></div>
+      <div class="role">Global styles &amp; the Tailwind import.</div>
+      <div class="fbody">Pulls in Tailwind's utilities and sets base font/height. Component styling is mostly done through the MUI theme, so this file stays tiny.</div>
+      <div class="conn"><b>Connects:</b> imported by <span class="m">main.tsx</span>; pairs with <span class="m">theme.ts</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/</span>vite-env.d.ts</span><span class="zt-sm z-build">BUILD</span><span class="lines">1 line</span></div>
+      <div class="role">Type hints for Vite features.</div>
+      <div class="fbody">A one-line reference so TypeScript understands Vite-specific things (like importing images or env vars).</div>
+      <div class="conn"><b>Connects:</b> ambient — used by the type-checker only.</div>
+    </div>
+
+    <div class="keyrow"><b>Also present:</b>&nbsp;<span class="m">README.md</span> (how to run + architecture), <span class="m">.gitignore</span>, <span class="m">.claude/launch.json</span> (dev-server config), and generated <span class="m">package-lock.json</span> / <span class="m">dist/</span>. None are app logic.</div>
+  </section>
+
+  <!-- 2 CONTRACT -->
+  <section id="types">
+    <div class="sec-no">02</div>
+    <h2>The shared contract <span class="zt-sm z-engine" style="vertical-align:middle">ENGINE</span></h2>
+    <p class="sec-sub">One file that defines the "language" every other file speaks. Read this and you understand the data model.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/types/</span>index.ts</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">196 lines</span></div>
+      <div class="role">Every shape of data in the app, in one place.</div>
+      <div class="fbody">Defines the vocabulary: <b>SessionInfo</b> (who/where you are), <b>LobDefinition</b> (one Line of Business), <b>ControlDef</b> (a single field), <b>PageBuildResponse</b> (a whole page as data), <b>BrowserCommand</b> (the ~20 server commands like <span class="m">SET_VISIBLE</span>), <b>ExecuteActionResult</b>, and <b>PageConfig</b> (a page's static/hybrid config). Crucially, <b>nothing here is Policy-specific</b> — an LOB is data, never a new type.</div>
+      <div class="conn"><b>Connects:</b> imported by almost every file — it's the contract the engine and the config both obey.</div>
+    </div>
+  </section>
+
+  <!-- 3 LOOK -->
+  <section id="look">
+    <div class="sec-no">03</div>
+    <h2>Look &amp; feel</h2>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/theme/</span>theme.ts</span><span class="zt-sm z-shell">SHELL</span><span class="lines">31 lines</span></div>
+      <div class="role">The design tokens — colors, spacing, typography.</div>
+      <div class="fbody">Creates the MUI theme: the blue primary color, the neutral background, rounded corners, default input sizes. Change a value here and the whole app restyles consistently (SDD §7.4).</div>
+      <div class="conn"><b>Connects:</b> consumed by <span class="m">App.tsx</span>'s ThemeProvider; every MUI component reads it.</div>
+    </div>
+  </section>
+
+  <!-- 4 BACKEND -->
+  <section id="api">
+    <div class="sec-no">04</div>
+    <h2>The backend boundary <span class="zt-sm z-engine" style="vertical-align:middle">ENGINE</span></h2>
+    <p class="sec-sub">The only place the app talks to a server. Swapping the mock for the real .NET APIs happens here — and nowhere else.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/api/</span>client.ts</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">33 lines</span></div>
+      <div class="role">The backend contract (an interface) + the active implementation.</div>
+      <div class="fbody">Declares <b>AqsApi</b> with three methods: <span class="m">navigate()</span> (which page loads), <span class="m">pageBuild()</span> (the page as JSON), <span class="m">pageLayout()</span> (run a user action). Exports <span class="m">api</span> — currently the mock. The engine only ever knows this interface.</div>
+      <div class="conn"><b>Connects:</b> the loader and <span class="m">execute-action</span> call <span class="m">api</span>; the real backend would replace the one export.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/mock/</span>mock-backend.ts</span><span class="zt-sm z-config">MOCK</span><span class="lines">146 lines</span></div>
+      <div class="role">A fake .NET backend so the POC runs with no server.</div>
+      <div class="fbody">Implements the three API methods with sample <b>Policy</b> data: the Policy Information fields, a Coverage grid, action buttons. It also contains the <b>demo rule</b> — when Policy Status becomes "Cancelled", it returns <span class="m">SET_VISIBLE</span> + <span class="m">SET_REQUIRED</span> + <span class="m">DISPLAY_WARNING</span> commands. This is the only file that changes when you plug in the real backend.</div>
+      <div class="conn"><b>Connects:</b> imported by <span class="m">client.ts</span>; produces the JSON the renderers draw.</div>
+    </div>
+  </section>
+
+  <!-- 5 STATE -->
+  <section id="state">
+    <div class="sec-no">05</div>
+    <h2>State — the four stores <span class="zt-sm z-state" style="vertical-align:middle">STATE</span></h2>
+    <p class="sec-sub">The app's shared memory, split into four focused stores (SDD §3). "Store" = a small box of data any component can read, that redraws the screen when it changes.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/stores/</span>auth-store.ts</span><span class="zt-sm z-state">STATE</span><span class="lines">24 lines</span></div>
+      <div class="role">Who is logged in.</div>
+      <div class="fbody">Holds the session (userId, CompLoc, LOB) and permissions, with <span class="m">login()</span>, <span class="m">logout()</span>, and <span class="m">can(permission)</span>.</div>
+      <div class="conn"><b>Connects:</b> set by <span class="m">Login</span>; read by the layout, the loader, and executeAction (to send the session).</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/stores/</span>app-store.ts</span><span class="zt-sm z-state">STATE</span><span class="lines">27 lines</span></div>
+      <div class="role">Global variables &amp; the "unsaved changes" flag.</div>
+      <div class="fbody">The React home for the legacy session array and dirty flag — variables addressed by name (set via <span class="m">SET_VARIABLE</span> commands).</div>
+      <div class="conn"><b>Connects:</b> written by command handling; read wherever page-global values matter.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/stores/</span>browser-command-store.ts</span><span class="zt-sm z-state">STATE</span><span class="lines">36 lines</span></div>
+      <div class="role">Messages &amp; modal requests from the server.</div>
+      <div class="fbody">Holds the notification queue (from <span class="m">DISPLAY_*</span> commands) and a pending-modal slot. Provides <span class="m">notify()</span>, <span class="m">openModal()</span>.</div>
+      <div class="conn"><b>Connects:</b> written by <span class="m">dispatch</span>; read by <span class="m">NotificationHost</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/stores/</span>page-store.ts</span><span class="zt-sm z-state">STATE</span><span class="lines">81 lines</span></div>
+      <div class="role">The live state of the currently-open page — where server-driven UI happens.</div>
+      <div class="fbody">Holds the page's controls (keyed by matchcode) and their values. Key method: <b>applyCommands()</b> — takes server commands (<span class="m">SET_VISIBLE</span>, <span class="m">SET_REQUIRED</span>, <span class="m">LOAD_COMBO</span>…) and mutates the controls, which makes the screen redraw. <span class="m">loadPage()</span> seeds it; <span class="m">setValue()</span> updates one field.</div>
+      <div class="conn"><b>Connects:</b> loaded by <span class="m">LobPage</span>; mutated by <span class="m">dispatch</span>; read by <span class="m">FormRenderer</span>/<span class="m">FieldRenderer</span>.</div>
+    </div>
+  </section>
+
+  <!-- 6 COMMANDS -->
+  <section id="cmd">
+    <div class="sec-no">06</div>
+    <h2>The engine — command core <span class="zt-sm z-engine" style="vertical-align:middle">ENGINE</span></h2>
+    <p class="sec-sub">The two files that make it "server-driven". This is the heart of the migration.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/commands/</span>execute-action.ts</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">58 lines</span></div>
+      <div class="role">The single choke-point for "the user did something".</div>
+      <div class="fbody">Gathers the current form values, calls the <b>Page Layout API</b>, then acts on the result's <b>frame</b> (the ported VBScript switch): <span class="m">MODAL</span> opens a dialog, <span class="m">MAIN</span> navigates, <span class="m">HIDDEN</span> just applies commands. It hands the returned commands to <span class="m">dispatch</span>.</div>
+      <div class="conn"><b>Connects:</b> called by <span class="m">FieldRenderer</span> &amp; <span class="m">ButtonsRenderer</span>; calls <span class="m">api</span> and <span class="m">dispatch</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/commands/</span>dispatch.ts</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">64 lines</span></div>
+      <div class="role">The command runner — the React version of legacy <span class="m">command-handlers</span>.</div>
+      <div class="fbody">Takes the list of server commands and routes each one: control commands (<span class="m">SET_VISIBLE</span> etc.) go to the <b>page store</b>; message commands (<span class="m">DISPLAY_WARNING</span> etc.) go to the <b>browser-command store</b>; navigation commands are returned to the caller. Every server command verb is handled here.</div>
+      <div class="conn"><b>Connects:</b> called by <span class="m">execute-action</span> and <span class="m">LobPage</span>; writes to the page &amp; browser-command stores.</div>
+    </div>
+  </section>
+
+  <!-- 7 RENDERERS -->
+  <section id="render">
+    <div class="sec-no">07</div>
+    <h2>The engine — renderers <span class="zt-sm z-engine" style="vertical-align:middle">ENGINE</span></h2>
+    <p class="sec-sub">The components that turn page-data into a visible screen. None of them know anything about Policy.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/renderers/</span>FieldRenderer.tsx</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">190 lines</span></div>
+      <div class="role">Draws ONE field from its type — the legacy .htc → MUI mapping made real.</div>
+      <div class="fbody">A switch on the field type: <span class="m">text</span>→TextField, <span class="m">select</span>→dropdown, <span class="m">combo</span>→Autocomplete, <span class="m">date</span>→date input, <span class="m">checkbox</span>/<span class="m">radio</span>/<span class="m">number</span>/<span class="m">textarea</span>. It reads/writes the page store, and fires <b>executeAction</b> on change (dropdowns) or blur (text) — that's what triggers the server loop.</div>
+      <div class="conn"><b>Connects:</b> used by <span class="m">FormRenderer</span>; reads page store; calls <span class="m">executeAction</span>. The biggest engine file, and the most reused.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/renderers/</span>FormRenderer.tsx</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">36 lines</span></div>
+      <div class="role">Lays out all the page's fields in a grid.</div>
+      <div class="fbody">Reads the control list from the page store and renders each via FieldRenderer in a responsive 2-column layout. Zero knowledge of any specific page.</div>
+      <div class="conn"><b>Connects:</b> rendered by <span class="m">LobPage</span>; reads page store; uses <span class="m">FieldRenderer</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/renderers/</span>DataGridRenderer.tsx</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">36 lines</span></div>
+      <div class="role">Turns any server list into a sortable grid (legacy XmlList → MUI DataGrid).</div>
+      <div class="fbody">Takes a list's columns + rows and renders a compact, paginated MUI DataGrid. Any page's lists render through this — no per-list component.</div>
+      <div class="conn"><b>Connects:</b> rendered by <span class="m">LobPage</span> for each grid in the PageBuild.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/renderers/</span>ButtonsRenderer.tsx</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">47 lines</span></div>
+      <div class="role">Renders the page's action buttons and wires their clicks.</div>
+      <div class="fbody">Draws each action button, styling it by its action (Save→filled, Cancel→plain), and routes clicks through <b>executeAction</b>.</div>
+      <div class="conn"><b>Connects:</b> rendered by <span class="m">LobPage</span>; calls <span class="m">executeAction</span>.</div>
+    </div>
+  </section>
+
+  <!-- 8 modal/notify -->
+  <section>
+    <div class="sec-no">08</div>
+    <h2>The engine — notifications <span class="zt-sm z-engine" style="vertical-align:middle">ENGINE</span></h2>
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/engine/modal/</span>NotificationHost.tsx</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">25 lines</span></div>
+      <div class="role">Shows the server's messages (the warning you see in the demo).</div>
+      <div class="fbody">Watches the browser-command store and renders each <span class="m">DISPLAY_*</span> message as an MUI Alert/snackbar. Mounted once at the app root so any page's messages appear.</div>
+      <div class="conn"><b>Connects:</b> mounted by <span class="m">App.tsx</span>; reads the browser-command store (fed by <span class="m">dispatch</span>).</div>
+    </div>
+  </section>
+
+  <!-- 9 LOB config -->
+  <section id="lobs">
+    <div class="sec-no">09</div>
+    <h2>The LOB config zone <span class="zt-sm z-config" style="vertical-align:middle">CONFIG</span></h2>
+    <p class="sec-sub">The other half of the architecture: pure configuration. This is where an LOB is <em>data</em>. The engine above never imports these specifics.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/lobs/</span>registry.ts</span><span class="zt-sm z-config">CONFIG</span><span class="lines">55 lines</span></div>
+      <div class="role">THE registry — the thesis of the whole POC.</div>
+      <div class="fbody">Builds the list of <b>156 Lines of Business</b>: LOB 1 (Policy) is fully defined; the six other real ones (BOP/CAU/IRM/WRM/LIA/RMP) are named; the rest are generated placeholders. Helpers: <span class="m">getLob()</span>, <span class="m">lobStats()</span>. Adding an LOB = one entry here.</div>
+      <div class="conn"><b>Connects:</b> read by the <span class="m">Dashboard</span> (tiles) and the loader (to find a page's config).</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/lobs/policy/</span>policy-config.ts</span><span class="zt-sm z-config">CONFIG</span><span class="lines">41 lines</span></div>
+      <div class="role">LOB 1 — Policy. The one fully-wired line of business.</div>
+      <div class="fbody">Declares the Policy LOB and its Policy Information page: title, version, <b>hybrid</b> strategy, tabs, grid list, permissions. Also its dashboard entry points. Everything Policy-specific is <em>here as data</em> — nothing in the engine.</div>
+      <div class="conn"><b>Connects:</b> imported by <span class="m">registry.ts</span>; used by <span class="m">Dashboard</span> and the loader's merge step.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/lobs/_template/</span>README.md</span><span class="zt-sm z-config">CONFIG</span><span class="lines">50 lines</span></div>
+      <div class="role">The copy-me guide for LOB 2 … 156.</div>
+      <div class="fbody">A short recipe: make a config folder, export a LobDefinition, add one line to the registry, point the backend at its pages. States explicitly: <b>no engine changes.</b></div>
+      <div class="conn"><b>Connects:</b> documentation — the proof that onboarding is config-only.</div>
+    </div>
+  </section>
+
+  <!-- 10 routing -->
+  <section id="route">
+    <div class="sec-no">10</div>
+    <h2>Routing glue <span class="zt-sm z-page" style="vertical-align:middle">PAGE</span></h2>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/config/</span>routes.ts</span><span class="zt-sm z-engine">ENGINE</span><span class="lines">28 lines</span></div>
+      <div class="role">Two small helpers used everywhere.</div>
+      <div class="fbody"><span class="m">pageIdToPath()</span> maps a backend pageId to a URL (generic across LOBs). <span class="m">mergeControlsWithPageBuild()</span> implements the static/hybrid merge (SDD §10.2.2): for hybrid pages, the static schema is the base and live server values are merged in; for dynamic pages, server data passes through.</div>
+      <div class="conn"><b>Connects:</b> used by <span class="m">FieldRenderer</span>/<span class="m">ButtonsRenderer</span> (navigation) and <span class="m">LobPage</span> (merge).</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/</span>router.tsx</span><span class="zt-sm z-page">PAGE</span><span class="lines">30 lines</span></div>
+      <div class="role">The route table.</div>
+      <div class="fbody">Defines: <span class="m">/login</span>, the protected layout, <span class="m">/dashboard</span>, and the star route <b><span class="m">/lob/:lob/:pageId</span></b> with its loader — <b>one route serves every LOB and every page.</b> Errors fall back to the error boundary.</div>
+      <div class="conn"><b>Connects:</b> mounted by <span class="m">App.tsx</span>; wires pages + the loader.</div>
+    </div>
+  </section>
+
+  <!-- 11 pages -->
+  <section id="pages">
+    <div class="sec-no">11</div>
+    <h2>Pages <span class="zt-sm z-page" style="vertical-align:middle">PAGE</span></h2>
+    <p class="sec-sub">The three screens. Notice there's only one for <em>all</em> LOB pages.</p>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/pages/</span>Login.tsx</span><span class="zt-sm z-page">PAGE</span><span class="lines">48 lines</span></div>
+      <div class="role">Sign-in (sprint task 11).</div>
+      <div class="fbody">A simple form that, on submit, fills the auth store with the session + permissions and navigates to the dashboard. The POC accepts any credentials.</div>
+      <div class="conn"><b>Connects:</b> writes <span class="m">auth-store</span>; navigates via the router.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/pages/</span>Dashboard.tsx</span><span class="zt-sm z-page">PAGE</span><span class="lines">108 lines</span></div>
+      <div class="role">The landing page — and the scale story made visual (task 12).</div>
+      <div class="fbody">Shows the stat row (156 LOBs · 1 active · 155 config-ready · 1 engine) and renders the registry as tiles: Policy is clickable, the rest are dimmed "config-ready". A quick-start button jumps into Policy Information.</div>
+      <div class="conn"><b>Connects:</b> reads <span class="m">registry.ts</span> &amp; <span class="m">policy-config</span>; navigates to the LOB route.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/pages/</span>LobPage.tsx</span><span class="zt-sm z-page">PAGE</span><span class="lines">99 lines</span></div>
+      <div class="role">The ONE generic page host for every LOB page (task 8).</div>
+      <div class="fbody">Two parts: (1) the exported <b>loader</b> — runs before render, doing Navigation → PageBuild (this is the ported <span class="m">Window_OnLoad</span>); (2) the component — loads the data into the page store, applies startup commands, and renders the title, tabs, <b>FormRenderer</b>, grids, and action buttons. It resolves nothing LOB-specific itself.</div>
+      <div class="conn"><b>Connects:</b> wired in <span class="m">router.tsx</span>; uses the API, page store, dispatch, and all renderers. The keystone file.</div>
+    </div>
+  </section>
+
+  <!-- 12 shell -->
+  <section id="shell">
+    <div class="sec-no">12</div>
+    <h2>Shell &amp; root <span class="zt-sm z-shell" style="vertical-align:middle">SHELL</span></h2>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/shell/</span>AppLayout.tsx</span><span class="zt-sm z-shell">SHELL</span><span class="lines">52 lines</span></div>
+      <div class="role">The frame around every signed-in page (SDD §2.2).</div>
+      <div class="fbody">The top AppBar with brand, the current user, and Logout — with the routed page shown below it. Also guards auth: not signed in → redirect to Login.</div>
+      <div class="conn"><b>Connects:</b> the parent route in <span class="m">router.tsx</span>; reads <span class="m">auth-store</span>.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/shell/</span>ErrorBoundary.tsx</span><span class="zt-sm z-shell">SHELL</span><span class="lines">28 lines</span></div>
+      <div class="role">The "something went wrong" fallback (SDD §2.7).</div>
+      <div class="fbody">If a page or its loader throws, this shows a contained error card with a way back to the dashboard — instead of blanking the whole app.</div>
+      <div class="conn"><b>Connects:</b> set as the <span class="m">errorElement</span> in the router.</div>
+    </div>
+
+    <div class="file"><div class="file-head"><span class="fname"><span class="dir">src/</span>App.tsx</span><span class="zt-sm z-shell">SHELL</span><span class="lines">20 lines</span></div>
+      <div class="role">The root component — assembles the app.</div>
+      <div class="fbody">Wraps everything in the theme, mounts the router, and mounts the NotificationHost. Small, because it just wires the big pieces together.</div>
+      <div class="conn"><b>Connects:</b> rendered by <span class="m">main.tsx</span>; pulls in <span class="m">theme</span>, <span class="m">router</span>, <span class="m">NotificationHost</span>.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-no">★</div>
+    <h2>The one-sentence summary</h2>
+    <div class="keyrow"><b>Everything in <span class="m">engine/</span>, <span class="m">stores/</span>, <span class="m">types/</span> is written once and frozen. Everything in <span class="m">lobs/</span> is configuration. A new Line of Business touches only the config side — which is exactly why 156 LOBs is one small codebase, not 156.</b></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">AQS Portal — Codebase Guide · 29 source files · engine (frozen) + config (per-LOB) · aligned to Solution Design Document v13.</div>
+</footer>

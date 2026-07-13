@@ -1,0 +1,495 @@
+<title>AQS POC — Study Guide & Talk Track</title>
+<style>
+  :root{
+    --paper:#F1F4F7; --ink:#151A21; --ink-soft:#3A4250; --muted:#69727F;
+    --line:#DCE2EA; --card:#FFFFFF; --card-2:#F7F9FB;
+    --accent:#2C6BB0; --accent-ink:#1F4E82; --legacy:#A96C22;
+    --ok:#2E7D5B; --warn:#B07D12; --todo:#7A8290;
+    --say-bg:#eef4fb; --say-line:#2C6BB0;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:70ch;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0E1218; --ink:#E7ECF2; --ink-soft:#B7C0CD; --muted:#8A94A3;
+      --line:#242C37; --card:#151B23; --card-2:#11161D;
+      --accent:#6EA9E7; --accent-ink:#9CC6F2; --legacy:#D89E58;
+      --ok:#5EBE93; --warn:#E0B84D; --todo:#8A94A3;
+      --say-bg:#13202e; --say-line:#6EA9E7;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{ --paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;--accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;--todo:#7A8290;--say-bg:#eef4fb;--say-line:#2C6BB0;--shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);}
+  :root[data-theme="dark"]{ --paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--todo:#8A94A3;--say-bg:#13202e;--say-line:#6EA9E7;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .wrap{max-width:940px;margin:0 auto;padding:0 20px}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  code,.m{font-family:var(--mono);font-size:.85em}
+  code{background:var(--card-2);border:1px solid var(--line);border-radius:5px;padding:.08em .38em}
+  h1,h2,h3,h4{text-wrap:balance;line-height:1.16;letter-spacing:-.02em}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  p{max-width:var(--measure)} ul,ol{max-width:var(--measure);padding-left:22px} li{margin:5px 0}
+
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:12px;height:52px}
+  .brand{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink)} .brand b{color:var(--accent)}
+  .nav{margin-left:auto;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;max-width:62%}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:0 0 auto;font-family:var(--mono);font-size:12px;color:var(--muted);padding:5px 9px;border-radius:6px;white-space:nowrap}
+  .nav a:hover{color:var(--ink);background:var(--card-2);text-decoration:none}
+
+  .hero{padding:52px 0 26px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(29px,5vw,44px);font-weight:760;margin:14px 0 0}
+  .lede{font-size:clamp(17px,2.3vw,20px);color:var(--ink-soft);max-width:var(--measure);margin:16px 0 0}
+  .howto{margin-top:22px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--legacy);border-radius:10px;padding:14px 18px;box-shadow:var(--shadow)}
+  .howto b{color:var(--legacy)}
+
+  .part{margin-top:46px;padding-top:10px}
+  .part-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--legacy);font-weight:700}
+  .part h2{font-size:clamp(24px,3.6vw,32px);font-weight:760;margin:6px 0 0}
+  .part .part-sub{color:var(--muted);margin-top:6px}
+
+  section{padding:30px 0;border-top:1px solid var(--line)}
+  .sec-no{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.08em}
+  h3.sh{font-size:clamp(20px,2.8vw,25px);font-weight:720;margin:6px 0 10px}
+  h4{font-size:16px;font-weight:680;margin:20px 0 6px}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin-top:14px}
+  .c{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:15px 17px;box-shadow:var(--shadow)}
+  .c h5{margin:0;font-size:14.5px;font-family:var(--mono);color:var(--accent);font-weight:640}
+  .c .plain{font-size:14px;color:var(--ink-soft);margin:7px 0 0}
+  .c .here{font-size:12.5px;color:var(--muted);margin:9px 0 0;padding-top:8px;border-top:1px dashed var(--line)}
+  .c .here b{color:var(--ink)}
+
+  .key{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:11px;padding:18px 20px;margin:18px 0;box-shadow:var(--shadow)}
+  .key .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .key p{margin:8px 0 0;font-size:17px;color:var(--ink)}
+
+  .flow{overflow-x:auto;margin:16px 0;padding:4px 2px 10px}
+  .flow-inner{display:flex;align-items:stretch;gap:0;min-width:660px}
+  .node{flex:1 1 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;box-shadow:var(--shadow)}
+  .node .k{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:640}
+  .node .t{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.4}
+  .arrow{flex:0 0 24px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:17px}
+
+  /* task cards */
+  .task{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:20px 22px;margin:16px 0;box-shadow:var(--shadow)}
+  .task-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .tnum{font-family:var(--mono);font-weight:700;font-size:13px;color:#fff;background:var(--accent);border-radius:7px;padding:3px 9px}
+  .task-head h3{font-size:19px;font-weight:720;margin:0;flex:1 1 auto}
+  .cat{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .task-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  @media (max-width:640px){.task-grid{grid-template-columns:1fr}}
+  .task-grid h4{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-family:var(--mono)}
+  .task-grid p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+  .say{margin-top:14px;background:var(--say-bg);border-left:4px solid var(--say-line);border-radius:8px;padding:12px 16px}
+  .say .lbl{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+  .say p{margin:5px 0 0;font-size:15px;color:var(--ink);font-style:italic}
+  .ifask{margin-top:10px;font-size:13.5px;color:var(--muted)} .ifask b{color:var(--ink-soft)}
+
+  .pill{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:2px 9px;border-radius:999px;white-space:nowrap}
+  .p-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent);border:1px solid color-mix(in srgb,var(--ok) 34%,transparent)}
+  .p-part{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid color-mix(in srgb,var(--warn) 34%,transparent)}
+
+  /* demo steps */
+  .steps{counter-reset:step;margin-top:16px}
+  .step{position:relative;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px 16px 56px;margin:11px 0;box-shadow:var(--shadow)}
+  .step::before{counter-increment:step;content:counter(step);position:absolute;left:16px;top:16px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-family:var(--mono);font-weight:700;font-size:13px;display:grid;place-items:center}
+  .step .do{font-weight:660;font-size:15px}
+  .step .do .m{font-weight:400}
+  .step .said{margin-top:7px;font-size:14px;color:var(--ink-soft);font-style:italic;border-left:3px solid var(--say-line);padding-left:11px}
+
+  .qa details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin:9px 0;padding:2px 18px;box-shadow:var(--shadow)}
+  .qa summary{cursor:pointer;font-weight:640;padding:14px 0;list-style:none;font-size:15px;color:var(--ink)}
+  .qa summary::-webkit-details-marker{display:none}
+  .qa summary::before{content:"›";font-family:var(--mono);color:var(--accent);margin-right:10px;display:inline-block;transition:transform .18s}
+  .qa details[open] summary::before{transform:rotate(90deg)}
+  .qa .a{padding:0 0 15px 24px;color:var(--ink-soft);font-size:14.5px} .qa .a p{margin:0 0 8px}
+
+  .gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(275px,1fr));gap:11px;margin-top:14px}
+  .g{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 15px}
+  .g dt{font-family:var(--mono);font-size:12.5px;color:var(--accent);font-weight:640}
+  .g dd{margin:5px 0 0;font-size:13.5px;color:var(--ink-soft)}
+
+  .memo{background:var(--accent);color:#fff;border-radius:13px;padding:22px 24px;margin:18px 0;box-shadow:var(--shadow)}
+  .memo h4{margin:0 0 12px;color:#fff;font-size:14px;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)}
+  .memo ol{margin:0;padding-left:20px;max-width:none} .memo li{margin:9px 0;font-size:16px;font-weight:500}
+  .memo .m{background:rgba(255,255,255,.16);border-color:transparent;color:#fff}
+
+  footer{border-top:1px solid var(--line);padding:28px 0 60px;color:var(--muted);font-size:13px;margin-top:40px}
+  @media (max-width:640px){body{font-size:16px}.nav{max-width:50%}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <span class="brand">AQS<b>·</b>study-guide</span>
+    <nav class="nav" aria-label="Sections">
+      <a href="#learn">A · Learn</a>
+      <a href="#tasks">B · 15 Tasks</a>
+      <a href="#demo">C · Demo script</a>
+      <a href="#qa">D · Q&amp;A</a>
+      <a href="#memorize">E · Memorize</a>
+      <a href="#glossary">F · Glossary</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Study Guide &amp; Talk Track · AQS ASP → React POC</div>
+    <h1>Learn it well enough to build it in your head — then talk about it with confidence.</h1>
+    <p class="lede">This is your single source to <b>understand</b> the POC and <b>present</b> it. Part A teaches the ideas (no React background assumed). Part B walks all 15 sprint tasks — what each is, how it's solved, and the exact words to say. Parts C–F give you a demo script, a Q&amp;A bank, five sentences to memorize, and a glossary.</p>
+    <div class="howto">
+      <b>How to use this before the call:</b> read Part A once for understanding (20 min). Skim Part B and read each task's <b>“Say it”</b> line aloud. Memorize Part E. Keep this open during the call and jump with the top nav.
+    </div>
+  </div>
+
+  <!-- ══════════════════ PART A ══════════════════ -->
+  <div class="part" id="learn">
+    <div class="part-label">Part A</div>
+    <h2>Learn it — the ideas behind the POC</h2>
+    <p class="part-sub">Seven short sections. After these you can follow any question on the call.</p>
+  </div>
+
+  <section>
+    <div class="sec-no">A1</div>
+    <h3 class="sh">The 90-second story</h3>
+    <p>The AQS insurance application is old — its screens are written in <b>Classic ASP + VBScript</b>, a 20-year-old Microsoft technology. It works, but it's hard to change, hard to hire for, and can't deliver a modern experience. We are moving the <b>screens</b> to <b>React</b> (today's standard for web UIs) <b>without touching the business logic</b> underneath.</p>
+    <div class="key">
+      <div class="tag">The core insight — say this and everyone gets it</div>
+      <p>The old app already works by having the <b>server describe each page as data</b> and send <b>commands</b> the screen obeys. We kept that exact idea. We built <b>one React “engine”</b> that turns server data into a live page and runs the server's commands — so we modernize <b>once</b>, and every screen benefits.</p>
+    </div>
+    <p>There are <b>156+ Lines of Business</b> (Policy, Business Owner's, Commercial Auto…). We are doing <b>LOB 1 (Policy)</b> now. The whole POC is designed to prove one thing: <b>adding the other 155 is configuration, not new code.</b></p>
+  </section>
+
+  <section>
+    <div class="sec-no">A2</div>
+    <h3 class="sh">What actually got built (and runs)</h3>
+    <p>A working React application you can open in a browser. It has a <b>mock backend</b> built in, so it runs on a laptop with no servers — perfect for a demo. The verified flow: <b>Login → Dashboard (156 LOBs) → Policy Information → change a field → the server-driven command loop fires.</b></p>
+    <div class="grid">
+      <div class="c"><h5>It compiles &amp; runs</h5><div class="plain">Clean install, passes TypeScript typecheck, builds for production, verified live in a browser.</div></div>
+      <div class="c"><h5>Real stack</h5><div class="plain">The exact technologies the design document (v13) specifies — not a toy.</div></div>
+      <div class="c"><h5>29 source files</h5><div class="plain">Small, because the engine is reused. That smallness <em>is</em> the proof.</div></div>
+      <div class="c"><h5>Demo-ready</h5><div class="plain">Mock backend stands in for the real .NET APIs; swappable via one interface.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-no">A3</div>
+    <h3 class="sh">React, only the 8 words you'll hear</h3>
+    <p>You don't need to write React. You need to recognize these eight words and know where each lives in our POC.</p>
+    <div class="grid">
+      <div class="c"><h5>Component</h5><div class="plain">A reusable piece of screen written as a function.</div><div class="here"><b>Ours:</b> <span class="m">FormRenderer</span>, <span class="m">FieldRenderer</span>, <span class="m">Dashboard</span>.</div></div>
+      <div class="c"><h5>JSX</h5><div class="plain">HTML written inside code. It just looks like HTML.</div><div class="here"><b>Ours:</b> the tags inside every <span class="m">.tsx</span> file.</div></div>
+      <div class="c"><h5>Props</h5><div class="plain">Inputs passed into a component.</div><div class="here"><b>Ours:</b> a field's label, value, required-flag.</div></div>
+      <div class="c"><h5>State</h5><div class="plain">Data that changes while you work; the screen redraws itself.</div><div class="here"><b>Ours:</b> the current form values, which field is visible.</div></div>
+      <div class="c"><h5>Hook</h5><div class="plain">Reusable behaviour named <span class="m">use…</span>.</div><div class="here"><b>Ours:</b> <span class="m">useAuthStore</span>, <span class="m">usePageStore</span>.</div></div>
+      <div class="c"><h5>Store (Zustand)</h5><div class="plain">The app's shared memory.</div><div class="here"><b>Ours:</b> auth, app, page, browser-command stores.</div></div>
+      <div class="c"><h5>Router</h5><div class="plain">Maps a URL to a page, and fetches its data first.</div><div class="here"><b>Ours:</b> <span class="m">router.tsx</span>, one route serves every LOB.</div></div>
+      <div class="c"><h5>Loader</h5><div class="plain">Runs before a page shows to get its data.</div><div class="here"><b>Ours:</b> <span class="m">lobPageLoader</span> — the legacy <span class="m">Window_OnLoad</span>.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-no">A4</div>
+    <h3 class="sh">The architecture — the 156-LOB answer</h3>
+    <p>The whole codebase splits into <b>two zones that never mix</b>. This split is the most important thing to understand and the strongest thing to say.</p>
+    <div class="grid">
+      <div class="c" style="border-left:4px solid var(--accent)"><h5>engine/ — write once, freeze</h5><div class="plain">Everything generic: the renderers that draw fields, the command runner, the page loader, the API contract. It has <b>zero</b> knowledge of Policy or any LOB. <em>If adding an LOB meant editing the engine, the design failed.</em></div></div>
+      <div class="c" style="border-left:4px solid var(--legacy)"><h5>lobs/ — pure configuration</h5><div class="plain">A <b>registry</b> of 156 entries + one folder per LOB with its page configs. LOB 1 (Policy) is filled in; the other 155 are placeholders that visibly slot in.</div></div>
+    </div>
+    <div class="key"><div class="tag">Say this</div><p>“Onboarding a new Line of Business is a config entry and a folder — <b>we never touch the engine.</b> That's how one team delivers 156 LOBs instead of building 156 apps.”</p></div>
+  </section>
+
+  <section>
+    <div class="sec-no">A5</div>
+    <h3 class="sh">How a page loads — the two-call flow</h3>
+    <p>When a user opens a page, two backend calls happen, then the engine draws it. Walk through this left-to-right if anyone asks “how does it actually work?”</p>
+    <div class="flow"><div class="flow-inner">
+      <div class="node"><div class="k">1 · Loader runs</div><div class="t">Router runs the page's loader before showing anything</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="k">2 · Navigation API</div><div class="t">Backend says <b>which</b> page/window to load</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="k">3 · PageBuild API</div><div class="t">Backend runs the legacy DLL, converts XML→JSON: fields + actions + commands</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="k">4 · Render + obey</div><div class="t">Engine draws the fields, then runs any startup commands</div></div>
+    </div></div>
+    <p>Then the user acts (types, clicks) → a third call, the <b>Page Layout API</b>, runs the legacy logic and returns the next commands. Every call is a thin <b>wrapper</b> around the <em>unchanged</em> legacy code.</p>
+  </section>
+
+  <section>
+    <div class="sec-no">A6</div>
+    <h3 class="sh">The server-driven command loop (the demo “aha”)</h3>
+    <p>This is the single most impressive thing to demo, so understand it well. The backend can send about <b>20 commands</b> the UI obeys — e.g. <span class="m">SET_VISIBLE</span>, <span class="m">SET_REQUIRED</span>, <span class="m">LOAD_COMBO</span>, <span class="m">DISPLAY_WARNING</span>, <span class="m">NAVIGATE</span>.</p>
+    <p>In our POC: change <b>Policy Status → Cancelled</b>. The field change calls the backend; the backend replies with three commands — “make the Cancellation Reason field <b>visible</b>”, “make it <b>required</b>”, “<b>warn</b> the user”. The React screen instantly obeys: the field appears and a warning pops up. <b>Nobody wrote page code for that</b> — the engine simply ran the server's commands.</p>
+    <div class="key"><div class="tag">Say this while demoing</div><p>“I changed one field. The <b>server</b> decided what happens next and sent commands; the React engine obeyed. This is exactly how the legacy screen behaves — same brain, new face.”</p></div>
+  </section>
+
+  <section>
+    <div class="sec-no">A7</div>
+    <h3 class="sh">The stack, one line each</h3>
+    <div class="grid">
+      <div class="c"><h5>React + TypeScript</h5><div class="plain">The UI library + a typed version of JavaScript that catches mistakes early.</div></div>
+      <div class="c"><h5>Vite</h5><div class="plain">The dev server + build tool. Instant reload, optimized production output.</div></div>
+      <div class="c"><h5>React Router</h5><div class="plain">URL → page, with loaders that fetch data before render.</div></div>
+      <div class="c"><h5>Zustand</h5><div class="plain">Lightweight shared state (our four stores).</div></div>
+      <div class="c"><h5>MUI v7</h5><div class="plain">The component library — buttons, inputs, grids, dialogs.</div></div>
+      <div class="c"><h5>Tailwind v4</h5><div class="plain">Utility styling that layers on top of MUI.</div></div>
+      <div class="c"><h5>.NET 4.8 wrapper APIs</h5><div class="plain">Thin backend endpoints that call the existing DLLs and return JSON.</div></div>
+      <div class="c"><h5>Mock backend (POC)</h5><div class="plain">Stands in for those APIs so the POC runs anywhere.</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PART B ══════════════════ -->
+  <div class="part" id="tasks">
+    <div class="part-label">Part B</div>
+    <h2>The 15 sprint tasks — in detail, with what to say</h2>
+    <p class="part-sub">Each card: <b>What it is</b> (plain) · <b>How we solved it</b> (the real approach in this POC) · <b>Say it</b> (your talk track) · <b>If asked</b> (a follow-up you can field). Status pills: <span class="pill p-ok">BUILT</span> substantially done · <span class="pill p-part">PARTIAL</span> proven, finishing left.</p>
+  </div>
+  <section style="border-top:none;padding-top:6px">
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">01</span><h3>Architecture Design</h3><span class="cat">Initial</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Decide the overall shape: how state, routing, rendering, the nav tree, and the dashboard fit together — and how it scales to 156 LOBs.</p></div>
+        <div><h4>How we solved it</h4><p>The two-zone design: a frozen <span class="m">engine/</span> + a config-only <span class="m">lobs/</span> registry. One shared contract of types (Controls, Commands, PageBuild) that every LOB speaks.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“The architecture is one reusable engine plus per-LOB configuration. That decision is what makes 156 LOBs feasible with one codebase.”</p></div>
+      <div class="ifask"><b>If asked “why not build each page normally?”</b> — 156 LOBs × dozens of pages each = thousands of screens. Hand-building doesn't scale; a config-driven engine does.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">02</span><h3>Project Setup</h3><span class="cat">Setup</span><span class="pill p-part">PARTIAL</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>The folders, files, and service layer — the skeleton every other task builds on.</p></div>
+        <div><h4>How we solved it</h4><p>A feature-sliced tree: <span class="m">engine/ · lobs/ · stores/ · pages/ · shell/ · mock/ · types/</span>, wired with Vite + TypeScript. Clean install, builds green.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“The project is set up so responsibilities are obvious: generic engine, per-LOB config, shared state, and pages. New engineers know exactly where things go.”</p></div>
+      <div class="ifask"><b>If asked what's left</b> — hardening the service layer and adding lint/test config; the structure itself is in place.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">03</span><h3>State Management</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>The app's shared memory — who's logged in, global variables, and the current page's live data.</p></div>
+        <div><h4>How we solved it</h4><p>Four Zustand stores (per SDD §3): <span class="m">authStore</span> (session + permissions), <span class="m">appStore</span> (global variables + dirty flag), <span class="m">browserCommandStore</span> (messages, modals), <span class="m">pageStore</span> (the current form's controls &amp; values).</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“State is split into focused stores. The page store is where server-driven UI happens — commands mutate it and the screen redraws.”</p></div>
+      <div class="ifask"><b>If asked why Zustand</b> — it's the design doc's choice: tiny, simple, and readable outside components (so loaders can use it too).</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">04</span><h3>APIs</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>The four backend touchpoints: Login, Navigation, PageBuild, Server Call.</p></div>
+        <div><h4>How we solved it</h4><p>One typed contract — <span class="m">AqsApi</span> with <span class="m">navigate()</span>, <span class="m">pageBuild()</span>, <span class="m">pageLayout()</span>. A mock implements it now; the real .NET wrappers implement the same interface later. No engine change to swap.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“We coded to an interface, not a specific server. The mock proves the flow today; pointing it at the real .NET APIs is a drop-in.”</p></div>
+      <div class="ifask"><b>If asked about the real backend</b> — thin .NET 4.8 wrapper APIs that call the existing DLLs and return JSON; no business logic is rewritten.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">05</span><h3>TS Conversion — Load</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Port the legacy <span class="m">Window_OnLoad</span> — the code that runs when a page opens — to TypeScript.</p></div>
+        <div><h4>How we solved it</h4><p>React Router <b>loaders</b>. Our <span class="m">lobPageLoader</span> runs before the page renders, doing the Navigation → PageBuild calls. That's the modern home for on-load logic.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“The legacy on-load became a route loader — data is fetched before the screen appears, so there's no flicker or half-drawn page.”</p></div>
+      <div class="ifask"><b>If asked about VBScript logic</b> — decision logic (which window/frame) is ported to <span class="m">execute-action</span>; data-fetch on load is the loader.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">06</span><h3>JSON Schema / Renderer</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Decide the shape of the page-data (JSON) and write the code that turns it into a screen.</p></div>
+        <div><h4>How we solved it</h4><p>A typed <span class="m">PageBuildResponse</span> (controls + actions + grids + commands) and the <span class="m">FieldRenderer</span>/<span class="m">FormRenderer</span> that draw it. Three render strategies — <span class="m">dynamic</span> / <span class="m">static</span> / <span class="m">hybrid</span> — chosen per page.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“One renderer draws any field from its type. A page is described by JSON; the renderer never hard-codes a screen.”</p></div>
+      <div class="ifask"><b>If asked about layouts that need a custom look</b> — that's the <span class="m">hybrid</span> strategy: a static schema for layout merged with live server values.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">07</span><h3>Event Handling</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Handle user events (onClick, onChange/onBlur) and do the right thing — often calling the server.</p></div>
+        <div><h4>How we solved it</h4><p>A single choke-point, <span class="m">executeAction</span>, plus a command <span class="m">dispatch</span> that runs the ~20 server command verbs. Fields fire it on change/blur; buttons fire it on click. <b>This is the loop we demo.</b></p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“Every user action funnels through one function, so behaviour is consistent everywhere. The server responds with commands; we execute them. You'll see it live.”</p></div>
+      <div class="ifask"><b>If asked for the command list</b> — SET_VISIBLE/DISABLED/REQUIRED/TEXT, LOAD_COMBO, NAVIGATE, DISPLAY_WARNING/ERROR/MESSAGE, OPEN_WINDOW, and more.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">08</span><h3>Page Renderer</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Render an entire page dynamically from its data.</p></div>
+        <div><h4>How we solved it</h4><p>One generic host, <span class="m">LobPage</span>, for <em>every</em> LOB and page. It loads the data and hands controls to the renderer, grids to the DataGrid, buttons to the buttons renderer.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“There's a single page component that renders every page in the whole system. The differences come from data and config, not new components.”</p></div>
+      <div class="ifask"><b>If asked “literally one page component?”</b> — yes; that's the scale story made concrete.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">09</span><h3>Modal Renderer</h3><span class="cat">Core</span><span class="pill p-part">PARTIAL</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Load and manage pop-up dialogs (e.g. Add Named Insured).</p></div>
+        <div><h4>How we solved it</h4><p>The frame switch in <span class="m">execute-action</span> recognizes <span class="m">MODAL</span> and stages a modal command in the browser-command store; a modal host consumes it. Notifications (DISPLAY_*) already render.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“Modals reuse the same engine — a modal is just a page rendered in a dialog frame. The routing to a modal is wired; the dialog host is the finishing step.”</p></div>
+      <div class="ifask"><b>If asked what's left</b> — mounting the modal page inside a draggable MUI Dialog; the command and state plumbing exist.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">10</span><h3>Routing</h3><span class="cat">Core</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>The basic router — URL to page.</p></div>
+        <div><h4>How we solved it</h4><p>React Router data-router. The key route is <span class="m">/lob/:lob/:pageId</span> — <b>one route with one loader serves every LOB and every page.</b></p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“One parameterized route handles all 156 LOBs. Add an LOB and its pages just work — routing needs no changes.”</p></div>
+      <div class="ifask"><b>If asked about old ASP URLs</b> — a route mapper converts legacy <span class="m">.asp</span> names to React routes, so existing links keep working.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">11</span><h3>Login</h3><span class="cat">Implementation</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Sign in and store the session + permissions.</p></div>
+        <div><h4>How we solved it</h4><p>A <span class="m">Login</span> page that seeds the <span class="m">authStore</span> (userId, CompLoc, LOB, permissions). Protected routes redirect to login when not signed in.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“Login establishes the session that every backend call carries. The POC accepts any credentials; production calls the real Auth API.”</p></div>
+      <div class="ifask"><b>If asked about security</b> — the design doc covers auth, API security, and threat protection; the POC focuses on the UI engine.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">12</span><h3>Dashboard</h3><span class="cat">Implementation</span><span class="pill p-part">PARTIAL</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>The landing page with entry points (“new policy” buttons).</p></div>
+        <div><h4>How we solved it</h4><p>The <span class="m">Dashboard</span> renders the 156-LOB registry as tiles — 1 active (Policy), 155 config-ready — plus a quick-start into Policy Information. It <em>is</em> the scale visual.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“The dashboard shows the whole story at a glance: 156 LOBs, one active, one shared engine. Clicking Policy takes you straight into the working flow.”</p></div>
+      <div class="ifask"><b>If asked what's left</b> — real per-user LOB permissions and live “new business” actions; the layout and scale view are done.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">13</span><h3>Policy Start</h3><span class="cat">Implementation</span><span class="pill p-part">PARTIAL</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Begin the Policy (LOB 1) flow and render its first screen.</p></div>
+        <div><h4>How we solved it</h4><p>Clicking Policy routes into <span class="m">/lob/POL/policy-information</span>; the loader fetches the page and the engine renders it. The Policy LOB config declares its pages.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“Starting a policy is just entering the Policy LOB's first configured page — the engine takes it from there.”</p></div>
+      <div class="ifask"><b>If asked about multiple policy pages</b> — each is another entry in the Policy config; the same loader + renderer serve them all.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">14</span><h3>Policy Information — 1</h3><span class="cat">Implementation</span><span class="pill p-ok">BUILT</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Create the page's JSON config and a page-specific component.</p></div>
+        <div><h4>How we solved it</h4><p><span class="m">policy-config.ts</span> declares the page: title, version, <span class="m">hybrid</span> strategy, tabs, grid list, permissions. The PageBuild supplies the live controls. This is the “create JSON” deliverable.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“Policy Information is described by a versioned config plus live server data. Its page-specific needs live in config — not in bespoke code.”</p></div>
+      <div class="ifask"><b>If asked why “hybrid”</b> — the page has a fixed layout/permissions (static schema) merged with live values from the server.</div>
+    </article>
+
+    <article class="task">
+      <div class="task-head"><span class="tnum">15</span><h3>Policy Information — 2</h3><span class="cat">Implementation</span><span class="pill p-part">PARTIAL</span></div>
+      <div class="task-grid">
+        <div><h4>What it is</h4><p>Render the full page (grids excluded for this pass).</p></div>
+        <div><h4>How we solved it</h4><p>The engine renders all field types (text, select, date, combo, number, textarea), tabs, action buttons, and the live command loop. A Coverage DataGrid is included as a bonus.</p></div>
+      </div>
+      <div class="say"><div class="lbl">Say it</div><p>“The full Policy Information page renders end-to-end, including the server-driven behaviour. Grids were scoped out for this pass, but our grid engine already handles them.”</p></div>
+      <div class="ifask"><b>If asked to prove grids work</b> — the Coverage tab shows a live DataGrid from the same config-driven approach.</div>
+    </article>
+
+  </section>
+
+  <!-- ══════════════════ PART C ══════════════════ -->
+  <div class="part" id="demo">
+    <div class="part-label">Part C</div>
+    <h2>The demo script — click by click, word by word</h2>
+    <p class="part-sub">Run this exact sequence. The italic line under each step is what to say.</p>
+  </div>
+  <section style="border-top:none;padding-top:6px">
+    <div class="steps">
+      <div class="step"><div class="do">Open the app — the <span class="m">Login</span> screen.</div><div class="said">“This is the new React front end. Same AQS, modern UI. Let me sign in.”</div></div>
+      <div class="step"><div class="do">Sign in → the <span class="m">Dashboard</span>.</div><div class="said">“156 Lines of Business. One is active — Policy. 155 are config-ready. And one shared engine renders them all. That number, one engine, is the whole point.”</div></div>
+      <div class="step"><div class="do">Point at the config-ready tiles.</div><div class="said">“Each of these becomes real by adding a config entry — no new engine code. That's how 156 LOBs is one project, not 156.”</div></div>
+      <div class="step"><div class="do">Click <span class="m">POL / Policy</span> → Policy Information.</div><div class="said">“The page just loaded by calling the backend and rendering the fields it returned — text, dropdowns, dates, a searchable combo, all drawn by one renderer.”</div></div>
+      <div class="step"><div class="do">Change <span class="m">Policy Status</span> → <b>Cancelled</b>.</div><div class="said">“Watch — I change one field. The server decides what happens and sends commands back.”</div></div>
+      <div class="step"><div class="do">The Cancellation Reason field appears + a warning shows.</div><div class="said">“A new required field appeared and a warning popped — because the server told the screen to. No page-specific code did that; the engine obeyed the server. That's the legacy behaviour, preserved, in React.”</div></div>
+      <div class="step"><div class="do">(Optional) Open the Coverage tab → the DataGrid.</div><div class="said">“Lists become sortable grids from the same config-driven approach — this maps the legacy XmlList control to a modern grid.”</div></div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PART D ══════════════════ -->
+  <div class="part" id="qa">
+    <div class="part-label">Part D</div>
+    <h2>Q&amp;A bank — answers ready to go</h2>
+    <p class="part-sub">Tap to expand. Read them once; they'll be there if you need them.</p>
+  </div>
+  <section style="border-top:none;padding-top:6px">
+    <div class="qa">
+      <details><summary>Why React, and why this approach?</summary><div class="a"><p>React builds pages from data with reusable parts. Because the legacy app is already server-driven, we keep that contract and only replace the browser layer — so one engine covers every screen instead of rewriting hundreds by hand.</p></div></details>
+      <details><summary>Are we rewriting the business logic or the backend?</summary><div class="a"><p>No. The design principle is “no API-first redesign.” New APIs are thin wrappers around the existing DLLs. Business rules and databases are untouched — that's what keeps risk low and rollout phased.</p></div></details>
+      <details><summary>How does adding LOB 2 actually work?</summary><div class="a"><p>Add a config folder for the LOB and one line in the registry. Routing, rendering, events, modals, grids, and state are all provided by the shared engine. No engine changes.</p></div></details>
+      <details><summary>What's genuinely done vs. remaining?</summary><div class="a"><p>Done: the whole engine (state, APIs, loaders, renderer, events) and the Login→Dashboard→Policy flow with the live command loop. Remaining for polish: the modal dialog host, per-user permissions on the dashboard, and grid coverage on Policy Information (scoped out this pass).</p></div></details>
+      <details><summary>Is this the real code or a mock?</summary><div class="a"><p>The engine and UI are real, best-practice React on the design-doc stack. The backend is mocked so it runs standalone for the demo; swapping in the real .NET APIs is a single interface implementation, no engine change.</p></div></details>
+      <details><summary>How long to migrate a page once the engine exists?</summary><div class="a"><p>For a dynamic page, mostly config. The design doc's step-by-step: analyze the legacy ASP/VBS/XML once, then the page renders from PageBuild. Complexity affects effort, not the process.</p></div></details>
+      <details><summary>What are the risks?</summary><div class="a"><p>Field types not yet covered by the renderer, grid edge-cases, and unusual commands. All are additive — they extend the engine, they don't change its shape. Multi-window and modal polish are known follow-ups in the design doc.</p></div></details>
+      <details><summary>Why is the codebase so small?</summary><div class="a"><p>Because the engine is reused. Small is the proof: if every page needed its own code, 156 LOBs would be enormous. It isn't.</p></div></details>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PART E ══════════════════ -->
+  <div class="part" id="memorize">
+    <div class="part-label">Part E</div>
+    <h2>Memorize these five sentences</h2>
+    <p class="part-sub">If you internalize nothing else, internalize these.</p>
+  </div>
+  <section style="border-top:none;padding-top:6px">
+    <div class="memo">
+      <h4>The five sentences</h4>
+      <ol>
+        <li>“The server sends each page as <b>data plus commands</b>; React renders the data and obeys the commands.”</li>
+        <li>“We built the engine <b>once</b>; adding a Line of Business is <b>configuration, not code</b>.”</li>
+        <li>“156 LOBs, one shared engine — that's why this scales.”</li>
+        <li>“We keep every business rule and DLL <b>untouched</b>; thin .NET wrappers just return JSON.”</li>
+        <li>“The demo proves it: I change one field, the server responds with commands, the screen obeys — same brain, new face.”</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ══════════════════ PART F ══════════════════ -->
+  <div class="part" id="glossary">
+    <div class="part-label">Part F</div>
+    <h2>Glossary</h2>
+    <p class="part-sub">Every term you'll hear, in one line.</p>
+  </div>
+  <section style="border-top:none;padding-top:6px">
+    <div class="gloss">
+      <dl class="g"><dt>LOB</dt><dd>Line of Business — a product area (Policy, Commercial Auto…). There are 156+.</dd></dl>
+      <dl class="g"><dt>ASP / VBScript</dt><dd>The legacy technology the current screens are built in.</dd></dl>
+      <dl class="g"><dt>Engine</dt><dd>Our reusable, LOB-agnostic code that renders any page and runs commands.</dd></dl>
+      <dl class="g"><dt>Registry</dt><dd>The list of 156 LOBs; adding one is a new entry here.</dd></dl>
+      <dl class="g"><dt>Navigation API</dt><dd>First backend call — which page/window loads next.</dd></dl>
+      <dl class="g"><dt>PageBuild API</dt><dd>Second call — the page as JSON (fields, actions, commands).</dd></dl>
+      <dl class="g"><dt>Page Layout API</dt><dd>Called on a user action — runs legacy logic, returns commands.</dd></dl>
+      <dl class="g"><dt>Wrapper API</dt><dd>A thin .NET endpoint that calls the existing DLL and returns JSON.</dd></dl>
+      <dl class="g"><dt>BrowserCommand</dt><dd>An instruction from the server (SET_VISIBLE, DISPLAY_WARNING…) the UI obeys.</dd></dl>
+      <dl class="g"><dt>matchcode</dt><dd>The short code that identifies a field/button (e.g. POLSTAT).</dd></dl>
+      <dl class="g"><dt>PageBuild / Data Island</dt><dd>The page data; legacy embedded it as XML, now converted to JSON.</dd></dl>
+      <dl class="g"><dt>Render strategy</dt><dd>dynamic (server only) / static / hybrid (config schema + server values).</dd></dl>
+      <dl class="g"><dt>Loader</dt><dd>Runs before a page renders to fetch its data (the old Window_OnLoad).</dd></dl>
+      <dl class="g"><dt>Store</dt><dd>Shared state container (auth, app, page, browser-command).</dd></dl>
+      <dl class="g"><dt>CompLoc</dt><dd>Company/location code on every request (defaults to PIHW).</dd></dl>
+      <dl class="g"><dt>Frame</dt><dd>Where an action's result goes: MAIN, MODAL, NEWWINDOW, HIDDEN.</dd></dl>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">AQS Portal — Study Guide &amp; Talk Track · learn it, then talk it · aligned to Solution Design Document v13 and the running POC.</div>
+</footer>

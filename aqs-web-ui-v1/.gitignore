@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.local
+.vite
+
+# Disposable, regenerable photo caches (multi-GB) — not part of the deliverable
+_study/rotated/
+_study/crops/

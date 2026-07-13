@@ -1,0 +1,188 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "firstName": "Sachin",
+            "lastName": "McDoual",
+            "email": "sachin@example.gov",
+            "username": "sachin",
+            "password": "sachin@123"
+        },
+        {
+            "id": 2,
+            "firstName": "Bettine",
+            "lastName": "Inett",
+            "email": "binett1@ftc.gov",
+            "userName": "bettine",
+            "password": "1232"
+        },
+        {
+            "id": 3,
+            "firstName": "Marielle",
+            "lastName": "Swannick",
+            "email": "mswannick2@npr.org",
+            "userName": "marielle",
+            "password": "1213"
+        },
+        {
+            "id": 4,
+            "firstName": "Elaina",
+            "lastName": "Ganing",
+            "email": "eganing3@ucoz.ru",
+            "userName": "elaina",
+            "password": "1236"
+        },
+        {
+            "id": 5,
+            "firstName": "Domenic",
+            "lastName": "McGroarty",
+            "userName": "domenic",
+            "email": "dmcgroarty4@harvard.edu",
+            "password": "7123"
+        },
+        {
+            "id": 6,
+            "firstName": "Prasad",
+            "lastName": "McGroarty",
+            "userName": "prasad",
+            "email": "pmcgroarty5@harvard.edu",
+            "password": "1234"
+        }
+    ],
+    "menu": {
+        "url": "../../system/asp/Menu_PIPHSYS_20010101.asp",
+        "frame": "menu",
+        "permissions": {
+            "m_blnSecurityPerms": "true",
+            "m_blnBatchPrintPerms": "true",
+            "m_blnSummaryMessagesPerms": "true",
+            "m_blnDocUtilityPerms": "true",
+            "m_blnResourceImportPerms": "true",
+            "m_blnPolicyImportExportPerms": "true"
+        },
+    "menus": {
+        "@id": "xmlStartMenu",
+        "menu": [
+            {
+                "@name": "File",
+                "item": [
+                    {
+                        "label": "Home",
+                        "action": "SelectTab",
+                        "args": "0",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "My Work",
+                        "action": "SelectTab",
+                        "args": "1",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "All Policies",
+                        "action": "SelectTab",
+                        "args": "2",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "Logout",
+                        "action": "Logout",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    }
+                ]
+            },
+            {
+                "@name": "Product Management",
+                "@matchcode": "Utilities",
+                "item": [
+                    {
+                        "@matchcode": "SecurityServices",
+                        "label": "Security Services",
+                        "action": "OpenNewSecuritySession",
+                        "test": "BooleanFunction#1#blnSecurityAllowed#0",
+                        "shortcut": null
+                    },
+                    {
+                        "@matchcode": "DocumentServices",
+                        "label": "Document Services",
+                        "action": "OpenNewDocumentAutomationSession",
+                        "test": "BooleanFunction#1#blnDocUtilityAllowed#0",
+                        "shortcut": null
+                    },
+                    {
+                        "@matchcode": "PremiumSummaryMessages",
+                        "label": "Premium Summary Messages",
+                        "action": "OpenNewPremiumSummarySession",
+                        "test": "BooleanFunction#1#blnSummaryMessagesAllowed#0",
+                        "shortcut": null
+                    },
+                    {
+                        "@matchcode": "OfflinePrintServices",
+                        "label": "Offline Print Services",
+                        "action": "OpenNewBatchPrintSession",
+                        "test": "BooleanFunction#1#blnBatchPrintAllowed#0",
+                        "shortcut": null
+                    },
+                    {
+                        "@matchcode": "DocumentTemplateServices",
+                        "label": "Document Template Summary",
+                        "action": "OpenDocumentSummarySession",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "@matchcode": "PolicyImportExport",
+                        "label": "Policy Import Export Utility",
+                        "action": "OpenExternalLink",
+                        "args": "../../Tools/PolicyImportExport/Default.html#PRC#height=600,width=650,top⟪?⟫",
+                        "test": "BooleanFunction#1#blnPolicyImportExportAllowed#0",
+                        "shortcut": null
+                    }
+                ]
+            },
+            {
+                "@name": "Help",
+                "item": [
+                    {
+                        "label": "Contents and Index",
+                        "action": "window_onhelp",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "ISO Disclaimer",
+                        "action": "LaunchModal",
+                        "args": "../../system/htm/disclaimer_iso.htm#350#420",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "Adobe Reader",
+                        "action": "OpenExternalLink",
+                        "args": "../../system/htm/AcrobatInfo.htm#faq#height=600,width=650,top=,left=,sta⟪?⟫",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    {
+                        "label": "About",
+                        "action": "LaunchModal",
+                        "args": "../../system/htm/about_v3.htm#500#420",
+                        "test": "ALWAYSACTIVE#0",
+                        "shortcut": null
+                    },
+                    null
+                ]
+            }
+        ]
+    },
+        "diagnosticMode": "0",
+        "fileName": "Menu_PIPHSYS_20010101.asp",
+        "errors": null,
+        "queryString": "../../system/asp/Menu_PIPHSYS_20010101.asp",
+        "statusCode": 200
+    }
+}

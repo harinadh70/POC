@@ -1,0 +1,47 @@
+# BUNDLE for src/constants/asp-route-map.ts
+# 1 photo fragment(s), ascending start-line order.
+
+
+========== IMG_2298.md ==========
+---
+photo: IMG_2298.JPG
+type: vscode-code
+file: aqs-web-ui/src/constants/asp-route-map.ts
+lines: 1-33
+orientation: 180
+confidence: high
+notes: Whole file visible in one shot (file is only 33 lines, ends at line 32 "};" with line 33 blank), no sticky-scroll needed. Explorer sidebar (aqs-web-ui/src) shows: components (header.tsx, info-xml-content.tsx, loader.tsx, PolicyLobGrid.tsx [U], radio.tsx, select.tsx, sub-header.tsx, text.tsx, textarea.tsx, XmlList.tsx [U]), config (action-config.ts, db.json), constants (asp-route-map.ts - selected/highlighted, button-matchcodes.ts, theme.ts), features, hooks, lib, pages, providers, services. Tab bar: "date.tsx 9+" and active "asp-route-map.ts". Breadcrumb: aqs-web-ui > src > constants > TS asp-route-map.ts > ... . Status bar: branch hitanshu/experimental*, "No Solution", 25 errors / 0 warnings, Ln 1 Col 1, Tab Size 4, UTF-8, CRLF, TypeScript language mode.
+---
+1    /**
+2     * ASP Route Map - Maps legacy ASP filenames to React routes
+3     *
+4     * Supports:
+5     * - Exact mappings (e.g., 'Main_ISLLSYS_20010101.asp' -> 'Main_ISLLSYS_20010101')
+6     * - Pattern-based mappings using * wildcard (e.g., 'Pol_PIPHPOL_*' -> 'policyinfo')
+7     *
+8     * Pattern rules:
+9     * - Use * as wildcard for any characters
+10    * - Patterns are checked after exact matches
+11    * - First matching pattern wins
+12    */
+13   export const ASP_Route_Map: Record<string, string> = {
+14       // System routes
+15       'Main_ISLLSYS_20010101.asp': 'Main_ISLLSYS_20010101',
+16       'Modal_ISLLSYS_20010101.asp': 'new-policy-dialog',
+17       'PageNotFound.asp': 'PageNotFound',
+18       'PageNotFound.aspx': 'PageNotFound',
+19
+20       // Policy Information - Pattern for all versions
+21       'Pol_PIPHPOL_*.asp': 'policyinfo',
+22       'Pol_PIPHPOL_*.aspx': 'policyinfo',
+23
+24       // LOB Action Menu - Pattern for all versions
+25       'ActMnu_*_Lob_*.asp': 'lob-action-menu',
+26       'ActMnu_*_Lob_*.aspx': 'lob-action-menu',
+27
+28       // LOB Detail Pages - Pattern for all LOB types and versions
+29       // Matches: Pol_PIPHBOP_Ucp_20250201.asp, Pol_PIPHLIA_*.asp, etc.
+30       'Pol_PIPH*_*.asp': 'ultimate-cover',
+31       'Pol_PIPH*_*.aspx': 'ultimate-cover',
+32   };
+33

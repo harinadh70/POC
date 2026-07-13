@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+/* Design tokens are owned by the MUI theme (see src/theme/theme.ts, per SDD §7.4).
+   Tailwind here is utility-only; MUI CssBaseline handles the reset so we don't
+   pull Tailwind Preflight into conflict with MUI. */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

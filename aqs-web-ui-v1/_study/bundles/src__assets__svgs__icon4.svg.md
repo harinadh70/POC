@@ -1,0 +1,15 @@
+# BUNDLE for src/assets/svgs/icon4.svg
+# 1 photo fragment(s), ascending start-line order.
+
+
+========== IMG_1861.md ==========
+---
+photo: IMG_1861.JPG
+type: vscode-code
+file: aqs-web-ui/src/assets/svgs/icon4.svg
+lines: n/a (image preview, no code)
+orientation: 0
+confidence: high
+notes: VS Code SVG preview, cropped photo (tab bar/breadcrumb cut off; icon4.svg selected in Explorer). Rendered icon = clipboard with downward arrow (import/download glyph), white. Status bar bottom-right "Whole Image 45x50, 1.03KB". Explorer tree same as prior photos with icon4.svg selected. Status bar: aqs-web-ui, hitanshu/experimental*, 0 errors 0 warnings, "No Solution". Taskbar 4:28 PM 7/10/2026.
+---
+No code content — editor pane shows rendered SVG preview only (clipboard-with-down-arrow icon, 45x50, 1.03KB). File identified from selected Explorer row icon4.svg.

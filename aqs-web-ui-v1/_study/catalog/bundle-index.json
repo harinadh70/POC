@@ -1,0 +1,787 @@
+{
+"src/assets/images/brandLogo.png": {
+"bundle": "bundles/src__assets__images__brandLogo.png.md",
+"nphotos": 1,
+"safe": "src__assets__images__brandLogo.png"
+},
+"src/assets/svgs/icon1.svg": {
+"bundle": "bundles/src__assets__svgs__icon1.svg.md",
+"nphotos": 1,
+"safe": "src__assets__svgs__icon1.svg"
+},
+"src/assets/svgs/icon2.svg": {
+"bundle": "bundles/src__assets__svgs__icon2.svg.md",
+"nphotos": 1,
+"safe": "src__assets__svgs__icon2.svg"
+},
+"src/assets/svgs/icon3.svg": {
+"bundle": "bundles/src__assets__svgs__icon3.svg.md",
+"nphotos": 1,
+"safe": "src__assets__svgs__icon3.svg"
+},
+"src/assets/svgs/icon4.svg": {
+"bundle": "bundles/src__assets__svgs__icon4.svg.md",
+"nphotos": 1,
+"safe": "src__assets__svgs__icon4.svg"
+},
+"src/components/data-grid/data-grid-config-registry.ts": {
+"bundle": "bundles/src__components__data-grid__data-grid-config-registry.ts.md",
+"nphotos": 22,
+"safe": "src__components__data-grid__data-grid-config-registry.ts"
+},
+"src/components/data-grid/data-grid-normalize.ts": {
+"bundle": "bundles/src__components__data-grid__data-grid-normalize.ts.md",
+"nphotos": 5,
+"safe": "src__components__data-grid__data-grid-normalize.ts"
+},
+"src/components/data-grid/data-grid.tsx": {
+"bundle": "bundles/src__components__data-grid__data-grid.tsx.md",
+"nphotos": 15,
+"safe": "src__components__data-grid__data-grid.tsx"
+},
+"src/components/modal-dialog/index.ts": {
+"bundle": "bundles/src__components__modal-dialog__index.ts.md",
+"nphotos": 1,
+"safe": "src__components__modal-dialog__index.ts"
+},
+"src/components/modal-dialog/modal-dialog.tsx": {
+"bundle": "bundles/src__components__modal-dialog__modal-dialog.tsx.md",
+"nphotos": 20,
+"safe": "src__components__modal-dialog__modal-dialog.tsx"
+},
+"src/components/modal-dialog/use-modal-actions.ts": {
+"bundle": "bundles/src__components__modal-dialog__use-modal-actions.ts.md",
+"nphotos": 34,
+"safe": "src__components__modal-dialog__use-modal-actions.ts"
+},
+"src/components/modal-dialog/use-modal-data.ts": {
+"bundle": "bundles/src__components__modal-dialog__use-modal-data.ts.md",
+"nphotos": 11,
+"safe": "src__components__modal-dialog__use-modal-data.ts"
+},
+"src/components/modal-dialog/use-modal-state.ts": {
+"bundle": "bundles/src__components__modal-dialog__use-modal-state.ts.md",
+"nphotos": 9,
+"safe": "src__components__modal-dialog__use-modal-state.ts"
+},
+"src/components/tabView/TabPanel.tsx": {
+"bundle": "bundles/src__components__tabView__TabPanel.tsx.md",
+"nphotos": 3,
+"safe": "src__components__tabView__TabPanel.tsx"
+},
+"src/components/tabView/TabView.tsx": {
+"bundle": "bundles/src__components__tabView__TabView.tsx.md",
+"nphotos": 21,
+"safe": "src__components__tabView__TabView.tsx"
+},
+"src/components/action-buttons.tsx": {
+"bundle": "bundles/src__components__action-buttons.tsx.md",
+"nphotos": 26,
+"safe": "src__components__action-buttons.tsx"
+},
+"src/components/button.tsx": {
+"bundle": "bundles/src__components__button.tsx.md",
+"nphotos": 5,
+"safe": "src__components__button.tsx"
+},
+"src/components/buttons-renderer.tsx": {
+"bundle": "bundles/src__components__buttons-renderer.tsx.md",
+"nphotos": 9,
+"safe": "src__components__buttons-renderer.tsx"
+},
+"src/components/checkbox.tsx": {
+"bundle": "bundles/src__components__checkbox.tsx.md",
+"nphotos": 5,
+"safe": "src__components__checkbox.tsx"
+},
+"src/components/date.tsx": {
+"bundle": "bundles/src__components__date.tsx.md",
+"nphotos": 22,
+"safe": "src__components__date.tsx"
+},
+"src/components/dialog.tsx": {
+"bundle": "bundles/src__components__dialog.tsx.md",
+"nphotos": 14,
+"safe": "src__components__dialog.tsx"
+},
+"src/components/modal-dialog/dialog.tsx": {
+"bundle": "bundles/src__components__modal-dialog__dialog.tsx.md",
+"nphotos": 5,
+"safe": "src__components__modal-dialog__dialog.tsx"
+},
+"src/components/error-boundary.tsx": {
+"bundle": "bundles/src__components__error-boundary.tsx.md",
+"nphotos": 8,
+"safe": "src__components__error-boundary.tsx"
+},
+"src/components/field-renderer.tsx": {
+"bundle": "bundles/src__components__field-renderer.tsx.md",
+"nphotos": 13,
+"safe": "src__components__field-renderer.tsx"
+},
+"src/components/footer.tsx": {
+"bundle": "bundles/src__components__footer.tsx.md",
+"nphotos": 1,
+"safe": "src__components__footer.tsx"
+},
+"src/components/form-renderer.tsx": {
+"bundle": "bundles/src__components__form-renderer.tsx.md",
+"nphotos": 38,
+"safe": "src__components__form-renderer.tsx"
+},
+"src/components/header.tsx": {
+"bundle": "bundles/src__components__header.tsx.md",
+"nphotos": 14,
+"safe": "src__components__header.tsx"
+},
+"src/components/info-xml-content.tsx": {
+"bundle": "bundles/src__components__info-xml-content.tsx.md",
+"nphotos": 6,
+"safe": "src__components__info-xml-content.tsx"
+},
+"src/components/loader.tsx": {
+"bundle": "bundles/src__components__loader.tsx.md",
+"nphotos": 1,
+"safe": "src__components__loader.tsx"
+},
+"src/components/PolicyLobGrid.tsx": {
+"bundle": "bundles/src__components__PolicyLobGrid.tsx.md",
+"nphotos": 14,
+"safe": "src__components__PolicyLobGrid.tsx"
+},
+"src/components/radio.tsx": {
+"bundle": "bundles/src__components__radio.tsx.md",
+"nphotos": 4,
+"safe": "src__components__radio.tsx"
+},
+"src/components/select.tsx": {
+"bundle": "bundles/src__components__select.tsx.md",
+"nphotos": 33,
+"safe": "src__components__select.tsx"
+},
+"src/components/sub-header.tsx": {
+"bundle": "bundles/src__components__sub-header.tsx.md",
+"nphotos": 2,
+"safe": "src__components__sub-header.tsx"
+},
+"src/components/text.tsx": {
+"bundle": "bundles/src__components__text.tsx.md",
+"nphotos": 11,
+"safe": "src__components__text.tsx"
+},
+"src/components/textarea.tsx": {
+"bundle": "bundles/src__components__textarea.tsx.md",
+"nphotos": 6,
+"safe": "src__components__textarea.tsx"
+},
+"src/components/XmlList.tsx": {
+"bundle": "bundles/src__components__XmlList.tsx.md",
+"nphotos": 9,
+"safe": "src__components__XmlList.tsx"
+},
+"src/config/action-config.ts": {
+"bundle": "bundles/src__config__action-config.ts.md",
+"nphotos": 31,
+"safe": "src__config__action-config.ts"
+},
+"src/config/db.json": {
+"bundle": "bundles/src__config__db.json.md",
+"nphotos": 17,
+"safe": "src__config__db.json"
+},
+"src/constants/asp-route-map.ts": {
+"bundle": "bundles/src__constants__asp-route-map.ts.md",
+"nphotos": 1,
+"safe": "src__constants__asp-route-map.ts"
+},
+"src/constants/button-matchcodes.ts": {
+"bundle": "bundles/src__constants__button-matchcodes.ts.md",
+"nphotos": 3,
+"safe": "src__constants__button-matchcodes.ts"
+},
+"src/constants/theme.ts": {
+"bundle": "bundles/src__constants__theme.ts.md",
+"nphotos": 4,
+"safe": "src__constants__theme.ts"
+},
+"src/features/auth/services/auth.ts": {
+"bundle": "bundles/src__features__auth__services__auth.ts.md",
+"nphotos": 11,
+"safe": "src__features__auth__services__auth.ts"
+},
+"src/features/auth/services/check-sso.ts": {
+"bundle": "bundles/src__features__auth__services__check-sso.ts.md",
+"nphotos": 8,
+"safe": "src__features__auth__services__check-sso.ts"
+},
+"src/features/auth/utils/action.ts": {
+"bundle": "bundles/src__features__auth__utils__action.ts.md",
+"nphotos": 5,
+"safe": "src__features__auth__utils__action.ts"
+},
+"src/features/auth/utils/loader.ts": {
+"bundle": "bundles/src__features__auth__utils__loader.ts.md",
+"nphotos": 6,
+"safe": "src__features__auth__utils__loader.ts"
+},
+"src/features/auth/utils/middleware.ts": {
+"bundle": "bundles/src__features__auth__utils__middleware.ts.md",
+"nphotos": 2,
+"safe": "src__features__auth__utils__middleware.ts"
+},
+"src/features/auth/middleware.ts": {
+"bundle": "bundles/src__features__auth__middleware.ts.md",
+"nphotos": 11,
+"safe": "src__features__auth__middleware.ts"
+},
+"src/features/dashboard/utils/loader.ts": {
+"bundle": "bundles/src__features__dashboard__utils__loader.ts.md",
+"nphotos": 8,
+"safe": "src__features__dashboard__utils__loader.ts"
+},
+"src/features/dashboard/utils/middleware.ts": {
+"bundle": "bundles/src__features__dashboard__utils__middleware.ts.md",
+"nphotos": 4,
+"safe": "src__features__dashboard__utils__middleware.ts"
+},
+"src/features/form/utils/dynamic-form-loader.ts": {
+"bundle": "bundles/src__features__form__utils__dynamic-form-loader.ts.md",
+"nphotos": 33,
+"safe": "src__features__form__utils__dynamic-form-loader.ts"
+},
+"src/features/legacy/utils/loader-optimized.ts": {
+"bundle": "bundles/src__features__legacy__utils__loader-optimized.ts.md",
+"nphotos": 11,
+"safe": "src__features__legacy__utils__loader-optimized.ts"
+},
+"src/features/legacy/utils/loader.ts": {
+"bundle": "bundles/src__features__legacy__utils__loader.ts.md",
+"nphotos": 6,
+"safe": "src__features__legacy__utils__loader.ts"
+},
+"src/features/legacy/utils/middleware-optimized.ts": {
+"bundle": "bundles/src__features__legacy__utils__middleware-optimized.ts.md",
+"nphotos": 6,
+"safe": "src__features__legacy__utils__middleware-optimized.ts"
+},
+"src/features/legacy/utils/middleware.ts": {
+"bundle": "bundles/src__features__legacy__utils__middleware.ts.md",
+"nphotos": 6,
+"safe": "src__features__legacy__utils__middleware.ts"
+},
+"src/features/policy/components/LobActionMenu.tsx": {
+"bundle": "bundles/src__features__policy__components__LobActionMenu.tsx.md",
+"nphotos": 16,
+"safe": "src__features__policy__components__LobActionMenu.tsx"
+},
+"src/features/policy/components/PolicyInformation.tsx": {
+"bundle": "bundles/src__features__policy__components__PolicyInformation.tsx.md",
+"nphotos": 93,
+"safe": "src__features__policy__components__PolicyInformation.tsx"
+},
+"src/features/policy/components/ultimate-cover.tsx": {
+"bundle": "bundles/src__features__policy__components__ultimate-cover.tsx.md",
+"nphotos": 40,
+"safe": "src__features__policy__components__ultimate-cover.tsx"
+},
+"src/features/policy/constants/tab-definitions.ts": {
+"bundle": "bundles/src__features__policy__constants__tab-definitions.ts.md",
+"nphotos": 1,
+"safe": "src__features__policy__constants__tab-definitions.ts"
+},
+"src/features/policy/constants/ultimate-cover-tab-definitions.ts": {
+"bundle": "bundles/src__features__policy__constants__ultimate-cover-tab-definitions.ts.md",
+"nphotos": 1,
+"safe": "src__features__policy__constants__ultimate-cover-tab-definitions.ts"
+},
+"src/features/policy/utils/action.ts": {
+"bundle": "bundles/src__features__policy__utils__action.ts.md",
+"nphotos": 1,
+"safe": "src__features__policy__utils__action.ts"
+},
+"src/features/policy/utils/lobActionMenuLoader.ts": {
+"bundle": "bundles/src__features__policy__utils__lobActionMenuLoader.ts.md",
+"nphotos": 4,
+"safe": "src__features__policy__utils__lobActionMenuLoader.ts"
+},
+"src/features/policy/utils/middleware.ts": {
+"bundle": "bundles/src__features__policy__utils__middleware.ts.md",
+"nphotos": 1,
+"safe": "src__features__policy__utils__middleware.ts"
+},
+"src/features/policy/utils/policyInformationLoader.ts": {
+"bundle": "bundles/src__features__policy__utils__policyInformationLoader.ts.md",
+"nphotos": 40,
+"safe": "src__features__policy__utils__policyInformationLoader.ts"
+},
+"src/features/policy/utils/ultimateCoverLoader.ts": {
+"bundle": "bundles/src__features__policy__utils__ultimateCoverLoader.ts.md",
+"nphotos": 21,
+"safe": "src__features__policy__utils__ultimateCoverLoader.ts"
+},
+"src/features/policy/FieldRenderer.tsx": {
+"bundle": "bundles/src__features__policy__FieldRenderer.tsx.md",
+"nphotos": 6,
+"safe": "src__features__policy__FieldRenderer.tsx"
+},
+"src/features/policy/index.ts": {
+"bundle": "bundles/src__features__policy__index.ts.md",
+"nphotos": 1,
+"safe": "src__features__policy__index.ts"
+},
+"src/features/policy/policy-information-fields.ts": {
+"bundle": "bundles/src__features__policy__policy-information-fields.ts.md",
+"nphotos": 24,
+"safe": "src__features__policy__policy-information-fields.ts"
+},
+"src/features/policy/types.ts": {
+"bundle": "bundles/src__features__policy__types.ts.md",
+"nphotos": 7,
+"safe": "src__features__policy__types.ts"
+},
+"src/features/policy/ultimate-cover-fields.ts": {
+"bundle": "bundles/src__features__policy__ultimate-cover-fields.ts.md",
+"nphotos": 14,
+"safe": "src__features__policy__ultimate-cover-fields.ts"
+},
+"src/features/prp/components/MlcSumList.tsx": {
+"bundle": "bundles/src__features__prp__components__MlcSumList.tsx.md",
+"nphotos": 4,
+"safe": "src__features__prp__components__MlcSumList.tsx"
+},
+"src/features/prp/services/prp.ts": {
+"bundle": "bundles/src__features__prp__services__prp.ts.md",
+"nphotos": 6,
+"safe": "src__features__prp__services__prp.ts"
+},
+"src/features/prp/utils/loader.ts": {
+"bundle": "bundles/src__features__prp__utils__loader.ts.md",
+"nphotos": 1,
+"safe": "src__features__prp__utils__loader.ts"
+},
+"src/features/root/services/user-data.ts": {
+"bundle": "bundles/src__features__root__services__user-data.ts.md",
+"nphotos": 4,
+"safe": "src__features__root__services__user-data.ts"
+},
+"src/features/root/utils/loader.ts": {
+"bundle": "bundles/src__features__root__utils__loader.ts.md",
+"nphotos": 17,
+"safe": "src__features__root__utils__loader.ts"
+},
+"src/features/root/utils/middleware.ts": {
+"bundle": "bundles/src__features__root__utils__middleware.ts.md",
+"nphotos": 16,
+"safe": "src__features__root__utils__middleware.ts"
+},
+"src/hooks/use-action-guard.ts": {
+"bundle": "bundles/src__hooks__use-action-guard.ts.md",
+"nphotos": 1,
+"safe": "src__hooks__use-action-guard.ts"
+},
+"src/hooks/use-browser-commands.ts": {
+"bundle": "bundles/src__hooks__use-browser-commands.ts.md",
+"nphotos": 6,
+"safe": "src__hooks__use-browser-commands.ts"
+},
+"src/hooks/use-deferred-navigation.ts": {
+"bundle": "bundles/src__hooks__use-deferred-navigation.ts.md",
+"nphotos": 14,
+"safe": "src__hooks__use-deferred-navigation.ts"
+},
+"src/hooks/use-form-commit.ts": {
+"bundle": "bundles/src__hooks__use-form-commit.ts.md",
+"nphotos": 66,
+"safe": "src__hooks__use-form-commit.ts"
+},
+"src/hooks/use-page-form.ts": {
+"bundle": "bundles/src__hooks__use-page-form.ts.md",
+"nphotos": 30,
+"safe": "src__hooks__use-page-form.ts"
+},
+"src/hooks/use-required-field-validation.ts": {
+"bundle": "bundles/src__hooks__use-required-field-validation.ts.md",
+"nphotos": 4,
+"safe": "src__hooks__use-required-field-validation.ts"
+},
+"src/hooks/use-smart-navigation.ts": {
+"bundle": "bundles/src__hooks__use-smart-navigation.ts.md",
+"nphotos": 19,
+"safe": "src__hooks__use-smart-navigation.ts"
+},
+"src/lib/grid-normalize.ts": {
+"bundle": "bundles/src__lib__grid-normalize.ts.md",
+"nphotos": 3,
+"safe": "src__lib__grid-normalize.ts"
+},
+"src/pages/dashboard.tsx": {
+"bundle": "bundles/src__pages__dashboard.tsx.md",
+"nphotos": 10,
+"safe": "src__pages__dashboard.tsx"
+},
+"src/pages/dynamic-form-page.tsx": {
+"bundle": "bundles/src__pages__dynamic-form-page.tsx.md",
+"nphotos": 11,
+"safe": "src__pages__dynamic-form-page.tsx"
+},
+"src/pages/grid-config-example.tsx": {
+"bundle": "bundles/src__pages__grid-config-example.tsx.md",
+"nphotos": 32,
+"safe": "src__pages__grid-config-example.tsx"
+},
+"src/pages/legacy-page.tsx": {
+"bundle": "bundles/src__pages__legacy-page.tsx.md",
+"nphotos": 5,
+"safe": "src__pages__legacy-page.tsx"
+},
+"src/pages/lob-action-menu-page.tsx": {
+"bundle": "bundles/src__pages__lob-action-menu-page.tsx.md",
+"nphotos": 1,
+"safe": "src__pages__lob-action-menu-page.tsx"
+},
+"src/pages/LobGridExample.tsx": {
+"bundle": "bundles/src__pages__LobGridExample.tsx.md",
+"nphotos": 13,
+"safe": "src__pages__LobGridExample.tsx"
+},
+"src/pages/login.tsx": {
+"bundle": "bundles/src__pages__login.tsx.md",
+"nphotos": 10,
+"safe": "src__pages__login.tsx"
+},
+"src/pages/page-not-found.tsx": {
+"bundle": "bundles/src__pages__page-not-found.tsx.md",
+"nphotos": 2,
+"safe": "src__pages__page-not-found.tsx"
+},
+"src/pages/policy-details.tsx": {
+"bundle": "bundles/src__pages__policy-details.tsx.md",
+"nphotos": 33,
+"safe": "src__pages__policy-details.tsx"
+},
+"src/pages/PolicyInformationPage.tsx": {
+"bundle": "bundles/src__pages__PolicyInformationPage.tsx.md",
+"nphotos": 2,
+"safe": "src__pages__PolicyInformationPage.tsx"
+},
+"src/pages/prp-mlc-sum.tsx": {
+"bundle": "bundles/src__pages__prp-mlc-sum.tsx.md",
+"nphotos": 4,
+"safe": "src__pages__prp-mlc-sum.tsx"
+},
+"src/pages/root.tsx": {
+"bundle": "bundles/src__pages__root.tsx.md",
+"nphotos": 8,
+"safe": "src__pages__root.tsx"
+},
+"src/pages/UltimateCoverPage.tsx": {
+"bundle": "bundles/src__pages__UltimateCoverPage.tsx.md",
+"nphotos": 3,
+"safe": "src__pages__UltimateCoverPage.tsx"
+},
+"src/pages/xsl-test.tsx": {
+"bundle": "bundles/src__pages__xsl-test.tsx.md",
+"nphotos": 5,
+"safe": "src__pages__xsl-test.tsx"
+},
+"src/providers/browser-commands-provider.tsx": {
+"bundle": "bundles/src__providers__browser-commands-provider.tsx.md",
+"nphotos": 75,
+"safe": "src__providers__browser-commands-provider.tsx"
+},
+"src/providers/form-provider.tsx": {
+"bundle": "bundles/src__providers__form-provider.tsx.md",
+"nphotos": 21,
+"safe": "src__providers__form-provider.tsx"
+},
+"src/providers/global-variable-provider.tsx": {
+"bundle": "bundles/src__providers__global-variable-provider.tsx.md",
+"nphotos": 10,
+"safe": "src__providers__global-variable-provider.tsx"
+},
+"src/providers/tab-context-provider.tsx": {
+"bundle": "bundles/src__providers__tab-context-provider.tsx.md",
+"nphotos": 2,
+"safe": "src__providers__tab-context-provider.tsx"
+},
+"src/providers/theme-provider.tsx": {
+"bundle": "bundles/src__providers__theme-provider.tsx.md",
+"nphotos": 37,
+"safe": "src__providers__theme-provider.tsx"
+},
+"src/services/lob-action-menu.ts": {
+"bundle": "bundles/src__services__lob-action-menu.ts.md",
+"nphotos": 3,
+"safe": "src__services__lob-action-menu.ts"
+},
+"src/services/navigation.ts": {
+"bundle": "bundles/src__services__navigation.ts.md",
+"nphotos": 25,
+"safe": "src__services__navigation.ts"
+},
+"src/services/page-build.ts": {
+"bundle": "bundles/src__services__page-build.ts.md",
+"nphotos": 18,
+"safe": "src__services__page-build.ts"
+},
+"src/services/user-data.ts": {
+"bundle": "bundles/src__services__user-data.ts.md",
+"nphotos": 6,
+"safe": "src__services__user-data.ts"
+},
+"src/services/xml-server-call.ts": {
+"bundle": "bundles/src__services__xml-server-call.ts.md",
+"nphotos": 14,
+"safe": "src__services__xml-server-call.ts"
+},
+"src/types/grid-response.ts": {
+"bundle": "bundles/src__types__grid-response.ts.md",
+"nphotos": 2,
+"safe": "src__types__grid-response.ts"
+},
+"src/utils/api-cache.ts": {
+"bundle": "bundles/src__utils__api-cache.ts.md",
+"nphotos": 27,
+"safe": "src__utils__api-cache.ts"
+},
+"src/utils/apply-server-commands.ts": {
+"bundle": "bundles/src__utils__apply-server-commands.ts.md",
+"nphotos": 18,
+"safe": "src__utils__apply-server-commands.ts"
+},
+"src/utils/asp-route-mapper.ts": {
+"bundle": "bundles/src__utils__asp-route-mapper.ts.md",
+"nphotos": 37,
+"safe": "src__utils__asp-route-mapper.ts"
+},
+"src/utils/build-cycling-url.ts": {
+"bundle": "bundles/src__utils__build-cycling-url.ts.md",
+"nphotos": 11,
+"safe": "src__utils__build-cycling-url.ts"
+},
+"src/utils/build-eedata-array.ts": {
+"bundle": "bundles/src__utils__build-eedata-array.ts.md",
+"nphotos": 49,
+"safe": "src__utils__build-eedata-array.ts"
+},
+"src/utils/build-xml-server-call-payload.ts": {
+"bundle": "bundles/src__utils__build-xml-server-call-payload.ts.md",
+"nphotos": 31,
+"safe": "src__utils__build-xml-server-call-payload.ts"
+},
+"src/utils/button-state-manager.ts": {
+"bundle": "bundles/src__utils__button-state-manager.ts.md",
+"nphotos": 26,
+"safe": "src__utils__button-state-manager.ts"
+},
+"src/utils/check-action-permission.ts": {
+"bundle": "bundles/src__utils__check-action-permission.ts.md",
+"nphotos": 1,
+"safe": "src__utils__check-action-permission.ts"
+},
+"src/utils/command-handlers.ts": {
+"bundle": "bundles/src__utils__command-handlers.ts.md",
+"nphotos": 105,
+"safe": "src__utils__command-handlers.ts"
+},
+"src/utils/common.ts": {
+"bundle": "bundles/src__utils__common.ts.md",
+"nphotos": 6,
+"safe": "src__utils__common.ts"
+},
+"src/utils/control-metadata-extractor.ts": {
+"bundle": "bundles/src__utils__control-metadata-extractor.ts.md",
+"nphotos": 8,
+"safe": "src__utils__control-metadata-extractor.ts"
+},
+"src/utils/create-store.tsx": {
+"bundle": "bundles/src__utils__create-store.tsx.md",
+"nphotos": 6,
+"safe": "src__utils__create-store.tsx"
+},
+"src/utils/detect-modal-type.ts": {
+"bundle": "bundles/src__utils__detect-modal-type.ts.md",
+"nphotos": 14,
+"safe": "src__utils__detect-modal-type.ts"
+},
+"src/utils/dynamic-form-actions.ts": {
+"bundle": "bundles/src__utils__dynamic-form-actions.ts.md",
+"nphotos": 5,
+"safe": "src__utils__dynamic-form-actions.ts"
+},
+"src/utils/error-handlers.ts": {
+"bundle": "bundles/src__utils__error-handlers.ts.md",
+"nphotos": 19,
+"safe": "src__utils__error-handlers.ts"
+},
+"src/utils/execute-action.ts": {
+"bundle": "bundles/src__utils__execute-action.ts.md",
+"nphotos": 72,
+"safe": "src__utils__execute-action.ts"
+},
+"src/utils/fallback-strategies.ts": {
+"bundle": "bundles/src__utils__fallback-strategies.ts.md",
+"nphotos": 27,
+"safe": "src__utils__fallback-strategies.ts"
+},
+"src/utils/form.ts": {
+"bundle": "bundles/src__utils__form.ts.md",
+"nphotos": 1,
+"safe": "src__utils__form.ts"
+},
+"src/utils/frame-router.ts": {
+"bundle": "bundles/src__utils__frame-router.ts.md",
+"nphotos": 35,
+"safe": "src__utils__frame-router.ts"
+},
+"src/utils/http-instance.ts": {
+"bundle": "bundles/src__utils__http-instance.ts.md",
+"nphotos": 31,
+"safe": "src__utils__http-instance.ts"
+},
+"src/utils/legacy-xml-detail.ts": {
+"bundle": "bundles/src__utils__legacy-xml-detail.ts.md",
+"nphotos": 8,
+"safe": "src__utils__legacy-xml-detail.ts"
+},
+"src/utils/local-storage.ts": {
+"bundle": "bundles/src__utils__local-storage.ts.md",
+"nphotos": 5,
+"safe": "src__utils__local-storage.ts"
+},
+"src/utils/logger-builder.ts": {
+"bundle": "bundles/src__utils__logger-builder.ts.md",
+"nphotos": 45,
+"safe": "src__utils__logger-builder.ts"
+},
+"src/utils/menu-persistence.ts": {
+"bundle": "bundles/src__utils__menu-persistence.ts.md",
+"nphotos": 8,
+"safe": "src__utils__menu-persistence.ts"
+},
+"src/utils/normalize-service-config copy.ts": {
+"bundle": "bundles/src__utils__normalize-service-config_copy.ts.md",
+"nphotos": 41,
+"safe": "src__utils__normalize-service-config_copy.ts"
+},
+"src/utils/normalize-service-config.ts": {
+"bundle": "bundles/src__utils__normalize-service-config.ts.md",
+"nphotos": 24,
+"safe": "src__utils__normalize-service-config.ts"
+},
+"src/utils/parse-combo-items.ts": {
+"bundle": "bundles/src__utils__parse-combo-items.ts.md",
+"nphotos": 5,
+"safe": "src__utils__parse-combo-items.ts"
+},
+"src/utils/parse-info-xml.ts": {
+"bundle": "bundles/src__utils__parse-info-xml.ts.md",
+"nphotos": 34,
+"safe": "src__utils__parse-info-xml.ts"
+},
+"src/utils/parse-permissions.ts": {
+"bundle": "bundles/src__utils__parse-permissions.ts.md",
+"nphotos": 33,
+"safe": "src__utils__parse-permissions.ts"
+},
+"src/utils/parse-querystring-params.ts": {
+"bundle": "bundles/src__utils__parse-querystring-params.ts.md",
+"nphotos": 26,
+"safe": "src__utils__parse-querystring-params.ts"
+},
+"src/utils/performance-benchmarks.ts": {
+"bundle": "bundles/src__utils__performance-benchmarks.ts.md",
+"nphotos": 36,
+"safe": "src__utils__performance-benchmarks.ts"
+},
+"src/utils/performance-monitor.ts": {
+"bundle": "bundles/src__utils__performance-monitor.ts.md",
+"nphotos": 29,
+"safe": "src__utils__performance-monitor.ts"
+},
+"src/utils/permission-store.ts": {
+"bundle": "bundles/src__utils__permission-store.ts.md",
+"nphotos": 9,
+"safe": "src__utils__permission-store.ts"
+},
+"src/utils/pub-sub.ts": {
+"bundle": "bundles/src__utils__pub-sub.ts.md",
+"nphotos": 14,
+"safe": "src__utils__pub-sub.ts"
+},
+"src/utils/required-field-validation.ts": {
+"bundle": "bundles/src__utils__required-field-validation.ts.md",
+"nphotos": 15,
+"safe": "src__utils__required-field-validation.ts"
+},
+"src/utils/session-storage.ts": {
+"bundle": "bundles/src__utils__session-storage.ts.md",
+"nphotos": 6,
+"safe": "src__utils__session-storage.ts"
+},
+"src/utils/session-sync.ts": {
+"bundle": "bundles/src__utils__session-sync.ts.md",
+"nphotos": 28,
+"safe": "src__utils__session-sync.ts"
+},
+"src/utils/transform-pagebuild-response.ts": {
+"bundle": "bundles/src__utils__transform-pagebuild-response.ts.md",
+"nphotos": 35,
+"safe": "src__utils__transform-pagebuild-response.ts"
+},
+"src/utils/url-helpers.ts": {
+"bundle": "bundles/src__utils__url-helpers.ts.md",
+"nphotos": 20,
+"safe": "src__utils__url-helpers.ts"
+},
+"src/utils/user-permissions.ts": {
+"bundle": "bundles/src__utils__user-permissions.ts.md",
+"nphotos": 50,
+"safe": "src__utils__user-permissions.ts"
+},
+"src/utils/xml-detail-persistence.ts": {
+"bundle": "bundles/src__utils__xml-detail-persistence.ts.md",
+"nphotos": 7,
+"safe": "src__utils__xml-detail-persistence.ts"
+},
+"src/utils/zod-error-formatter.ts": {
+"bundle": "bundles/src__utils__zod-error-formatter.ts.md",
+"nphotos": 16,
+"safe": "src__utils__zod-error-formatter.ts"
+},
+"src/app.css": {
+"bundle": "bundles/src__app.css.md",
+"nphotos": 7,
+"safe": "src__app.css"
+},
+"src/app.tsx": {
+"bundle": "bundles/src__app.tsx.md",
+"nphotos": 37,
+"safe": "src__app.tsx"
+},
+"src/context.ts": {
+"bundle": "bundles/src__context.ts.md",
+"nphotos": 14,
+"safe": "src__context.ts"
+},
+"src/main.tsx": {
+"bundle": "bundles/src__main.tsx.md",
+"nphotos": 1,
+"safe": "src__main.tsx"
+},
+"src/routes.tsx": {
+"bundle": "bundles/src__routes.tsx.md",
+"nphotos": 12,
+"safe": "src__routes.tsx"
+},
+"src/store.ts": {
+"bundle": "bundles/src__store.ts.md",
+"nphotos": 2,
+"safe": "src__store.ts"
+},
+"src/types.ts": {
+"bundle": "bundles/src__types.ts.md",
+"nphotos": 24,
+"safe": "src__types.ts"
+}
+}

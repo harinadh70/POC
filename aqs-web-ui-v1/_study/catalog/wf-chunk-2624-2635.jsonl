@@ -1,0 +1,12 @@
+{"photo":"IMG_2624","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"38-80","orientation":180,"confidence":"high"}
+{"photo":"IMG_2625","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"64-96","orientation":180,"confidence":"high"}
+{"photo":"IMG_2626","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"65-109","orientation":180,"confidence":"high"}
+{"photo":"IMG_2627","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"91-122","orientation":180,"confidence":"medium"}
+{"photo":"IMG_2628","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"120-141","orientation":180,"confidence":"medium"}
+{"photo":"IMG_2629","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"126-157","orientation":180,"confidence":"high"}
+{"photo":"IMG_2630","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"139-169","orientation":180,"confidence":"high"}
+{"photo":"IMG_2631","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"149-181","orientation":180,"confidence":"high"}
+{"photo":"IMG_2632","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"163-194","orientation":180,"confidence":"high"}
+{"photo":"IMG_2633","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"172-206","orientation":180,"confidence":"high"}
+{"photo":"IMG_2634","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"192-223","orientation":180,"confidence":"high"}
+{"photo":"IMG_2635","type":"vscode-code","file":"aqs-web-ui/src/features/policy/utils/ultimateCoverLoader.ts","lines":"210-241","orientation":180,"confidence":"medium","notes":"lines 224-231 have unresolved tear/duplicate ambiguity (duplicate 'nf.options = Array.from(labelMap.values());' at 224 and 227); line 241 'if (' cut off at bottom of frame, last photo in batch"}

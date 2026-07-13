@@ -1,0 +1,84 @@
+# BUNDLE for src/types/grid-response.ts
+# 2 photo fragment(s), ascending start-line order.
+
+
+========== IMG_3243.md ==========
+---
+photo: IMG_3243.JPG
+type: vscode-code
+file: aqs-web-ui/src/types/grid-response.ts
+lines: 1-34
+orientation: 180
+confidence: high
+notes: New file relative to the prior photos in this run (IMG_3232-3242 were all xml-server-call.ts) — this is types/grid-response.ts, tab shows unsaved "U" marker. Photo is sharp with essentially no ghosting/motion blur, easy read. Line 34 is cut off by the status bar; zoomed crop confirms it is just "};" (closing the GridResponse type), consistent with line 33 ending the visible body. Explorer sidebar (types folder now expanded, differs from prior photos): src> services> lob-action-menu.ts, navigation.ts, page-build.ts, user-data.ts, xml-server-call.ts; types> grid-response.ts (selected, U); utils >; then app.css, app.tsx, context.ts, main.tsx, routes.tsx, store.ts, types.ts, .env.development, .env.production, .gitignore, .prettierrc, browser-commands-analy...(U), eslint.config.js, GLOBAL_COMPONENTS_A...(U, appears twice with different icons — likely a .ts/.tsx pair or a file+symlink). Status bar differs from prior photos: 2 errors 0 warnings (was 3), Spaces: 2 (was Tab Size: 4 in xml-server-call.ts), Ln 1 Col 1, UTF-8, CRLF, TypeScript, No Solution, branch hitanshu/experimental*. Timestamp overlay 6:15 PM 7/10/2026.
+---
+1	// types/grid-response.ts
+2	
+3	export type Session = {
+4	  CompLoc: string;
+5	  UserId: string;
+6	  PolicyId: string;
+7	  NodeKey: string;
+8	  Action: string;
+9	  DiagnosticNode: string;
+10	  SessionXml: string;
+11	};
+12	
+13	export type LobItem = {
+14	  "@converted": "T" | "F";
+15	  "@exists": "T" | "F";
+16	  "@lob": string;         // code, e.g., "PRP"
+17	  sequencer: string;      // numeric-ish string
+18	  nodekey: string;
+19	  text: string;           // display name, e.g., "Property"
+20	  units: string;          // numeric-ish string
+21	  premium: string;        // numeric-ish string
+22	};
+23	
+24	export type Page = {
+25	  "@totalunits": string;
+26	  "@totalpremium": string;
+27	  LOB: LobItem[] | LobItem;  // backend sometimes flips array/single
+28	};
+29	
+30	export type GridResponse = {
+31	  Session: Session;
+32	  Page: Page;
+33	  ListData: unknown | null;
+34	};
+
+
+========== IMG_3244.md ==========
+---
+photo: IMG_3244.JPG
+type: vscode-code
+file: aqs-web-ui/src/types/grid-response.ts
+lines: 11-34
+orientation: 180
+confidence: low
+notes: Severe motion-blur/double-exposure ghosting throughout — the photo appears to show two overlapping scroll positions of the same file, offset by ~5 lines (gutter shows two interleaved numeral sequences, e.g. "22" bold over faint "17"). Transcription below is the clearer/bold layer, read against its own (also doubled) gutter; line-number-to-text mapping is best-effort. Faint ghost text bleeding into rows 12-22 appears to read approximately: "Action: string,", "DiagnosticNode: string;", "SessionXml: string;", "};", "text: string;", "@exists: | \"F\";", "@lob: string;" — likely a residual/earlier-scroll duplicate of a "Session" type's fields (Action, DiagnosticNode/DiagnosticMode, SessionXml, nodeKey, text, units, premium, LOB) bleeding through, not confidently attributable to specific line numbers. Tab bar: only "grid-response.ts" (unsaved, dot indicator "U") open. Breadcrumb: aqs-web-ui > src > types > grid-response.ts. Explorer sidebar (aqs-web-ui/src) shows: services/ (lob-action-menu.ts, navigation.ts, page-build.ts, user-data.ts, xml-server-call.ts), types/ (grid-response.ts selected, utils/), app.css, app.tsx, context.ts, main.tsx, routes.tsx, store.ts, types.ts, .env.development, .env.production, .gitignore, .prettierrc, browser-commands-analy...(truncated, unsaved "U"), eslint.config.js, GLOBAL_COMPONENTS_A... (x2, unsaved "U"). Status bar: branch "hitanshu/experimental*" (dirty), "No Solution", 2 errors / 0 warnings, Ln 1 Col 1, TypeScript. Cursor position in editor near blank line ~29/30 (between Page and GridResponse types).
+---
+~11  export type Session = {           // ⟪?⟫ sticky-scroll header or literal line 11; closing brace of Session inferred nearby
+12   nodeKey: string;
+13   export type LobItem = {
+14     "@converted": "T" | "E";
+15     "@exists": "T" | "F";
+16     "@lob": string;                 // code, e.g., "PRP"
+17     sequencer: string;              // numeric-ish string
+18     nodekey: string;
+19     text: string;                   // display name, e.g., "Property"
+20     units: string;                  // numeric-ish string
+21     premium: string;                // numeric-ish string
+22   };
+23
+24   export type Page = {
+25     "@totalunits": string;          // numeric-ish string
+26     "@totalpremium": string;        // numeric-ish string
+27     LOB: LobItem[] | LobItem;       // backend sometimes flips array/single
+28   };
+29
+30   export type GridResponse = {
+31     Session: Session;
+32     Page: Page;
+33     ListData: unknown | null;
+34   };

@@ -1,0 +1,48 @@
+# BUNDLE for src/features/policy/utils/action.ts
+# 1 photo fragment(s), ascending start-line order.
+
+
+========== IMG_2575.md ==========
+---
+photo: IMG_2575.JPG
+type: vscode-code
+file: aqs-web-ui/src/features/policy/utils/action.ts
+lines: 1-34
+orientation: 180
+confidence: high
+notes: New file (different from ultimate-cover.tsx seen in the rest of this batch). Very little ghosting, high legibility throughout. Breadcrumb: aqs-web-ui > src > features > policy > utils > action.ts. Line 34 "sourceContext?: SubmittedNavigationContext;" is cut off at the very bottom edge of the screen (partially visible, high confidence on content from context/indentation pattern but not fully verified pixel-by-pixel). Explorer sidebar: AQS_WORKSPACE > aqs-web-ui > src > features > policy > constants (tab-definitions.ts, ultimate-cover-tab-definit....ts), policy > utils (expanded: action.ts selected/highlighted with "2" unsaved-changes indicator, lobActionMenuLoader.ts, middleware.ts, policyInformationLoader.ts, ultimateCoverLoader.ts), FieldRenderer.tsx, index.ts, policy-information-fields.ts, types.ts, ultimate-cover-fields.ts; below policy, collapsed sibling folders under features: prp, root, hooks, lib, pages, providers, services, types. Tab bar: only one open tab "action.ts 2" (2 = unsaved change count). Status bar: branch "hitanshu/experimental*", "4 errors / 0 warnings", "No Solution", Ln 1 Col 1, Tab Size 4, UTF-8, CRLF, TypeScript (plain .ts, not JSX). Clock visible but partially cut off (consistent ~5:13 PM 7/10/2026 session as rest of batch, exact minute not fully legible).
+---
+1   import { redirect } from 'react-router';
+2   import { createFeatureLogger } from '@utils/logger-builder';
+3   import { getItem } from '@utils/local-storage';
+4   import { readContextFromStorage, syncContextToStorage } from '@utils/session-sync';
+5   import {
+6       createInitialNavigationContext,
+7       mergeNavigationContext,
+8       type NavigationContextValue,
+9   } from '@/context';
+10
+11  import type { ActionFunctionArgs } from 'react-router';
+12  import type { SessionInfo } from '@features/auth/services/auth';
+13  import type { ActionType } from '@/types';
+14
+15  const logger = createFeatureLogger('policy', 'policy-navigation-action');
+16
+17  interface SubmittedNavigationContext {
+18      action?: string;
+19      policyId?: string;
+20      nodeKey?: string;
+21      userId?: string;
+22      compLoc?: string;
+23      xmlDetail?: unknown;
+24      xmlFileName?: string;
+25      xmlFilePath?: string;
+26      tabFileName?: string;
+27      tabFilePath?: string;
+28      xmlListFileName?: string;
+29      xmlListFilePath?: string;
+30  }
+31
+32  interface SubmittedNavigationPayload {
+33      navData?: Record<string, unknown>;
+34      sourceContext?: SubmittedNavigationContext; ⟪?⟫

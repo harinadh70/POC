@@ -1,0 +1,26 @@
+# BUNDLE for src/components/footer.tsx
+# 1 photo fragment(s), ascending start-line order.
+
+
+========== IMG_2111.md ==========
+---
+photo: IMG_2111.JPG
+type: vscode-code
+file: aqs-web-ui/src/components/footer.tsx
+lines: 1-12
+orientation: 180
+confidence: high
+notes: Full file shown, no sticky scroll needed (file is short, starts at line 1). Line 3's className string is very long and runs off the right edge of the visible screen (horizontally cut off, not wrapped) — closing quote and footer tag's ">" not visible in photo. Explorer sidebar shows components folder with footer.tsx selected/highlighted, "3" modified-lines badge. Other files visible: dialog.tsx, error-boundary.tsx, field-renderer.tsx, footer.tsx (selected), form-renderer.tsx, header.tsx, info-xml-content.tsx, loader.tsx, PolicyLobGrid.tsx (U), radio.tsx, select.tsx, sub-header.tsx, text.tsx, textarea.tsx, XmlList.tsx (U). Tab bar: date.tsx (9+), footer.tsx (3, active). Breadcrumb: aqs-web-ui > src > components > footer.tsx > Footer. Status bar: branch hitanshu/experimental*, 28 errors 0 warnings, "No Solution".
+---
+1   function Footer() {
+2       return (
+3           <footer className=" text-right fixed! bottom-0! w-full px-16! py-4! text-xs! font-semibold text-[#0A2⟪cut off at screen edge, continues off-screen⟫
+4               Powered by AQS/advantage
+5           </footer>
+6       );
+7   }
+8
+9   // --------------------------------------
+10
+11  export { Footer };
+12

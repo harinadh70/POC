@@ -1,0 +1,1610 @@
+FULCRUM DIGITAL CONFIDENTIAL DOCUMENT
+TMNAS – AQS Portal
+Solution Design DocumentPresented to: TMNAS
+VERSION 13.0RELEASED On 04-Jun-2026
+Presented By:
+Fulcrum Digital
+Document Revision List
+# | Version | Action 1 | Action Date | By | Revision Description | Release Date
+1 | 1.0 | Created | 20-Jan-26s | Ravi S | First draft | 20-Jan-26
+2 | 1.1 | Updated | 05-Feb-26 | Ravi S | Added React Architecture, Component | 06-Feb-26
+3 | 2.0 | Updated | 27-Feb-26 | Ravi S | Added Global React Components, Browser Commands, Bundling | 27-Feb-26
+4 | 3.0 | Updated | 12-Mar-26 | Ravi S | Component Hierarchy, Component Communication, Browser Commands, Routing, FE/BE Communication, Common Components - Design Tokens | 16-Mar-26
+5 | 4.0 | Updated | 20-Mar-26 | Ravi S | Global Components: Providers, Data Strategy, Pub/Sub, Browser Commands | 22-Mar-26
+6 | 5.0 | Updated | 23-Mar-26 | Ravi S | Component Hierarchy, State Management, Unit Testing Strategy | 23-Mar-26
+7 | 6.0 | Updated | 25-Mar-26 | Ravi S | Component Communication | 25-Mar-26
+8 | 7.0 | Updated | 26-Mar-26 | Ravi S | Routing | 26-Mar-26
+9 | 8.0 | Updated | 31-Mar-26 | Ravi S | 5.7.2 Authorization Model | 31-Mar-26
+10 | 9.0 | Updated | 07-Apr-26 | Ravi S | 2.7 Error Boundy Strategy | 07-Apr-26
+11 | 10.0 | Updated | 08-Apr-26 | Ravi S | 8.2.5 Security & Threat Protection 10. Migration Strategy | 08-Apr-26
+12 | 10.1 | Updated | 10-Apr-26 | Ravi S | 4.7 to 4.10 Updated | 10-Apr-26
+13 | 11.0 | Updated | 15-Apr-26 | Ravi S | 11. Multi-window support | 15-Apr-26
+14 | 12.0 | Updated | 05-May-26 | Ravi S | Accommodated review comments:2.1 Component Hierarchy 2.5.2 Communication Details - Diagram with updated API Names 2.7.4 Placement Strategy 2.7.6 HTTP Error Codes Handling 4.11 Sequence Diagram 5.3 Frontend-to-Backend End-to-End Flow : User Actions (Click/Change events) 5.4 Login Flow (End-to-End Flow) diagram 10.2.4 Component Creation and Use of Custom Tool 10.3 Step-by-Step Migration Approach - step 1 | 05-May-26
+13 | 12.1 | Updated | 14-May-26 | Ravi S | Accommodated review comments:5.4 Login Flow 8.2.2 API Security 8.2.3 Frontend Security 8.2.6 Application Security Implementation | 14-May-26
+14 | 12.2 | Updated | 22-May-26 | Ravi S | 2.6 Dynamic Control Positioning 13. References for API design doc | 22-May-26
+15 | 12.3 | Updated | 29-May-26 | Ravi S | 12 IIS Configuration | 29-May-26
+16 | 13.0 | Updated | 04-Jun-26 | Ravi S | 2.3.4 Global Variable Provider 2.3.5 BrowserCommandsProvider 2.4 Multi-version JSON Configuration 2.5 Component Communication 3 State Management 4.3 Central Navigation Control – Data Strategy 4.4 Shared Routing Context 4.5 Route Loaders 4.11 Routing Design – Sequence Diagram 10 Migration Strategy 11.1 Multiple Window - Overview | 04-Jun-26
+1. Introduction & Scope4
+1.1 Purpose5
+1.2 Objective5
+1.3 Design Philosophy5
+1.4 Architecture5
+1.4.1 Architecture Overview6
+1.4.2 High-Level Architecture6
+1.4.3 Architectural Benefits7
+1.4.4 Architectural Constraints7
+2. React Component Architecture7
+2.1 Component Hierarchy7
+2.2 Shell Components9
+2.3 Global Components10
+2.3.1 Data Strategy + Execute Action10
+2.3.1.1 Legacy Behaviour10
+2.3.1.2 Purpose of Data Strategy & Execute Action11
+2.3.2 Form Provider11
+2.3.3 Dialog Provider12
+2.3.4 Global Variable Provider12
+2.3.5 BrowserCommandsProvider [RAVI-NUMBERING]13
+2.3.6 Command Handlers13
+2.3.5.1 Legacy Behaviour14
+2.3.5.2 Purpose14
+2.3.5.3 How it works14
+2.3.6 Pub/Sub Mechanism15
+2.3.6.1 Purpose15
+2.3.6.2 Usages15
+2.3.6.3 How it works15
+2.3.6.4 Usage16
+2.3.6.5 Key Features16
+2.3.7 Form/Dialog Rendering16
+2.4 MultiVersion JSON Configuration17
+Overview17
+Purpose17
+When to Create18
+Configuration Structure18
+Folder Organization18
+Mapping with Navigation Response18
+JSON file structure18
+2.4.8 Events19
+Config Driven Routing20
+2.5 Components Communication20
+2.5.1 Legacy Behaviour20
+2.5.2 Purpose21
+2.5.3 How It Works21
+2.5.3.1 State-Driven Communication (Primary)22
+2.5.3.2 Event-Based Communication (Pub-Sub — Secondary)23
+2.5.3.3 Command-Driven Communication23
+2.5.4 Overall Communication Model23
+2.6 Dynamic Control Positioning24
+2.7 Error Boundary Strategy25
+2.7.1 Overview25
+2.7.2 Purpose25
+2.7.3 Approach26
+2.7.4 Placement Strategy26
+2.7.5 Fallback UI Strategy27
+2.7.6 HTTP Error Codes Handling27
+3. State Management27
+3.1 Overview27
+3.2 State Architecture Overview28
+3.3 Store Definitions and Responsibilities28
+3.3.1 Session Store (sessionStore)28
+3.3.2 App State Store (appStateStore)29
+3.3.3 Browser Command Store (browserCommandStore)29
+3.3.4 Auth Store (authStore)30
+3.4 State Interaction Model30
+4. Routing Design31
+4.1 Overview31
+4.2 Modern Routing Architecture (React-Based)31
+4.3 Central Navigation Control – Data Strategy32
+4.4 Shared Routing Context32
+4.5 Route Loaders33
+4.6 Static vs Dynamic Routes33
+4.7 Static/Hybrid Page Configuration & Component-Based Rendering33
+4.8 Event Handling for Static Pages34
+4.9 Handler Registry (Page-Specific and Common Logic)34
+4.10 Loading Static Configuration & Rendering Components35
+4.11 Sequence Diagram35
+5. Frontend & Backend Communication Flow36
+5.1 Overview36
+5.2 Communication Model36
+5.3 Frontend-to-Backend End-to-End Flow36
+5.4 Login Flow (End-to-End Flow)38
+5.5 Page Load and Rendering Flow40
+5.6 API Design Approach (Wrapper APIs)41
+5.7 Authentication & Authorization Approach42
+5.7.1 Authentication Flow42
+APIs44
+Success Codes44
+Error Codes44
+5.7.2 Authorization Model44
+Maintenance (Administration & Setup)44
+Frontend Enforcement44
+5.7.3 Permissions45
+6. Bundling & Build Strategy45
+6.2 Development workflow46
+6.3 Build workflow47
+7. Component Library47
+7.1 Overview47
+7.2 Reusable Components47
+7.3 MUI (V.7) + Tailwind (V.4)52
+7.4 MUI Theme > Design Tokens54
+8. Non-Functional Requirements56
+8.1 Maintainability57
+8.2 Security57
+8.2.1 Data in Motion57
+8.2.2 API Security57
+8.2.3 Frontend Security57
+8.2.4 Platform, Network & Infrastructure Security57
+8.2.5 Security & Threat Protection58
+8.2.6 Application Security Implementation59
+8.3 Browser Support60
+9. Unit Testing Strategy60
+9.1 React Strategy60
+9.2 API Strategy60
+10. Migration Strategy62
+10.1 Overview63
+10.1.1 Assumptions63
+10.1.2 Legacy to Modern Conversion Overview63
+10.1.3 XSL to MUI Responsibility Mapping64
+10.2 Key Aspects of Migration Approach65
+10.2.1 Routes and Component Mapping65
+10.2.2 Rendering Strategy65
+10.2.3 Config-Driven UI for Static Pages66
+10.2.4 Component Creation66
+10.2.5 Encapsulation and Reusability66
+10.3 Step-by-Step Migration Approach67
+11. Multi-Window Support69
+11.1 Overview70
+11.2 Legacy behaviour alignment70
+11.3 Architecture overview70
+11.4 Window Registry and lifecycle71
+11.5 One-window-per-policy constraint72
+11.6 Integration with routing and browser commands73
+11.7 State isolation and storage strategy73
+11.8 Cross-window communication74
+11.9 Logout and cleanup74
+11.10 Error handling and safety74
+12. IIS Configuration75
+13. Conclusion76
+14. References76
+- API Design Document77
+
+### [Heading2] 1. Introduction & Scope
+
+### [Heading3] 1.1 Purpose
+The AQS application is a business-critical system currently built on a legacy technology stack. While the underlying backend logic has proven to be stable and functionally rich, the existing user interface has become difficult to maintain, extend, and enhance due to outdated UI technologies and patterns.
+To address these challenges, this initiative focuses on modernizing the user interface using React, while preserving and reusing the existing backend business logic without functional changes through Web APIs. The objective is to improve user experience, maintainability, and long-term extensibility, without introducing risk to core business processing.
+This approach ensures continuity for business users while allowing the platform to evolve incrementally.
+
+### [Heading3] 1.2 Objective
+The primary objectives of this solution are:
+Modernize the AQS UI using a component based React architecture
+Improve maintainability and scalability of the frontend
+Reuse existing backend logic as-is, without re-engineering or rewriting business rules through Web APIs.
+Avoid disruption to existing workflows and data processing
+Enable phased modernization with minimal operational risk
+
+### [Heading3] 1.3 Design Philosophy
+The solution is guided by the following architectural principles:
+Backend-first ownership of business logicAll business rules, validations, and processing remain in the backend.
+UI as a rendering and orchestration layerThe frontend is responsible only for presentation, user interaction, and invoking backend logic.
+No API-first redesignThere are no pre-existing APIs. Existing backend logic is reused directly through project references to .NET class libraries, enabling in-process execution.
+Incremental modernizationThe new React UI can coexist with legacy AQS application during transition, allowing phased rollout.
+
+### [Heading3] 1.4 Architecture
+
+### [Heading4] 1.4.1 Architecture Overview
+The AQS solution follows a layered architecture that separates presentation concerns from backend processing while enabling reuse of existing backend business logic with minimal change. The architecture introduces a modern React-based frontend while retaining the current backend logic through a .NET Framework 4.8 Web API layer, which acts as a controlled interaction and security boundary.
+This approach enables UI modernization without disrupting existing business rules, data access, or processing behaviour, thereby reducing implementation risk and supporting phased adoption.
+
+### [Heading4] 1.4.2 High-Level Architecture
+The architecture diagram illustrates:
+The React Single Page Application (SPA) runs in the user’s browser, responsible for UI rendering, client-side routing, and user interaction.
+The .NET Framework 4.8 Web API layer, hosted on IIS, acting as the secure interaction and orchestration layer between the frontend and backend.
+Direct, in-process invocation of existing backend business logic through project references from the Web API layer, ensuring reuse of proven logic.
+Legacy Data Islands (XML-based server-side data) previously embedded in Classic ASP pages, now accessed and transformed to JSON within the backend rather than exposed directly to the UI.
+Databases and external systems consumed by the backend business logic, remaining unchanged as part of the modernization effort.
+Structured JSON responses returned by the Web API layer to the React UI, replacing legacy page-embedded data delivery.
+The solution consists of the following logical layers:
+1. React App
+Single Page Application (SPA) built using React
+Responsible for UI rendering, user interaction, client-side routing, and state management
+Contains no business logic or validation rules
+Communicates with backend exclusively via Web APIs over HTTPS
+2. Web API Layer (.NET Framework 4.8)
+Serves as the interaction layer between the React UI and the existing backend logic
+Exposes RESTful endpoints tailored for frontend consumption
+Handles authentication, authorization, request validation, and orchestration
+References existing backend class libraries directly and invokes them in-process
+3. Backend Business Logic Layer (Existing .NET Class Libraries)
+Contains all business rules, validations, and processing logic
+Remains unchanged as part of this modernization effort
+Executes within the Web API process via project references
+Acts as the single source of truth for business behaviour
+4. Data & External Systems Layer
+Databases and external systems currently used by the backend
+No changes introduced as part of this architecture
+
+### [Heading4] 1.4.3 Architectural Benefits
+This architecture provides the following benefits:
+Low-risk modernization by reusing proven backend logic
+Clear separation of responsibilities between UI, orchestration, and business logic
+Improved maintainability through modular frontend design
+Strong security boundaries via the Web API layer
+Future readiness, allowing APIs to be evolved or extended if required
+
+### [Heading4] 1.4.4 Architectural Constraints
+Backend logic remains tightly coupled to the Web API layer through project references
+Scalability is constrained by the hosting model (IIS deployment as per TMNAS standard) of the Frontend, Web API and backend process
+
+### [Heading2] 2. React Component Architecture
+The React component architecture explains how the AQS Advantage policy management application is structured and organized. It describes the complete plan to move from the old VB6/ASP application to a modern React-based single-page application (SPA). The goal is to keep all existing features the same while improving and modernizing the user experience.
+
+### [Heading3] 2.1 Component Hierarchy
+The component hierarchy shows how all the react components in the app are logically organized.
+React Application
+├── Application layer
+│   Entry point, router setup, and global providers. Bootstraps the app
+│   and wraps the component tree with app-wide context.
+│
+├── Routing layer
+│   Defines all routes with loaders, actions, and middleware. Handles
+│   auth gating and permission checks before rendering protected routes.
+│
+├── Frame system
+│   Manages lifecycle of frame-based legacy ASP content frames. Frames
+│   are kept alive on navigation to avoid reload cost.
+│
+├── Modal / dialog system
+│   State-driven modal management with typed data payloads. Built on a
+│   provider/hook pattern to keep dialog state local and composable.
+│
+├── Form components
+│   Configuration-driven form rendering with a full field control library.
+│   Form structure is server-supplied, removing the need for frontend changes.
+│
+├── Common hooks
+│   Shared hooks for navigation, storage, events, and window management.
+│   Each hook is single-responsibility and framework-composable.
+│
+├── Feature modules
+│   Self-contained modules for auth, frame-system, and root initialisation.
+│   Each module co-locates its loader, action, and middleware.
+│
+├── Service / API layer
+│   All outbound server communication — REST API calls.
+│   Built on a shared HTTP instance with centralised config and interceptors.
+│
+├── Utility layer
+│   Pure, framework-agnostic helpers for URL building, data transforms,
+│   persistence, error handling, and observability.
+│
+└── Configuration & types
+Single source of truth for static config, manifests, and shared
+TypeScript type definitions. No outbound dependencies.
+
+### [Heading3] 2.2 Shell Components
+Shell components are the structural backbone of the application. They provide a consistent layout, navigation, and page structure across the application. Below are some identified shell components for the AQS modernization.
+Section | UI Component | Behavior / Remarks | MUI Component Mapping
+Header | App Header | Logout button shows after login, navigation menus and brand logo | AppBar, Toolbar, Button, Menu Items, Link
+Progress Indicator | Progress Indicator | Contains images with colors to indicate the flow | Custom Component
+Page Header | Page Header | Contains page header name and status | Box/Div
+Left Panel | Left Panel | Shell of the tree view component | Box/Div
+Right Panel | Right Panel | Shell of the forms, Data Grid and other page level component | Box/Div
+Popup Window | Popup/Dialog | Shell of the forms, Data Grid and buttons components | Draggable dialog
+Footer | Footer | Common footer across app | Box/Div, Typography
+Below is the initial folder structure of the AQS application with common component and the login, and the dashboard pages. It will keep growing and changing as the project progresses.
+
+### [Heading3] 2.3 Global Components
+This section explains all the global react components that will be used across applications.
+
+### [Heading4] 2.3.1 Data Strategy + Execute Action
+This section explains how Data Strategy and Execute Action are used in the application.
+
+### [Heading5] 2.3.1.1 Legacy Behaviour
+Navigation was handled imperatively through ExecuteAction, which decided frame targets, next page, and backend calls using global variables.
+Route/state inputs (action, nodeKey, tab) were stored in mutable global module-level variables, causing hidden dependencies.
+Backend cycling was triggered directly by ExecuteAction, which built URLs and updated frame src attributes to reload content.
+
+### [Heading5] 2.3.1.2 Purpose of Data Strategy & Execute Action
+The dataStrategy acts as the central orchestration layer inside React Router (data mode)
+Its job is to determine:
+When to call backend cycling endpoints
+What inputs are required
+How to process server-driven browser commands
+How navigation context should update.
+The purpose is to:
+Provide a predictable, structured, navigation lifecycle
+Decouple navigation from UI and global variables
+Ensure modern React pages receive the correct backend data before render
+Assist executeAction in determining the correct navigation response
+The executeAction utility is the modern equivalent of the legacy ExecuteAction function.
+Its purpose is to:
+Prepare parameters for backend cycling (action, nodeKey, xmlDetail, tab)
+Execute the network call that returns browser commands
+Pass responses to BrowserCommandsProvider
+Update navigation Context
+Support modal behaviour and deferred navigation via hooks
+
+### [Heading4] 2.3.2 Form Provider
+This section explains purpose of Form Provider and how it works.
+Legacy Behaviour:
+Form values lived in global VBScript variables (mstrPolicyID, etc.) and raw HTML form inputs.
+ExecuteBrowserCommands updated inputs by direct DOM writes (document.all(noun).value = addinf).
+No unified validation or dirty-state tracking — everything was runtime only.
+Form updates tightly coupled with frames and dependent components via global state and manual calls.
+Its purpose is to:
+Centralizes all form data, validation, and field‑level state using react-hook-form and a typed store.
+Allows backend browser commands to update form fields in a controlled and observable way.
+Ensures form state stays consistent across the application without relying on globals.
+Replaces legacy direct DOM manipulation with declarative, testable state updates.
+How it works:
+Wraps forms with a provider exposing typed APIs like updateField, validateField, and form state selectors.
+Listens for browser command events (e.g., SET_TEXT, LOAD_COMBO) and updates the relevant fields.
+Notifies subscribers (via pub-sub) whenever a field is updated.
+Re-renders only the required form components for performance optimization.
+
+### [Heading4] 2.3.3 Dialog Provider
+This section explains purpose of Dialog Provider and how it works.
+Legacy Behaviour:
+Used MsgBox() for alerts and window.showModalDialog for blocking modals.
+Modal closure triggered global flags (mblnNextAction_DeferNavigation) to resume navigation.
+Navigation after modal depended on global variables (mstrNextAction_*).
+UI was inconsistent across browsers and relied on deprecated modal APIs.
+Its purpose is to:
+Provides a unified, accessible modal/dialog system using MUI’s dialog components.
+Replaces VBScript MsgBox and showModalDialog with configurable, type-safe dialogs.
+Centralizes dialog lifecycle (open/close, callbacks, messages).
+Handles confirmation flows and integrates cleanly with deferred navigation.
+How it works:
+Maintains global dialog state (open, message, actions) inside a React context.
+Renders a single shared dialog component and exposes APIs like onOpenDialog and onCloseDialog.
+Executes user-chosen callbacks (OK / Yes / No / Cancel) and triggers follow-up navigation/actions.
+Cooperates with deferred-navigation hooks to run actions after dialogs close.
+
+### [Heading4] 2.3.4 Global Variable Provider
+This section explains purpose of Global Provider and how it works.
+Purpose:
+Centralizes application-wide navigation and session-related state such as:
+action
+nodeKey
+active tab
+cycle context
+modal state
+Replaces scattered VBScript globals with a structured and predictable state model
+Avoids implicit dependencies by ensuring all consumers access state through a defined interface
+Allows backend-driven navigation changes to propagate through a unified state layer
+How it works
+Global navigation and session-related state are now managed using Zustand stores, primarily:
+sessionStore
+appStateStore
+These stores act as the single source of truth for all navigation and session state
+Exposes state access through hooks (e.g., useSessionStore(), useAppStateStore())
+Works closely with dataStrategy to supply correct navigation inputs during route loads.
+
+### [Heading4] 2.3.5 BrowserCommandsProvider [RAVI-NUMBERING]
+This section explains how browser commands are being handled.
+Purpose:
+The BrowserCommandsProvider is responsible for orchestrating execution of browser commands received from the backend (e.g., SET_TEXT, LOAD_COMBO, NAVIGATE, MODAL). It manages command queues, execution history, and integrates with navigation, dialogs, and form state, enabling the frontend to interpret and apply server-driven UI actions in a consistent, testable way.
+How it works
+The command management mechanism is now implemented using:
+1. Browser Command Store
+Maintains:
+Pending commands
+Execution state
+Enable/disable control
+2. Browser Command Processor
+Responsible for:
+Sequential execution
+Handling command logic
+Coordinating side effects
+
+### [Heading4] 2.3.6 Command Handlers
+This section explains how Command Handlers are works along with its purpose.
+(File: src/utils/command-handlers.ts)
+
+### [Heading5] 2.3.5.1 Legacy Behaviour
+Server-driven model: backend decides → UI executes via commands
+Server returns BrowserCommands (<call verb="...">)
+Client executes commands to update UI, show dialogs, and navigate
+
+### [Heading5] 2.3.5.2 Purpose
+Acts as the central execution layer for all backend-driven UI commands
+Modern replacement of legacy ExecuteBrowserCommands pattern
+Consumes BrowserCommand (verb, noun, addinf) from API responses
+Routes each command to a specific handler based on verb
+Uses injected dependencies (via builder):
+Form APIs (state + metadata updates)
+Navigation utilities
+Dialog/modal system
+Global/session variables
+Ensures consistent, reusable behavior across all pages
+Decouples backend-driven logic from UI rendering components
+
+### [Heading5] 2.3.5.3 How it works
+Command Processing
+Receives list of BrowserCommands from backend response
+Iterates sequentially and dispatches based on verb
+Each handler interprets:
+noun → target field/control
+addinf → value / payload / config
+UI Updates (State-Driven)
+Replaces direct DOM manipulation with controlled React state updates
+SET_TEXT → updates field value via form state
+SET_* (DISABLED, REQUIRED, VISIBLE, READONLY) → updates runtime field metadata
+LOAD_COMBO / CLEAR_COMBO → transforms payload into structured options and updates dropdown state
+Navigation Handling
+NAVIGATE → parses target path and triggers smartNavigate()
+NAVIGATE_CYCLING → reconstructs navigation context (session + global vars) and builds next route
+Navigation triggers route loader, which calls backend APIs (continuing server-driven flow)
+Dialogs / User Interaction
+All DISPLAY_* commands routed through a central dialog system
+Normalizes legacy formats (text, markers, XML payloads)
+Supports:
+Alerts (info, warning, error)
+Questions (user input required → flow continues)
+Structured content rendering (XML → UI component)
+Execution Outcome
+Commands are applied in order, ensuring deterministic UI updates
+UI remains backend-driven but React-controlled
+Maintains legacy behavior while enabling modern state management
+
+### [Heading4] 2.3.6 Pub/Sub Mechanism
+This section explains how pub/sub mechanism is being used.
+(File: src/utils/pub-sub.ts)
+
+### [Heading5] 2.3.6.1 Purpose
+Enables decoupled, event-driven communication between global providers and feature modules. Components can broadcast and react to events without direct dependencies, supporting modularity, extensibility, and cross-cutting concerns (e.g., logging, error handling, state sync).
+
+### [Heading5] 2.3.6.2 Usages
+BrowserCommandsProvider:Subscribes to and publishes events like 'command:executed' and 'command:error' using the global pubSub utility. This allows logging, error handling, and UI updates in response to browser command execution, without tightly coupling command logic to UI components.
+CommandHandlerBuilder:Publishes command lifecycle events (start, success, failure) via pubSub. This enables global monitoring, analytics, or side effects (such as triggering dialogs or navigation) in response to command execution.
+FormProvider:Uses pubSub to broadcast form-level events (e.g., field commit, validation, submission). This decouples form logic from UI, allowing other modules to listen for and react to form changes globally.
+Shared Storage Hooks (use-shared-storage, use-window-storage):Use pubSub to synchronize state and events across browser tabs/windows. When storage changes in one tab, pubSub notifies other tabs to update their state, ensuring a consistent user experience.
+
+### [Heading5] 2.3.6.3 How it works
+The global pubSub utility exposes subscribe and publish methods.
+Components subscribe to specific event types and provide handlers.
+When an event occurs, any component can publish it with relevant data.
+All subscribers to that event type receive the data and can react accordingly.
+Unsubscribe functions are used to clean up listeners when components unmount.
+
+### [Heading5] 2.3.6.4 Usage
+Publishing Example:
+Any component can publish an event using the pubSub utility.
+This notifies all subscribers to 'command:executed' with the provided data.
+Subscription Example:
+Components subscribe to events by providing a handler.
+This handler will be called whenever 'command:executed' is published.
+
+### [Heading5] 2.3.6.5 Key Features
+Decouples event producers and consumers for maintainable architecture.
+Enables global event handling (e.g., command execution, error reporting, form events).
+Supports cross-tab/window state sync.
+Extensible for future features (analytics, notifications, etc.).
+
+### [Heading4] 2.3.7 Form/Dialog Rendering
+Legacy Behaviour
+Page XML → XSL transforms PageBuild XML (controls/calls) into markup containing aqs: tags (page XML files in Website/*/XML).
+Controls fire events and build legacy EEData; client calls server via XmlServerCall.htc / MSXML to xmlServerCall.asp.
+Server components run business logic and return <aqs> XML including <BrowserCtl> / <call verb="..."> entries
+ExecuteBrowserCommands is executed to iterate <call> nodes and apply actions: update DOM/options, open modals (showModalDialog/window.open), show messages, or queue navigation, loading list items and populating combos
+Control rendering: Combo.htc builds HTML for a combo (creates text input + button + select):
+server-call handler / dispatcher: ExecuteBrowserCommands (key cases, from Main_ISLLSYS_20010101.vbs):
+What is its purpose
+Centralize UI decisions on server: server returns UI commands so complex business rules remain server-side.
+Reuse uniform controls: HTC behaviours provide a single control implementation reused across pages.
+Reduce payloads & enable lazy loading: combos/lists can be populated on-demand (LOAD_COMBO) to speed initial page load.
+Preserve synchronous modal flows: server can request a question and immediately branch logic based on the user's modal response.
+Client sends EEData / SessionInformation and server returns BrowserCtl commands.
+How it works in React
+FormRenderer renders normalized PageBuild fields, applies runtime metadata (visible/disabled/required/options), and forwards user edits to the commit hook.
+useFormCommit builds the legacy EEData payload for the changed field(s), calls the XML server API, parses the response, and returns/executes resulting browser-commands. It also handles combo dedupe and stores session snapshots.
+The commit hook uses an XML-server client and small builders (EEData / XML payload helpers) to match the legacy contract so backend responses include BrowserCtl and marrListItems.
+Command parsing & application:
+parseBrowserCommands / parseBrowserCommandsFromXMLServerCall convert legacy XML/response objects into simple {verb,noun,addinf,...} commands.
+applyCommands maps verbs to handler callbacks (handlers: setText, setDisabled, clearCombo, loadCombo, displayMessage, openWindow, navigate, callServer) and executes them in sequence. See src/utils/apply-server-commands.ts.
+
+### [Heading3] 2.4 Multi‑Version JSON Configuration
+
+### [Heading4] Overview
+This section defines the approach for managing static and hybrid page configurations using a multiversion, JSONbased model, aligned with the overall migration strategy from legacy ASP/XSL structures to a modern, modular React architecture.
+
+### [Heading4] Purpose
+To introduce a versioned, modular configuration model for static and hybrid pages.
+To enable parallel version support for the same page family during phased migration.
+To improve:
+Maintainability
+Traceability of changes
+Controlled rollout of enhancements
+To align with the config-driven UI and server-driven behaviour model.
+
+### [Heading4] When to Create
+A JSON file is created when the page is classified as static or static-hybrid during migration analysis (see Section 10.3 Step 2).
+
+### [Heading4] Configuration Structure
+Each page family will maintain its own configuration set under: src/schemas/
+Configurations are split by version, instead of maintaining a single file.
+Each version is represented as an independent JSON file.
+
+### [Heading4] Folder Organization
+JSON configuration files are organized based on their functional domain / folder structure derived from legacy ASP paths.
+Example: src/schemas/sys/str-piphsys-20100101.json
+This ensures:
+Logical grouping
+Easier traceability from legacy to modern structure
+
+### [Heading4] Mapping with Navigation Response
+The application receives navigation metadata from the backend containing:
+ASP file name
+Folder path
+Example Navigation URL: ../../sys/asp/STR_PIPHSYS_20100101.asp
+
+### [Heading4] JSON file structure
+Page Structure Variations
+The JSON structure varies depending on the page type. The sample below shows a multi-tab page — the most common structure. Other variations include but not limited to:
+No-tab page — no tabs array; controls defined at a flatter level
+Mixed — combinations of tabs, forms, and grids depending on page requirements
+Core Properties
+Property | Purpose
+componentName | Must match the legacy ASP file name. Used by the static component registry to resolve the TSX component
+tabs | Ordered list of tab definitions. Present only on tabbed pages
+Tab Properties
+Property | Purpose
+id | Unique tab identifier matching the legacy tab matchcode (e.g. TABPOL, TABDET)
+label | Display label shown in the TabView
+index | Tab order — carried forward from the legacy ASP page
+renderingStrategy | How the tab content is rendered — static, static-hybrid, or dynamic
+controls | List of control definitions. Empty array for dynamic tabs
+static and static-hybrid are currently treated identically — both merge static schema controls with PageBuild values via mergeControlsWithPageBuild. The distinction is preserved for future use.
+Control Properties
+Property | Purpose
+matchcode | Unique control identifier. Matches legacy control matchcode from the XML Data Island
+controlType | MUI control to render — textbox, date, select, radio, checkbox
+label | Display label
+required | Whether the field is required. May be overridden at runtime by SET_REQUIRED browser command
+tabIndex | Tab order — carried forward from the legacy ASP page
+controlMetadata | Additional control-specific config — showZero, readOnly, options, serverObject
+events | Event definitions — see Section 2.4.8
+
+### [Heading4] 2.4.8 Events
+Events are declared on controls where a user interaction should trigger a server-side call or client-side behaviour. The number and type of events on a control varies depending on the page and control requirements.
+Currently supported event types:
+Event | Trigger | Use
+onCommit | Field change or blur | Triggers PageData API — used for cascading field dependencies
+onInfoClick | Info icon click | Triggers PageData API — used for info-driven workflows
+Additional event types may be introduced as migration progresses and new interaction patterns are identified from the legacy codebase.
+
+### [Heading4] Config Driven Routing
+As part of Routing, routing information will also be externalized into JSON files. These JSON files will:
+Map page versions to their route behaviour.
+Support onboarding into the new React Router v7–based system.
+Feed into the Page Navigation → Page Build → Component rendering pipeline.
+This ensures routing becomes configdriven, versionaware, and decoupled from React component logic for static pages.
+
+### [Heading3] 2.5 Components Communication
+This section explains how different components will communicate with each other.
+
+### [Heading4] 2.5.1 Legacy Behaviour
+In the legacy AQS application:
+Component communication was implicit and tightly coupled
+HTC controls and VBScript functions directly interacted with each other
+State and events were handled through:
+Global variables (mobjAQSMain)
+Direct DOM manipulation (document.all(...))
+Inline event handlers
+Key Characteristics
+No clear separation between components
+State changes triggered unpredictable side effects
+Event flow was difficult to trace
+Heavy reliance on shared global state
+
+### [Heading4] 2.5.2 Purpose
+The purpose of the component communication layer is to:
+Enable controlled and predictable data flow between components
+Decouple UI components from business logic
+Provide a consistent mechanism for:
+State sharing
+Event propagation
+UI updates
+Ensure backend-driven changes are reflected consistently across the UI
+
+### [Heading4] 2.5.3 How It Works
+In the modern architecture, component communication is based on a hybrid model:
+1. Primary Mechanism — Zustand State (NEW)
+2. Secondary Mechanism — Event-based Pub-Sub (LIMITED USE)
+
+### [Heading5] 2.5.3.1 State-Driven Communication (Primary)
+Overview
+Most component communication is now handled via shared Zustand stores, which act as the central communication medium.
+Key Benefits
+Eliminates need for manual event propagation
+Provides deterministic data flow
+Ensures consistency across components
+Simplifies debugging and traceability
+
+### [Heading5] 2.5.3.2 Event-Based Communication (Pub-Sub — Secondary)
+Overview
+A Pub-Sub mechanism is still available but is now used only in specific scenarios where state alone is insufficient.
+Important Behavior
+Events do not control execution order
+Execution sequencing is handled by:
+Browser Command Processor
+Pub-Sub only triggers reactions — not orchestration
+
+### [Heading5] 2.5.3.3 Command-Driven Communication
+Overview
+In addition to state and events, the system uses command-driven communication:
+Backend sends browserCommands
+Commands are executed sequentially
+Each command results in state updates or UI actions
+Flow
+Backend Response
+→ browserCommands[]
+→ Command Processor
+→ updates Zustand stores
+→ UI re-renders
+Key Role
+Acts as the orchestration layer
+Ensures:
+execution order
+consistency
+alignment with backend logic
+
+### [Heading4] 2.5.4 Overall Communication Model
+
+### [Heading3] 2.6 Dynamic Control Positioning
+The legacy AQS application defines control positions using absolute top and left pixel coordinates within the XML Data Island. To modernise this, the .NET Web API layer translates these coordinates into structured row and col properties when converting the Data Island XML to JSON, before the response is sent to the React frontend.
+This keeps the React rendering layer fully decoupled from the legacy coordinate system.
+Approach
+When the Data Island XML is returned to the frontend, the Web API layer converts it to JSON
+During this conversion, the top and left attributes of each control are parsed and mapped to row and col properties respectively
+All controls on dynamic pages receive these properties as part of the JSON payload
+The frontend uses these values to construct the page layout without any hardcoded positional logic in React components
+Where additional styling or layout properties are required, className and other supporting attributes are added manually directly into the XML Data Island, and are carried through as-is during the XML-to-JSON conversion
+Control properties derived from XML
+Property | Source | Notes
+Row | Top attribute | Derived during Data Island XML-to-JSON conversion
+Col | Left attribute | Derived during Data Island XML-to-JSON conversion
+ClassName | XML Data Island | Added manually to XML where additional styling is required
+Benefits
+Translation logic is centralised in the API layer — no React changes needed if derivation logic updates
+Frontend receives clean, structured data rather than raw legacy coordinates
+Additional properties can be introduced by updating the XML Data Island directly, without changes to the conversion layer or React components
+Consistent positioning model across all dynamic pages
+
+### [Heading3] 2.7 Error Boundary Strategy
+
+### [Heading4] 2.7.1 Overview
+To ensure robust error handling and user experience, the application will use React error boundaries to catch and gracefully handle runtime errors in the UI, especially in dynamic, backend-driven, or third-party components.
+
+### [Heading4] 2.7.2 Purpose
+The purpose of this strategy is the ensure a robust, resilient user experience by gracefully handling runtime and rendering errors without destabilizing the application.
+Given the systems frame-based architecture, mixed static/dynamic content, backend-driven rendering, and incremental migration approach, error handing must:
+Isolate failures to the smallest possible scope.
+Prevent a single page or frame from breaking the entire application.
+Provide clear, user-friendly feedback with recovery options.
+
+### [Heading4] 2.7.3 Approach
+The application uses React error boundaries as the primary mechanism for catching and handling UI runtime errors.
+Key Principles:
+Uses react-error-boundary as the standardized library for all error boundaries.
+Apply boundaries hierarchically so failures are contained locally and recover gracefully.
+Differentiate clearly between:
+Rendering/runtime errors (handled by error boundaries).
+Route, loader, action, middleware, and server errors (handled by react router and surfaced via boundaries or error pages.)
+
+### [Heading4] 2.7.4 Placement Strategy
+Error boundaries are implemented at multiple, intentional levels, aligned with routing and frame responsibilities.
+Global Error Boundary
+A global error boundary wraps the root of the application.
+Catches uncaught rendering errors that escapes lower-level boundaries.
+Prevent total application crashes.
+Provide a safe fallback with recovery guidance.
+This acts as a last line of defence.
+Route-Level Error Handling
+React router v7 route errorElement/ErrorBoundary support is used for:
+Loader failures
+Action failures
+Thrown responses (HTTP errors)
+This keeps data and routing errors scoped to the route they originate from, rather than bubbling unexpectedly into rendering logic.
+This also covers all the API errors that occurs during loader/action failures.
+To log the errors/activity, we will be using below API’s:
+api/v1/ui/application-events/log-error
+api/v1/ui/application-events/log-activity
+Feature-Level Error Boundaries
+Each major feature or route entry point (for example, policy information) is wrapped in its own error boundary its own error boundary.
+Isolate feature-level failures
+Avoid cascading failures across unrelated areas of the application.
+In frame-based layout, where multiple regions coexist independently, this will allow other persistent frames to remain functional.
+Component-Level Error Boundaries
+Component-level boundaries are used selectively, not everywhere.
+May applied to:
+Highly dynamic or schema driven components.
+Third party or complex UI elements.
+This ensures failures in dynamic content do not break the surrounding frame or layout.
+
+### [Heading4] 2.7.5 Fallback UI Strategy
+All error boundary fallback UIs follow consistent guidelines:
+Development mode shows extended error details
+Production mode shows friendly messaging with recovery actions
+Options include retry, reload or navigation to a safe route.
+
+### [Heading4] 2.7.6 HTTP Error Codes Handling
+Any other errors apart from what has been mentioned below will be handled carefully as well.
+HTTPS status code | Description | Handling
+200 | Successful Request | 
+401 | Incorrect credentials / Unauthorized access | Clear session state and redirect user to login or
+404 | Incorrect Route / Page not found | Show Page Not Found UI
+403 | Missing permissions. | TBD
+500+ | API Failure / Unhandled Exceptions / Timeouts / Server Errors | TBD
+
+### [Heading2] 3. State Management
+
+### [Heading3] 3.1 Overview
+The AQS React application adopts a centralized, deterministic state management architecture using Zustand to replace the legacy VBScript global state model.
+In the legacy system, global state was stored in a single object (mobjAQSMain), which contained:
+Session information (marrSessionInformation)
+UI flags (frame state, modal state)
+Command queues (mxmlBrowserCtl)
+Global variables (GlobalVars)
+In the modern architecture:
+The legacy “God object” is decomposed into multiple focused Zustand stores
+Each store owns a specific responsibility
+State transitions are explicit, predictable, and traceable
+
+### [Heading3] 3.2 State Architecture Overview
+The application state is organized into four primary Zustand stores:
+
+### [Heading3] 3.3 Store Definitions and Responsibilities
+3.3.1 Session Store (sessionStore)
+Overview
+The sessionStore represents the modern equivalent of the legacy marrSessionInformation array and serves as the single source of truth for all session-related data.
+Purpose:
+Stores dynamic session attributes (e.g., datachanged, ratingdatachanged)
+Acts as a server-controlled key-value bag
+Updated via:
+UI events
+Browser commands (SET_VARIABLE, CLEAR_SESSIONXML_ITEM)
+Core Responsibilities:
+Build session payload for all API calls
+Hydrate from sessionStorage
+Update state from:
+/data responses (array format)
+/navigation / /layout responses (flat format)
+Manage xmlDetail lifecycle
+
+### [Heading4] 3.3.2 App State Store (appStateStore)
+Overview
+The appStateStore manages UI state and application-level flags, replacing:
+Legacy GlobalVars class
+Frame state (fraMain)
+UI flags and lifecycle variables
+Responsibilities
+Manage UI flags (loading, modal state)
+Control frame transitions
+Track data change states
+Coordinate application initialization phases
+Handle modal lifecycle
+
+### [Heading4] 3.3.3 Browser Command Store (browserCommandStore)
+Overview
+The browserCommandStore manages the queue of server-driven UI commands, replacing:
+mxmlBrowserCtl
+MblnDoBrowserCommands
+Responsibilities
+Store commands received from backend
+Control execution lifecycle
+Enable / disable command processing
+Support sequential command execution
+
+### [Heading4] 3.3.4 Auth Store (authStore)
+Overview
+Handles authentication state and replaces:
+Legacy cookie/session-based login logic
+Responsibilities
+Store JWT token
+Manage authentication state
+Persist to localStorage
+Provide Authorization header for API calls
+
+### [Heading3] 3.4 State Interaction Model
+The application follows a unidirectional, protocol-driven state flow:
+
+### [Heading2] 4. Routing Design
+
+### [Heading3] 4.1 Overview
+The routing and navigation architecture bridges legacy ASP/ASPX page flows with a modern, schema driven React SPA. React Router v7 (data mode) is used to centralize navigation logic, support both static and dynamic page rendering, and enable seamless migration of thousands of legacy pages. Each static/hybrid ASP page version is represented by a dedicated JSON schema file.
+
+### [Heading3] 4.2 Modern Routing Architecture (React-Based)
+Purpose: Support legacy static and hybrid ASP/ASPX pages within a React SPA using React Router v7 data mode.
+Key Features:
+Centralized navigation control via middleware.
+Schema-driven rendering for both static and dynamic pages.
+One-to-one mapping: each ASP/ASPX version has a corresponding JSON schema file, organized by legacy folder (e.g., /src/frame-system/pol/str-piphsys-20010101.json).
+Consistent navigation and event handling across all page types.
+Benefits:
+Reduces route complexity.
+Enables large-scale migration with minimal disruption.
+Ensures predictable, maintainable UI behaviour.
+
+### [Heading3] 4.3 Central Navigation Control – Data Strategy
+Component: dataStrategy (middleware/controller)
+Role: Acts as the navigation traffic controller for all route changes and user actions.
+Technical Flow:
+Intercept Navigation: All navigation events (MENU, MAIN, ACTION, etc.) are intercepted by the dataStrategy middleware before any loader or component executes.
+Backend API Call: The middleware calls the backend cycling API, passing session and action details.
+Response Parsing: The backend response includes frame type, target ASP filename (with folder, e.g., pol/str-piphsys-20010101), browser commands, and navigation metadata.
+Route Mapping: The legacy ASP filename and folder are mapped to a React route using a central mapping. Once we form a route path using ASP filename and folder, we would check if the schema file exists for that in the /src/schemas/**/* folder, once we find the schema file, we will load the component using the same.
+Context Update: The processed navigation data is stored in a shared routing context and Zustand store
+Downstream Consumption: Route loaders and components consume this context to determine what to render and how to behave.
+
+### [Heading3] 4.4 Shared Routing Context
+Component: Shared Routing Context (Zustand store)
+Role: Maintains navigation-related state across the application.
+State Includes:
+Action type (MENU, MAIN, ACTION, etc.)
+Backend-returned ASP filename (with folder, e.g., pol/str-piphsys-20010101)
+Mapped React route
+Frame type (Main, Modal, New Window)
+Browser commands (SET_TEXT, LOAD_COMBO, NAVIGATE, etc.)
+Session metadata
+Technical Details:
+The context is updated by dataStrategy on every navigation event.
+Loaders and components use hooks to access the current navigation state.
+The context is provided at the app root, ensuring all routes and components have access.
+
+### [Heading3] 4.5 Route Loaders
+Component: Route Loader Functions (per route)
+Role: Serve as page-level data readers for React Router v7.
+Technical Flow:
+Loaders do not call backend APIs directly; they read navigation data from the shared context.
+For static routes, the loader identifies the ASP filename and folder, then loads the corresponding JSON schema from /src/schemas/<folder>/<aspFileName>.json.
+If we found the schema file for corresponding ASP filename, that means we are supposed to render static or hybrid frame, if not found then we must render dynamic frame.
+For dynamic routes, the loader triggers the PageBuild flow, using the navigation state as input.
+Loaders provide page-specific data to components for rendering.
+
+### [Heading3] 4.6 Static vs Dynamic Routes
+Route Types:
+/static/:folder/:aspFileName for schema-based (static/hybrid) pages.
+/dynamic/:folder/:aspFileName for PageBuild-driven (dynamic) pages.
+Classification:
+Determined by manifest entries, page-family patterns, and backend metadata.
+Each ASP version has a dedicated JSON schema file, organized by legacy folder.
+Execution:
+Both route types rely on executeAction as the source of truth for navigation state.
+Static routes load a JSON schema for layout and behaviors.
+Dynamic routes follow the PageBuild flow, using the same navigation and command orchestration.
+
+### [Heading3] 4.7 Static/Hybrid Page Configuration & Component-Based Rendering
+Static and Hybrid ASP/ASPX pages are rendered using a component-based React approach, guided by a lightweight, versioned JSON configuration.
+Each static or hybrid page version is represented by:
+A dedicated JSON configuration file, and
+A corresponding React component (.tsx) which contains the actual UI markup.
+Responsibility of the JSON configuration
+Schema Location: /src/schema/<folder>/<aspFileName>.json (e.g., /src/schema/pol/str-piphsys-20010101.json)
+Page identity and legacy mapping:
+ASP file name, folder, version and page family
+Classification and rendering behaviour
+Static vs hybrid indicators
+Permissions and UI rules
+Lifecycle hooks (e.g., onLoad)
+Explicit mapping to the React rendering component via componentName
+Event wiring references (handlers, XML server calls, navigation intent)
+Note
+The JSON file intentionally does not contain JSX-like elements tree or detailed UI structure. This keeps the configuration readable, and stable across versions.
+Responsibilities of the React component
+The mapped React component (*.tsx) is the single owner of the UI rendering and is responsible for:
+Building the UI using MUI and shared components.
+Applying layout and visual structure
+Binding events declaratively (e.g. onClick, onChange)
+Delegating behaviour to handlers and orchestration utilities
+Remaining free of business logic
+This separation ensures static pages are:
+Easier to debug and test
+Consistent with standard React development practices
+More amendable to refactoring
+
+### [Heading3] 4.8 Event Handling for Static Pages
+Event Declaration:
+Events are described in the JSON schema by intent, not implementation.
+Runtime Handling:
+Events defined in JSON are normalized
+Dispatched through a unified event pipeline.
+Supported event types: handler invocation, PageData API, direct navigation, client-side interactions.
+This allows static pages to participate fully in:
+Backend-driven workflows
+Dynamic navigation and redirection
+Browser command execution
+
+### [Heading3] 4.9 Handler Registry (Page-Specific and Common Logic)
+Types of Handlers:
+Page-Specific Handlers:
+Each JSON schema references a handler module with the same name and folder as the ASP/JSON file (e.g., /src/handlers/pol/str-piphsys-20010101-handlers.ts).
+These handlers implement logic unique to that page version.
+Common Handlers:
+A shared module (e.g., /src/handlers/common-handlers.ts) contains reusable functions and utilities.
+Common handlers are imported into all page-specific handler modules as needed.
+Loading:
+Handlers are lazy-loaded using import.meta.glob, ensuring only needed code is loaded.
+Execution:
+Each handler receives a structured context (navigation state, frame metadata, helpers).
+JSON events reference handler names, which are resolved and executed at runtime.
+
+### [Heading3] 4.10 Loading Static Configuration & Rendering Components
+Process:
+After executeAction, the route loader identifies the ASP filename and folder.
+Loads the matching JSON schema from /src/schema/<folder>/<aspFileName>.json.
+Merges the schema into a FrameModel
+The componentName declared in JSON is resolved via the static component registry.
+The mapped React component is rendered by StaticFrameRenderer
+On user action, the event dispatcher loads and executes the required handler module (matching the JSON file name and folder) with the correct context.
+Common handler functions are available as and when needed.
+
+### [Heading3] 4.11 Sequence Diagram
+The diagram covers the key interactions between the user, React Router, dataStrategy middleware, backend API, route loaders, JSON schema loader, handler modules, and backend API.
+
+### [Heading2] 5. Frontend & Backend Communication Flow
+
+### [Heading3] 5.1 Overview
+The React SPA communicates exclusively with the backend via HTTP(S)/JSON, with the .NET Framework 4.8 Web API serving as the sole integration boundary. The UI is strictly responsible for presentation and orchestration - no business logic is implemented in the frontend. All business rules, calculations, and validations remain in the backend, ensuring a clear separation of concerns and a stable migration path.
+
+### [Heading3] 5.2 Communication Model
+All data exchange between the React SPA and backend occurs over HTTP(S) using JSON payloads. The Web API acts as:
+A security boundary (enforcing authentication and authorization)
+A contract boundary (defining stable, UI-focused endpoints)
+An orchestration layer (coordinating calls to backend logic)
+Backend business logic is reused directly via DLLs project references from the Web API, ensuring no duplication and consistent behaviour.
+
+### [Heading3] 5.3 Frontend-to-Backend End-to-End Flow
+This section depicts how Fronted and Backend communication works.
+Page Load / Navigation:
+Trigger: User navigates to a new route or page.
+Frontend:
+React Router’s loader (using dataStrategy) is invoked for the route.
+Loader calls the Navigation API to determine which page/window should be loaded next, passing session info and navigation context.
+Backend:
+Navigation API validates session, determines the next page/window, and returns its name.
+Frontend:
+Loader receives the page/window name.
+Loader then calls the PageBuild API with the name and other detail to fetch the structure, controls, and metadata for the page.
+Backend:
+PageBuild API invokes legacy DLL, receives XML, converts it to JSON, and returns:
+List of controls/fields
+Available actions/calls
+BrowserCommands (for initial UI setup)
+Frontend:
+Parses and normalizes the JSON response.
+Renders the UI using FormRenderer/FieldRenderer.
+Executes any BrowserCommands from the response.
+User Actions (Click/Change events):
+Trigger: User interacts with the UI (e.g., changes a dropdown, clicks a button).
+Frontend:
+The corresponding action handler is invoked.
+Calls the Page Layout API (or Navigation API if navigation is required), passing session info, action parameters, and any form data.
+Backend:
+API validates session, invokes legacy DLL, processes the action, and returns XML.
+Converts XML to JSON, including:
+Action result/status
+Updated data/fields
+BrowserCommands (for further UI updates or navigation)
+Frontend:
+Processes the JSON response.
+Executes BrowserCommands (e.g., update fields, show dialogs).
+Updates the UI accordingly.
+
+### [Heading3] 5.4 Login Flow (End-to-End Flow)
+This flow describes the end-to-end request lifecycle that occurs when a user successfully logs in and navigates to the main page.
+Step 1 — Client requests a protected endpoint
+The React client makes a request to a protected endpoint, sending any available SessionInfo. The JWT token, AppGuid, and UserId cookies may or may not exist at this point.
+Step 2 — JwtAndGuidAuthentication filter
+The filter runs on every request before any controller or business logic executes, evaluating the request in the following order:
+If all three cookies are present and valid — request proceeds, 200 OK returned
+If cookies are absent or invalid — filter checks Windows Authentication via HttpContext.Current.User
+If user is authenticated in AD — JWT, AppGuid, and UserId cookies are generated and returned with 200 OK. No login form is shown
+If user is not in AD — 401/403 returned, React displays the login form
+Step 3 — Username/password login
+The React client posts credentials to POST /api/v1/auth/login. The API validates against the database via the existing DLL.
+Valid credentials — JWT, AppGuid, and UserId cookies generated, 200 OK returned
+Invalid credentials — 401 Unauthorized returned, login form remains visible
+Step 4 — Subsequent API calls
+All subsequent requests automatically include the three cookies. The filter validates them on every request before processing proceeds.
+
+### [Heading3] 5.5 Page Load and Rendering Flow
+The following diagram illustrates the high-level interaction between the browser, routing layer, backend APIs, and existing backend services.
+Detailed Flow Explanation
+Route ResolutionWhen a user navigates to a route, the browser forwards the request to the React application. React Router resolves the route configuration and identifies the associated route loader and page component.
+Loader ExecutionThe route loader is invoked before the page component renders. The loader evaluates route parameters and determines the backend APIs required to initialize the page.
+API InvocationThe loader invokes the API wrapper layer, which issues HTTP requests to the .NET Web API endpoints. The API wrapper standardizes request construction and response handling for the React application.
+Authentication & Backend InvocationThe Web API validates the authenticated user context and invokes the existing backend DLL logic through referenced services.
+Backend ProcessingBackend components execute business logic, validations, and data retrieval operations. The response is returned to the Web API in XML format, consistent with the existing backend architecture.
+Response TransformationThe Web API converts the backend XML response to JSON and returns the result to the frontend API wrapper.
+Loader Data ResolutionThe route loader receives the API responses and resolves the required data for the page initialization.
+Page RenderingThe resolved data is passed to the page component, which renders the UI within the browser using the retrieved data.
+
+### [Heading3] 5.6 API Design Approach (Wrapper APIs)
+We are adopting a wrapper-based API design approach. The React application will communicate with a set of new .NET 4.8 APIs. These APIs will act as integration wrappers: instead of directly implementing business logic, they will internally call the existing DLLs that are part of our current system. This allows us to reuse validated functionality while exposing a modern interface to the front-end.
+Key points:
+React -> .NET 4.8 APIs: The React frontend will make REST calls to our new APIs.
+Wrapper Design: The APIs will not duplicate functionality; they will serve as adapters between the UI and legacy components.
+Existing DLL Integration: The wrapper APIs will invoke the existing DLLs from the current system to perform business operations.
+APIs:
+Present stable, JSON-based contracts
+Enable the frontend to evolve independently of backend changes
+
+### [Heading3] 5.7 Authentication & Authorization Approach
+Authentication and authorization are central to the migration strategy, ensuring security and business rule enforcement remain in the backend. The implementation is as follows:
+
+### [Heading4] 5.7.1 Authentication Flow
+This section describes how the system handles user authentication, including credential validation, AD authentication, token generation, API access security, and error handling for unauthorized requests.
+Below sequence diagram represents the flow for registered user:
+The system will validate the user’s credentials received from the React UI against the configured authentication mechanism.
+When Active Directory (AD) authentication is enabled, the system will authenticate the user using Windows Authentication.
+When AD authentication is not enabled, the system will validate the username and password against the credentials stored in the database through the existing logic referenced using DLL.
+After successful credential validation, the system will generate a short-lived Bearer Token (JWT) and a Refresh Token. The Bearer Token will contain authenticated user information, and the Refresh Token will be securely stored by the client.
+For every subsequent request, the new REST API will validate the Bearer Token provided by the client.
+The new REST API will extract the user’s information from the validated Bearer Token and use it to authenticate and authorize the user for the requested operation.
+When the Bearer Token expires and a valid Refresh Token is presented, the system will issue a new Bearer Token using an existing refresh token without requiring the user to reauthenticate.
+If the Bearer Token is invalid and no valid Refresh Token is available, the system will return an appropriate error response (such as HTTP 401 Unauthorized), and the React UI will handle the error.
+
+### [Heading5] APIs
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
+
+### [Heading5] Success Codes
+200 OK
+
+### [Heading5] Error Codes
+401 Unauthorized
+403 Forbidden
+
+### [Heading4] 5.7.2 Authorization Model
+This section describes how user access and UI control behaviour are governed throughout the system. It covers the permission data structure, the flow from authentication to UI enforcement, and how both the permission object and session-level flags are consumed by the React frontend.
+
+### [Heading5] Maintenance (Administration & Setup)
+Permission and role management is handled entirely by the existing AQS Advantage Control Panel application. No new administration UI is being built as part of the modernization.
+
+### [Heading5] Frontend Enforcement
+The React frontend consumes the permission object and session data from the GetUserData API and enforces them at the UI layer.
+Field/Control-Level Permissions
+After user logs in, call GetUserData API → API returns the permission object (xdiSecurity)
+Frontend parses the object into an optimized lookup map organized by LOB → Page → Field matchCodes
+For each UI control, the app looks up its permission using the LOB → Page → Field matchCode hierarchy
+Visibility and enabled state are applied based on @vis and @dis attributes:
+If @vis is "F", the control is hidden
+If @dis is "T", the control is rendered as disabled/read-only
+Special handling is included for TAB controls, DIV containers (cascading to children), and companion controls (labels, calendars, info buttons)
+A configurable lookup strategy supports exact matching or wider search (across pages within a LOB, then global fallback)
+Menu/Action-Level Permissions
+Session-level flags (inquiry, rated, oos, discard, submit, etc.) are evaluated alongside the permission object for composite business rules
+Menu items and toolbar actions (Rate, Issue, Submit, Discard, etc.) are enabled or disabled based on combined checks of security permissions + session state + policy context
+Example: "Rate" requires RATE permission AND policy loaded AND tree enabled AND business lines added AND not in inquiry mode
+Implementation Note: Both enforcement layers are implemented as reusable React utilities — a permission application utility for field-level control and a centralized hook for menu-level permissions — ready for consumption across all features.
+
+### [Heading4] 5.7.3 Permissions
+This section describes the architecture of AQS permission object, which governs user access and UI control behaviour throughout the system. It details the key terms and structure of the permission data, outlines the flow from the authentication to UI enforcement, and explains how both XML and API based permission objects are used dynamically to secure the UI elements.
+Key Terms
+LOB (Line of Business): Functional area, Identified by @mc (matchCode)
+Page: Screen or module, Identified by @mc (matchCode)
+Field/Control: UI element, Identified by @mc (matchCode)
+@vis: Visibility attribute (“T” = show, “F” = Hide)
+@dis: Disabled attribute (“T” = disable “F” = enable)
+Permission Object (xdiSecurity): XML/JSON structure containing all user permissions.
+API Data: Permissions can also be delivered as JSON from /api/permissions, structured by LOB, page and field, with vis and dis attribute.
+Flow
+User logs in: backend generates a permission object
+Frontend loads the object, organized by LOB, page and field.
+For each UI control, the app looks up its permission using LOB, page and field matchCodes.
+The control’s visibility and enabled state are set based on @vis and @dis.
+Object is queried for each control using its unique identifiers.
+If @vis is “F”, the control is hidden.
+By using matchcodes and attributes, the system enforces, security consistently.
+
+### [Heading2] 6. Bundling & Build Strategy
+This section provides the information about how bundling and building will work in react API. Bundling is just the step where all the pieces of AQS app (JavaScript, CSS, images, etc.) get packed and cleaned up so a browser can load them efficiently.
+6.1 Vite – Purpose and Tool Selection
+Vite is a modern frontend build tool that enables fast development through native ES module serving and produces optimized, cache-friendly production bundles for deployment. It integrates seamlessly with React and TypeScript, requires minimal configuration, and generates a predictable dist/ output suitable for enterprise deployment on IIS.
+With Vite, this works differently depending on whether developing or shipping the app.
+The above diagram illustrates how the AQS React application is processed during development and production, highlighting the different responsibilities handled by Vite in each mode.
+The flow begins with the AQS React source code, which includes:
+React components written in TypeScript/JavaScript
+Stylesheets (CSS)
+Static assets such as images and fonts
+This source code is the single input for both development and production workflows.
+
+### [Heading3] 6.2 Development workflow
+App starts with AQS app’s source files: JavaScript or TypeScript, React components, CSS, and images. When we run the app in development mode, Vite starts a local dev server.
+Instead of bundling everything together, Vite serves AQS files directly to the browser as ES modules. This means the app starts up very fast, even for large projects.
+Vite also prepares third-party libraries (like React) ahead of time using a fast tool, so imports resolve quickly, and things stay snappy.
+While the app is running, the dev server stays connected to AQS browser. When you change a file, only that specific part updates instantly-no full-page refresh. This makes development smooth and keeps your flow uninterrupted.
+
+### [Heading3] 6.3 Build workflow
+When app is build for production, Vite takes the same source code and switches into build mode.
+At this point, Vite hands off the heavy lifting to a bundler that’s focused on optimization. The goal is to make the app as fast and efficient as possible for real users.
+During this step:
+Unused code is removed
+The app is split into smaller pieces so pages load only what they need
+Files are compressed to reduce download size
+File names are hashed so browsers can cache them safely
+Finally, everything is written in a dist/ folder. This folder contains the finished app: optimized HTML, JavaScript, CSS, and assets.
+
+### [Heading2] 7. Component Library
+
+### [Heading3] 7.1 Overview
+The AQS React project uses a ready-made library of reusable UI components based on the Material UI framework. These components replace the legacy VB6, HTC controls, and other controls with React components.
+
+### [Heading3] 7.2 Reusable Components
+The following list outlines the HTC components used in the legacy application and their corresponding MUI components. Based on our review of the existing AQS codebase (AQS>advantage>website>system>behaviors), this list covers all HTC components presently used in the AQS application and will be updated as new components are added during the UI modernization effort.
+Legacy Component |  | Purpose | MUI Equivalent
+ActionDropDownList.htc |  | Dropdown list with action capabilities | Menu + MenuItem / Select dropdown
+Actionmenu.htc |  | Menu bar with action items | Menu, MenuItem,
+AqsChecklist.htc |  | Checkbox list control | Checkbox + FormGroup + FormControlLabel
+Calendar.htc |  | Date picker calendar control | DatePicker
+checkbox.htc |  | Enhanced checkbox with styling | Checkbox
+Combo.htc |  | Combo box (dropdown + text input) | Autocomplete
+Dropdown.htc |  | Standard dropdown list | Select + MenuItem
+EnabledProperty.htc |  | Enabled/disabled property handler | disabled prop
+ImageButton.htc |  | Image-based button with states | IconButton, Button
+IMDBXmlList.htc |  | In-memory XML list control | DataGrid
+KPCombo.htc |  | Key-pair combo box | Autocomplete (key-value)
+Maxlength.htc |  | Maxlength enforcement | TextField (inputProps.maxLength)
+OrderedList.htc |  | Ordered / numbered list | List, ListItem, <ol>
+ProgressIndicator.htc |  | Progress bar / indicator | LinearProgress, CircularProgress
+Radiobutton.htc |  | Enhanced radio button | Radio, RadioGroup
+setSearch.htc |  | Search functionality | TextField + filtering logic
+Tabstrip.htc |  | Tab navigation | Tabs, Tab
+ToolButton.htc |  | Toolbar button | IconButton, Button
+Tooltip.htc |  | Tooltip / hover help | Tooltip
+TreeFacade.htc |  | Tree view | TreeView, TreeItem
+TreeFacadeNodSel.htc |  | Tree with node selection | TreeView (controlled selection)
+XmlList.htc |  | XML-bound list/grid | DataGrid
+HTC & VB Components Transformations (Examples)
+Below are the examples that demonstrate replacement of HTC controls with React MUI components.
+1. Checkbox.htc component is replaced with MUI checkbox component
+2. Calendar.htc is replaced by MUI Date Calendar component.
+Common Components that will be used across AQS applications.
+Design tokens will be defined by the front-end team post style guide sign-off, factoring in any application-specific updates for AQS.
+Component Name | Purpose | MUI License
+Header Section | 
+Menu > MenuItem | Navigation menu | Not required
+Navigation Component | 
+TreeView -> TreeItem | Tree view structure until four level nesting. | Not required
+Form Elements | 
+FormGroup | Form element wrapper | Not required
+Checkbox | Form element | Not required
+FormControlLabel | Form element | Not required
+Select (Dropdown) | Form element | Not required
+DatePicker | Calendar control | Not required
+TextField | Form element | Not required
+Radio | Form element | Not required
+RadioGroup | Radio element wrapper | Not required
+Tooltip | Quick info | Not required
+Progress Elements | 
+Loader | To show during the page load | Not required
+Linear Progress | Progress update | Not required
+Container Elements | 
+Tab Navigation | Tabular format to show tangible data in one page | Not required
+Box, Stack | Wrapper | Not required
+Card, Paper | To show the article or multiple elements | Not required
+List > ListItem | Listing of the elements | Not required
+Data Grid Element | 
+Table | Table grid | Not required
+Pagination | Multiple page data loading indicator | Not required
+Overlay Elements | 
+Draggable Dialog | Pop-up/modal | Not required
+Custom Components
+Components that aren’t supported by MUI component library are indicated as below:
+Component Name | Purpose | MUI license
+Grid Plus accordion | Grid + Accordion is not the default component given by MUI hence we need to use the combination of it. | Not Required
+Transfer + Dialog | The dialog functionality needs to be customized based on the drag and drop of the element from left to right section. | Not required – Need basic customizations for rendering the pop-up
+
+### [Heading3] 7.3 MUI (V.7) + Tailwind (V.4)
+MUI components are declared centrally in the React application and reused as common components wherever required. Component variants are derived from the MUI theme, Tailwind class names are applied for styling, and conditional logic and functions are used to support required functionality.
+Minimizes reliance on bulky and difficult-to-maintain custom CSS files
+Helps prevent style conflicts by using utility-first, scoped classes
+Enhances code readability and consistency by keeping styling close to components
+Enables faster and more predictable UI changes
+Reduces excessive usage of inline styling and SX props overrides
+Combines MUI’s mature component ecosystem with Tailwind’s flexibility and control
+Supports a clean, scalable, and maintainable UI architecture across the application
+Below are the illustrative code snippets for different approaches:
+Approach 1: Custom CSS
+Approach 2: MUI Specific
+Approach 3: MUI + Tailwind (This approach shall be applicable for the new AQS application.)
+Comparative View:
+Approach | Styling Control | Maintainability | Custom Design | CSS Size
+Plain CSS | High | Low | High | Large
+MUI Only | Medium | Medium | Limited | Small
+MUI + Tailwind | High | High | High | Minimal
+Custom SVG/PNG Icons:
+We will use custom SVG/PNG icons instead of third-party icon libraries to improve performance. Since the legacy application uses a limited set of icons, custom SVGs/PNGs will help reduce dependencies while ensuring better control over styling and optimization.
+
+### [Heading3] 7.4 MUI Theme > Design Tokens
+Based on the designs we are picking up the colour codes and styles of the component and adding those in theme and theme constants for reusable colour variable and the fonts, wrapper etc.
+Theme - Used to define common design variables such as colour codes, fonts, and layout sizes. These constants help maintain consistency and allow reuse across the application and theme configuration files.
+Theme Provider – Used to configure and manage MUI component variants and classes as needed. These configurations are applied at the file level to customize and maintain consistent styling across components.
+Please Note – This is an ongoing activity, we will be adding and modifying the design assets colour codes based on the upcoming changes/additions.
+
+### [Heading2] 8. Non-Functional Requirements
+
+### [Heading3] 8.1 Maintainability
+Robust error handling and diagnostics ensure maintainability:
+User-friendly error messages for clarity and trust
+Detailed error logging includes source, user, role, timestamp, layer, and type
+Error storage & retrieval via centralized logging preferred by TMNAS.
+
+### [Heading3] 8.2 Security
+This section talks about the various security aspects of the application.
+
+### [Heading4] 8.2.1 Data in Motion
+All communication between the React frontend and the .NET Framework 4.8 Web APIs is performed over HTTPS (or as per TMNAS standard).
+Sensitive data is transmitted only when required and is never exposed over unsecured channels.
+
+### [Heading4] 8.2.2 API Security
+The .NET Web API layer is the sole security enforcement point — no security decisions are made in the React frontend
+The JwtAndGuidAuthentication filter runs on every incoming request before any controller logic or DLL invocation executes
+All three cookies — JWT token, AppGuid, and UserId — must be present and valid for the request to proceed
+Missing or invalid cookies return 401 or 403 with a sanitised error message — no internal system detail is exposed
+Both the React SPA and .NET Web API are hosted under a single IIS application — all requests are same-origin, no CORS configuration required
+Authorization checks are performed after authentication — see Section 5.7.2
+
+### [Heading4] 8.2.3 Frontend Security
+The React frontend contains no security logic — all enforcement is delegated to the .NET API layer
+JWT token, AppGuid, and UserId are held exclusively in HttpOnly cookies set by the AuthController — never accessible to JavaScript
+Browser transmits all three cookies automatically with every API request — React neither reads nor manipulates them
+No sensitive data stored in localStorage or sessionStorage — used only for non-sensitive working state such as navigation context and page configuration (see Section 3.2)
+Client-side validation is limited to basic checks such as required fields and format validation, consistent with the legacy application
+
+### [Heading4] 8.2.4 Platform, Network & Infrastructure Security
+Web Application Firewall (WAF), DDoS protection, and network-level security controls shall be applied as per TMNAS enterprise standards.
+The solution will leverage TMNAS-approved cloud/on-premises and infrastructure security services for traffic filtering, threat detection, and denial-of-service protection.
+Infrastructure hardening, patching, monitoring, and security operations are governed by TMNAS security policies and operational procedures.
+
+### [Heading4] 8.2.5 Security & Threat Protection
+Threats / Attack Scenarios | Mitigation Approach | Proposed Approach
+Software Supply Chain Failures – Vulnerable npm/NuGet packages | Dependency scanning, version control | Use any TMNAS approved tool such as Snyk / NPM audit and lock package versions, scan during CI/CD (GitHub Actions), avoid untrusted libraries
+Cryptographic Failures – Weak encryption, plain-text data | Use strong encryption & key management | Use Data Protection API, HMAC SHA256, enforce HTTPS/TLS 1.2+, hash passwords as per TMNAS/AQS standard
+Authentication Failures – Weak login/session handling | Strong auth, session security | Use AD / Identity Server, enforce JWT with expiry, secure cookies.
+Software/Data Integrity Failures – Tampered code/data | Integrity checks, signed updates | Use code signing, verify JWT signatures, enable HTTPS, CI/CD pipeline integrity checks
+Security Logging & monitoring/ logging | Centralized logging | Use common endpoints that have developed as part of this migration; Endpoints will be reusing existing AQS logging mechanism through DLLs (e.g. DB logs, elk).
+Cross-Site Scripting (XSS) | Input Sanitization & Output Encoding | React automatically escapes HTML content to reduce XSS risks. Additional validation and sanitization are implemented on API inputs. Security headers such as Content Security Policy (CSP) are enforced through IIS or reverse proxy.
+Man-in-the-Middle (MITM) Attack | HTTPS / TLS Encryption | All communication between React frontend and .NET APIs are recommended over HTTPS using TLS 1.2 or higher. IIS is configured to disable older protocols (SSL, TLS 1.0, TLS 1.1) as per TMNAS standard.
+Cross-Site Request Forgery (CSRF) | SameSite cookies | APIs validate tokens included in request headers. SameSite cookies are enabled to reduce CSRF risks.
+CORS Misconfiguration | Restrict allowed origins, methods, and headers | Configure CORS policy in ASP.NET (Add Cors) with specific origins, avoid AllowAnyOrigin with credentials, allow only required methods/headers, validate origin dynamically if needed
+Clickjacking | Frame protection | Use X-Frame-Options: DENY or CSP frame-ancestors
+
+### [Heading4] 8.2.6 Application Security Implementation
+Infrastructure-level controls — including TLS, certificate management, HSTS, and network security — are governed by TMNAS enterprise security standards.
+JWT payload design
+AuthController generates a JWT token carrying minimum required claims: user identity and token expiry
+Signing algorithm and token lifetime to be confirmed with TMNAS security team prior to production deployment
+Cookie configuration
+The AuthController sets three separate cookies on the authentication response:
+Cookie | Purpose | HttpOnly | SameSite | Expiry
+JWT token | Authentication | True | Strict | Per TMNAS standard
+AppGuid | Kickout users from the system during maintenance | true | Strict | Independent of JWT
+UserId | User identity for DLL calls | true | Strict | Independent of JWT
+All three cookies set by application code in the AuthController
+Secure flag enforced at IIS level per TMNAS infrastructure standard
+On logout, AuthController explicitly expires all three cookies — React clears local state and redirects to login
+AppGuid and UserId propagation
+JwtAndGuidAuthentication filter validates all three cookies on every request
+Once validated, UserId and AppGuid are available to downstream DLL invocations, scoping all backend operations to the authenticated user and application session
+
+### [Heading3] 8.3 Browser Support
+Compatibility will focus only on major browsers: Google Chrome, Mozilla Firefox, and Microsoft Edge.
+Application will support current versions – 2;
+Legacy browser support (e.g., IE8) will not be provided.
+
+### [Heading2] 9. Unit Testing Strategy
+
+### [Heading3] 9.1 React Strategy
+In React, ViteTest and React Testing Library will be used for unit testing.
+
+### [Heading3] 9.2 API Strategy
+Overview
+The API unit testing strategy ensures the correctness, reliability, and robustness of the Web API endpoints in the TMNAS.AQSAdvantage.Api project. Unit tests validate that controllers and their actions behave as expected under various conditions, including valid inputs, invalid inputs, edge cases, and error scenarios. The tests are designed to catch regressions early and maintain code quality throughout the development lifecycle.
+Testing Framework and Tools
+MSTest Framework: The primary unit testing framework used for API testing. MSTest is a free, open-source testing framework integrated with Visual Studio, providing attributes such as [TestClass], [TestMethod], [TestInitialize], and a comprehensive assertion library.
+Moq: A mocking library used to isolate the controller logic from external dependencies such as databases, third-party services, and legacy components.
+Target Framework: .NET Framework 4.8
+Test Project Structure
+Test Project: TMNAS.AQSAdvantage.Controllers.Tests
+Organization: Each API controller has a corresponding test class with the naming convention {ControllerName}Test.cs.
+Namespace Convention: Tests are organized in namespaces matching the structure of the API project (e.g., AQSWebApi.Tests.Controllers).
+Testing Approach
+1. Arrange-Act-Assert Pattern
+All tests follow the AAA (Arrange-Act-Assert) pattern for clarity and maintainability:
+Arrange: Set up test data, mock dependencies, and initialize the controller under test.
+Act: Execute the controller action being tested.
+Assert: Verify the expected outcome using MSTest assertions.
+2. Test Initialization
+The [TestInitialize] attribute is used to set up common test prerequisites, such as HttpContext initialization for controllers that depend on HTTP-specific features (cookies, sessions, etc.).
+3. Dependency Isolation
+External dependencies are mocked using the Moq library to ensure true unit testing isolation.
+Legacy components (e.g., pZSecurity.cZSecurity) that cannot be easily injected are documented for future refactoring to support dependency injection.
+4. Test Coverage Categories
+Positive Scenarios: Verify correct behavior with valid inputs.
+Negative Scenarios: Verify appropriate error handling with invalid inputs (null, empty, malformed data).
+Edge Cases: Test boundary conditions and unusual but valid inputs.
+HTTP Status Codes: Validate that appropriate status codes are returned (e.g., 200 OK, 401 Unauthorized, 400 Bad Request).
+Response Content: Verify the structure and content of API responses.
+5. Naming Convention
+Test methods follow the naming pattern: {MethodName}_{Scenario}_{ExpectedBehavior} for readability and self-documentation.
+Sample Test Structure
+Limitations and Future Improvements
+Legacy Dependencies: Some controllers depend on legacy components that do not support dependency injection. Future refactoring should introduce interfaces and dependency injections to enable full test coverage.
+Continuous Integration
+Unit tests are executed automatically as part of the CI/CD pipeline in Azure DevOps.
+Failed tests block the build to prevent regression from being merged.
+
+### [Heading2] 10. Migration Strategy
+
+### [Heading3] 10.1 Overview
+The migration strategy focuses on incrementally modernizing legacy ASP/ASPX pages into a React-based architecture while preserving existing backend business logic and navigation behavior.
+The legacy system is built on a combination of ASPX pages, VBScript event handling, XSL-driven UI rendering, and XML Data Islands. These cannot be migrated as-is. Instead, each page is analyzed, classified, and rebuilt using a structured approach that maps legacy responsibilities to their modern equivalents.
+
+### [Heading5] 10.1.1 Assumptions
+Legacy ASP, VBS, and XML files serve as reference artefacts only — they are not reused or converted directly
+All business logic remains in the backend — no business rules are reimplemented in React
+The JwtAndGuidAuthentication filter handles all authentication — pages do not implement auth logic
+XSL files are not transpired or converted — their rendering responsibilities are replaced by MUI components and React state
+PageBuild API returns all dynamic control data — React does not hardcode field definitions for dynamic pages
+Browser commands returned by the server are the source of truth for runtime UI state changes
+All navigation goes through useSmartNavigation / action orchestration — no direct URL manipulation
+Global variables from legacy VBScript are replaced by useGlobalVariableStore with matching key names where possible
+Known gaps identified during migration are documented explicitly and tracked separately — they do not block migration completion
+Work sheets and screen-specific XSL files are out of scope for this version of the strategy
+
+### [Heading5] 10.1.2 Legacy to Modern Conversion Overview
+The following diagram illustrates the two-path conversion flow from the legacy technology stack to the modern React architecture:
+
+### [Heading5] 10.1.3 XSL to MUI Responsibility Mapping
+In the legacy system, XSL files were responsible for UI rendering, styling, default control behavior, and attribute propagation. In the modern architecture, these responsibilities are not reimplemented manually — they are replaced by MUI components, React props, and the FormRenderer system.
+XSL Responsibility | Modern Equivalent
+HTML generation | React components (.tsx)
+CSS styling and layout | MUI theming + Tailwind utility classes
+Default control behaviour | MUI component defaults
+Attribute handling (@required, @disabled) | Component props via FormRenderer
+Layout positioning (@top, @left, @ctrlwidth) | row / col derived from XML Data Island (see Section 2.6)
+XML list rendering (180+ XSL files) | DataGrid / CommonDataGrid with JSON config
+XSL transform of XML → HTML tables | XML → JSON conversion + rows[] fed to DataGrid
+Row selection and events | onRowClick, action handlers in React
+Form controls (@controltype) | NormalizedField → FieldRenderer → MUI control
+XSL file classification
+XSL Category | Legacy Files | Modern Replacement
+Form controls | Controls_ISLLSYS_20010101.xsl, Controls_ISLLSYS_ScreenDesigner_20010101.xsl | FormRenderer + FieldRenderer (Section 2.3.7)
+XML lists | 180+ files across POL, STR and other folders | CommonDataGrid with configuration-driven grid definition
+Work sheets | TBD | TBD
+Screen specific | TBD | TBD
+
+### [Heading3] 10.2 Key Aspects of Migration Approach
+
+### [Heading5] 10.2.1 Routes and Component Mapping
+All migrated pages are accessed via two generic routes — there is no one-to-one route per page:
+/static/:folder/:aspFileName — for static and hybrid pages
+/dynamic/:folder/:aspFileName — for PageBuild-driven dynamic pages
+The routing layer maps the backend-resolved ASP filename to either route. For static and hybrid pages, a dedicated React component is created per ASP version, declared explicitly in the page's JSON configuration via componentName. This ensures traceability between the legacy ASP file, the migration configuration, and the React implementation.
+
+### [Heading5] 10.2.2 Rendering Strategy
+Rendering behavior depends on page classification:
+Dynamic pages
+UI controls are driven entirely by the PageBuild API response
+Controls are rendered dynamically via FormRenderer and FieldRenderer
+Row and column positioning is derived from the XML Data Island during conversion (see Section 2.6)
+No static schema file is required
+Static / Hybrid pages
+UI markup lives in a dedicated .tsx component file
+A versioned JSON configuration file provides metadata, permissions, lifecycle hooks, and event wiring
+Static controls from the schema are merged with PageBuild values at render time via mergeControlsWithPageBuild
+The component remains free of business logic — behavior is delegated to handlers and hooks
+Rendering strategies declared in the JSON configuration:
+Strategy | Behaviour
+static | Static schema controls are the source of truth; PageBuild values are merged in
+hybrid | Same as static — schema controls merged with PageBuild values
+dynamic | PageBuild fields only — no static schema fallback
+
+### [Heading5] 10.2.3 Config-Driven UI for Static Pages
+Each static or hybrid page version is represented by its own dedicated versioned JSON configuration file, stored under src/schema/<folder>/. File names follow the pattern <pageName>_<version>.json, directly reflecting the legacy ASP file name and version code.
+Examples:
+src/schema/pol/str-piphsys-20010101.json
+Each file is standalone — there is no combined page family file. A new version of a page results in a new JSON file, not a new key within an existing file. This ensures each version is independently reviewable, diffable, and deployable without risk of affecting other versions in the same page family.
+
+### [Heading5] 10.2.4 Component Creation
+Legacy ASP/ASPX pages cannot be directly reused. Each static page requires a new React component (.tsx). The legacy ASP, VBS, and XML files serve as reference artefacts only.
+The migration process involves reviewing the legacy ASP layout and VBScript logic, identifying UI elements, flows, and backend touchpoints, scaffolding the React component, and manually refining it to ensure correctness and parity with legacy behaviour.
+A custom tooling approach to accelerate initial scaffolding and layout translation is planned — details to be confirmed.
+
+### [Heading5] 10.2.5 Encapsulation and Reusability
+Logic is clearly separated to avoid duplication:
+Page-specific logic — behavior unique to a specific page or version, contained in the component and its handler file
+Common logic — shared handler modules, hooks, and utilities covering navigation, PageData API, rules evaluation, permissions, and state updates
+Handlers receive a well-defined execution context including navigation state, frame metadata, and helper utilities. Pages remain thin and focused on composition — shared behavior changes do not require reworking every page.
+
+### [Heading3] 10.3 Step-by-Step Migration Approach
+Assumptions per step
+Each step is repeatable across all pages regardless of complexity
+Simple pages (e.g. str-piphsys-20010101) follow the same steps as complex pages (e.g. pol-piphpol-20150801) — complexity affects effort, not process
+Steps 2a and 3 apply to both paths
+Step 1 — Page Analysis (Legacy)
+Each migration begins with a detailed analysis of the legacy page using manual code review of ASP, VBS, and XML files, and runtime observation where applicable.
+Key focus areas:
+UI structure and layout intent from the ASP and XSL files
+User interactions — buttons, tabs, menus, form events from the VBS file
+Navigation triggers and backend touchpoints — PageData API endpoints, object names
+Browser commands handled — SET_TEXT, LOAD_COMBO, NAVIGATE, SET_DISABLED etc.
+Global variables used — session array indices, dirty flags, security booleans
+XSL files used — classify as Form, XML List, or other
+XML Data Island structure — control definitions, call stacks, tab definitions
+Example — str-piphsys-20010101: Analysis identified 4 tabs, 3 XSL XML lists (WIP, Policy, Print), PageData API endpoints for WIPSearch, POLICYSEARCH, PRINTSEARCH, and PRINTJOBS, and key global variables including marrSessionInformation, mlngPageCount, and mblnDeleteAllowed.
+Example — pol-piphpol-20150801: Analysis identified 5 tabs, 7+ server entities (POLPOL, POLPOLV3X, POLNAM, POLAGT, POLPOLEXT, POLStat, POLXCP), the EEBrowser CallServer mechanism, cascading field dependencies, and a billing tab injected via a <billingtab/> XML marker.
+Step 2 — Page Classification
+After analysis, the page is explicitly classified as static/hybrid or dynamic.
+Dynamic pages — UI structure is primarily driven by PageBuild XML. Rendered via /dynamic/:folder/:aspFileName. Migrated by integrating with FormRenderer and browser command workflows.
+Static / Hybrid pages — UI layout is custom or heavily scripted in legacy ASP/VBScript. Rendered via /static/:folder/:aspFileName. Require a dedicated React component and JSON configuration.
+This classification determines which renderer is used, whether a PageBuild flow is involved, and the shape of configuration and component work required.
+Step 2a — API Design and Implementation
+For each page, backend WebAPI endpoints are defined or updated to provide the data and operations required by the React component. API contracts are documented with request/response schemas and error handling. New APIs or enhancements to existing ones are implemented following RESTful principles and the security approach described in Section 5.7.
+Step 3 — Identify and Leverage Global and Reusable Building Blocks
+Before writing page-specific code, existing global providers, hooks, and utilities must be reviewed (see Section 2.3):
+Navigation must always go through useSmartNavigation / action orchestration
+XML server interactions must use runPageDataCall or PageData API from @services/page-data-call
+Dialogs and confirmations must use DialogProvider / useDialogStore
+Global session state must use useGlobalVariableStore
+EEData payloads must be built via buildEEDataArray or buildButtonEEDataArray
+Browser command responses must be processed via parseBrowserCommandsFromPageDataCall and applied via executeCommands
+Reusable UI components — MUI-based or shared custom components — must be used wherever possible to ensure visual consistency and reduce duplication.
+Example — pol-piphpol-20150801: useFormCommit is the single abstraction for all field commits, replacing dozens of disparate VBScript event handlers. It internally handles EEData construction, PageData API invocation, browser command parsing, and session snapshot persistence.
+Step 4 — Create or Update the JSON Configuration
+For static or hybrid pages, a versioned JSON configuration file is created under src/schema/<folder>/<pageFamily>.json. The configuration declares page metadata, version keys, legacy references, permissions, UI rules, lifecycle hooks, and the React component name.
+A single JSON file can contain multiple version keys to support parallel ASP variants of the same page family.
+The JSON does not define JSX layout — it acts as a lightweight contract between routing, orchestration, and rendering. Configuration is easy to review and diff, and the UI can evolve naturally in TypeScript/React files.
+Step 5 — Implement the React Component
+A dedicated React component (.tsx) is created matching the componentName declared in the JSON. The component is responsible for:
+Rendering UI using MUI and shared components
+Organising PageBuild response into tabs via organizePageBuildByTabs
+Merging static schema controls with PageBuild values via mergeControlsWithPageBuild
+Binding events declaratively (onClick, onChange, onBlur)
+Delegating navigation and backend interaction to handlers and hooks
+Remaining free of business logic
+Example — str-piphsys-20010101: The legacy ASP frameset with sub-frames was replaced by a sidebar-driven single-page layout with activeTab state controlling which subframe renders. The Str_Home_Subframe and Str_WIP_Subframe components are rendered conditionally.
+Example — pol-piphpol-20150801: The component uses TabView with keepMounted: true and lazy: true across 5 tabs. All tab content is rendered from a single PageBuild call at startup — eliminating the legacy per-tab server calls. deduplicateAliasedFields was introduced to prevent TABDET rendering the same field twice when PageBuild returns both an alias and its original.
+Step 6 — Event Handling and Backend Interaction
+User events are dispatched through the static event pipeline (see Section 4.8) and may invoke page-specific handlers, common reusable handlers, PageData API sequences, or orchestrated navigation actions.
+Example — pol-piphpol-20150801: Five distinct interaction patterns exist on this page:
+Trigger | Mechanism
+Field blur / change | useFormCommit.commitField → buildPageDataPayload → PageDataCall
+Info icon click | commitField reusing the same commit flow
+OK / NEXT / PATHUPDATE buttons | commitField with button matchcode
+CANCEL button | runPageDataCall with calls extracted from PageBuild
+Named Insured actions | PageData API called directly inside useNamedInsuredActions
+Step 7 — Browser Commands — Extension and Governance
+When a migrated page encounters a browser command it is reused from the central registry if already supported. If a new command is identified it is added to the central handler registry, implemented using React state and providers — never direct DOM manipulation — and documented for reuse potential.
+Browser commands must not be implemented ad hoc inside page components. All command logic remains centralised (see Section 2.3.4 and 2.3.5).
+Example — pol-piphpol-20150801: Commands arrive from two sources — the PageBuild loader response (auto-executed on mount via useBrowserCommands) and per-field PageData API responses (applied via executeCommands). Commands used include SET_DISABLED, SET_VISIBLE, SET_REQUIRED, SET_VALUE, and navigation commands.
+Step 8 — Validation and Parity Check
+Each migrated page is validated against the legacy implementation across navigation paths, backend interactions, visibility and permission rules, and error scenarios. Where parity differences are intentional they are documented explicitly.
+Example — str-piphsys-20010101: Known gaps include the WIP queue not being pre-populated on load, the Print Jobs and All Policies tabs rendering as placeholders, and permission-based tab rendering not yet enforced.
+Example — pol-piphpol-20150801: Known gaps include the OK button being forced enabled overriding required-field validation, the TABBIL tab depending entirely on PageBuild with no static fallback, and the component name mismatch between the file name and exported component.
+
+### [Heading2] 11. Multi-Window Support
+
+### [Heading3] 11.1 Overview
+The application supports multiple simultaneous browser windows to allow users to work on more than one policy or workflow at a time. This mirrors the behaviour of the legacy VBScript application, which relied on named windows, in-memory dictionaries, and direct parent–child communication to manage this capability.
+The modern implementation preserves the same business semantics while replacing legacy constructs with maintainable, secure equivalents: Multi-window and frame-specific state is managed using sessionStorage-backed Zustand sessionStore, ensuring that each browser window maintains an independent session context consistent with legacy behavior.
+A fundamental constraint carried forward from the legacy system is that at most one browser window may be open for a given policyId at any time. Attempting to open a policy that already has an open window must result in that existing window being focused, not a duplicate being created.
+
+### [Heading3] 11.2 Legacy behaviour alignment
+The legacy application managed multi-window behaviour using the following mechanisms:
+Legacy mechanism | Modern equivalent
+VBScript in-memory window dictionary | Window Registry singleton
+Deterministic window name (e.g. policy{policyId}) | Structured window key derived from type and policyId
+window.open with name reuse for focus | Registry lookup → focus or open
+Direct window.opener function calls | postMessage with origin validation
+Explicit close-all on logout | Registry iterates all handles and closes
+
+### [Heading3] 11.3 Architecture overview
+Multi-window support is implemented as shared infrastructure, not as page-specific logic. The following components are involved:
+Window Registry — a singleton service that is the authoritative record of all open child windows. It stores window handles, metadata (type, policyId, timestamp), and is responsible for enforcing the one-window-per-policy constraint.
+Browser command handler — when the backend returns a navigation instruction that targets a new window, the corresponding browser command handler is invoked. It computes the window key and delegates to the registry to determine whether to focus an existing window or open a new one.
+Cross-window communication layer — uses window.postMessage with explicit origin validation for all inter-window messaging, including logout broadcasts, tree refresh notifications, and WIP updates.
+State storage — per-window working state is held in sessionStorage, scoped to the individual window. Shared identity and session state is held in localStorage and is visible to all windows.
+Each child window is an independent React application instance with its own routing, layout, and component tree. It shares only the user identity and security state held in localStorage.
+
+### [Heading3] 11.4 Window Registry and lifecycle
+The Window Registry is instantiated once in the parent window and persists for the duration of the session. It is not replicated in child windows.
+Responsibilities:
+Registering newly opened child windows with their handle and metadata
+Enforcing the one-window-per-policy rule (see section 11.5)
+Detecting stale registrations where the window handle has been closed externally (e.g. the user closed the tab)
+Providing a method to close all registered windows during logout or session expiry
+Classifying windows by type (policy, singleton, external) to support targeted and bulk operations
+Window types:
+policy — opened for a specific policy, keyed by policyId. Subject to the one-window-per-policy constraint.
+singleton — a tool or utility window of which only one instance may exist regardless of content (e.g. a help window). Keyed by a fixed feature name.
+external — opened to an external URL. Tracked for cleanup but not subject to deduplication rules.
+Window key format:
+Type | Key format | Example
+Policy | policy_{policyId} | policy_10042
+Singleton | singleton_{featureName} | singleton_help
+External | external_{featureKey} | external_guidelines
+The key is used both as the window.open name parameter (to allow browser-level reuse) and as the registry lookup key.
+
+### [Heading3] 11.5 One-window-per-policy constraint
+This is a hard business rule. At most one browser window may be open for a given policyId at any time.
+When a browser command instruction is received to open a policy window:
+The registry is queried for an existing entry with key policy_{policyId}.
+If an entry exists and the stored window handle is still open (checked via handle.closed === false), the registry calls handle.focus() and the open instruction is suppressed. No navigation occurs.
+If no entry exists, or the stored handle is stale (handle.closed === true), window.open is called with the key as the window name. The returned handle and metadata are registered.
+If window.open returns null (popup blocked), the registry does not register an entry. An in-application notification is surfaced to the user with guidance to permit popups for this domain.
+When an existing window is focused (step 2), its current state is preserved. The window retains whatever sessionStorage context it was already displaying. No re-navigation is triggered unless the parent subsequently sends an explicit postMessage instruction.
+
+### [Heading3] 11.6 Integration with routing and browser commands
+Multi-window behaviour is driven entirely through the existing browser-command mechanism. No page-level or route-level code handles window management directly.
+The flow is:
+Backend returns a navigation instruction that targets a new window.
+The action orchestrator invokes the relevant browser command handler.
+The handler computes the window key and calls the registry.
+The registry resolves to either focus or open (per section 11.5).
+If a new window is opened, the child window bootstraps independently, reads its initial state from sessionStorage, and establishes its own routing context.
+URL parameters in child windows carry only minimal navigation identifiers (e.g. action code). All extended working state — policyId, nodeKey, xmlDetail, action context — is read from sessionStorage at startup and is not encoded in the URL.
+
+### [Heading3] 11.7 State isolation and storage strategy
+State category | Storage | Scope | Examples
+Per-window working state | sessionStorage | Individual window | policyId, action, nodeKey, xmlDetail
+User identity and security | localStorage | All windows (shared) | userId, authToken, roles, session expiry
+sessionStorage is natively scoped to the browser tab/window, so no additional namespacing is required. Each child window's sessionStorage is completely isolated from the parent and from other child windows.
+localStorage is shared across all windows on the same origin. Updates to shared state (e.g. session token refresh) are visible to all windows immediately and are used to drive cross-window logout coordination.
+
+### [Heading3] 11.8 Cross-window communication
+All communication between the parent window and child windows uses window.postMessage. Direct references to window functions (as used in the legacy VBScript implementation via window.opener) are not used.
+All receivers validate event.origin against the known application origin before processing any message. The specific message types, payload structures, and direction conventions will be defined during implementation once the full set of cross-window interactions has been confirmed. This section will be updated prior to the implementation sign-off review.
+
+### [Heading3] 11.9 Logout and cleanup
+On logout or session expiry:
+The parent window broadcasts a LOGOUT postMessage to all registered child window handles.
+The registry iterates all handles and calls .close() on each, starting with policy windows, then singletons.
+Per-window sessionStorage in child windows is cleared by the child's own logout handler on receipt of the LOGOUT message.
+Shared localStorage is cleared by the parent after all child windows have been instructed to close.
+The registry is emptied.
+This sequence replicates the legacy "close all child windows on logout" behaviour in a controlled, ordered manner and prevents orphaned windows from persisting with stale session state.
+
+### [Heading3] 11.10 Error handling and safety
+Popup blocker — if window.open returns null, the registry does not create a registration. An in-application banner is shown with a prompt to allow popups for the domain. The user can retry the action after granting permission.
+Stale handles — before any focus or postMessage operation, the registry checks handle.closed. If the handle is stale, the registration is removed and the action proceeds as if no window existed (i.e. a new window is opened).
+postMessage failures — message sends are wrapped in try/catch. If delivery fails (e.g. the target window closed between the handle check and the send), the failure is logged and no retry is attempted. The next registry operation will detect and clean up the stale handle.
+Memory leaks — the registry does not hold strong references beyond the window handle. Periodic background checks sweep for stale handle.closed === true entries and remove them.
+
+### [Heading2] 12. IIS Configuration
+We will be deploying both the API application and the React Frontend under a single IIS website configuration.
+Deployment structure will be as follows:
+TMNAS.AQS.Advantage/ → API Application
+TMNAS.AQS.Advantage/UI → React Frontend Application
+Hosting both applications under the same domain and website will help us avoid CORS-related issues and simplify communication between the frontend and backend.
+In addition, this approach provides the following benefits:
+Eliminates cross-origin request handling and related browser restrictions
+Simplifies authentication and session/cookie management
+Makes deployment, routing, and maintenance more streamlined
+Keeps frontend and backend access under a unified URL structure
+Required IIS configurations:
+Install the URL Rewrite Module on the target server.
+This is required for handling React frontend routing properly, especially for client-side routes under /UI.
+Configure IIS Rewrite Rules for the React application.
+Since the React frontend uses client-side routing (React Router), direct navigation or browser refresh on routes such as /UI/dashboard or /UI/profile may otherwise result in 404 - Not Found errors.
+Add the following rewrite rule in the React application's web.config file under the /UI deployment path:
+<rewrite>  <rules>    <rule name="React Routes" stopProcessing="true">      <match url=".*" />      <conditions logicalGrouping="MatchAll">        <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />        <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />        <add input="{REQUEST_URI}" pattern="^/api" negate="true" />      </conditions>      <action type="Rewrite" url="/UI/index.html" />    </rule>  </rules></rewrite>
+This configuration ensures that all non-API and non-static file requests under /UI are redirected to index.html, allowing React Router to handle navigation correctly.
+Configure the Application Pool with the following settings: or default app pool
+.NET CLR Version: .NET Framework v4.0
+Managed Pipeline Mode: Classic
+We will use an existing application app pool (PIPHAdvantage_AppPool) of advantage application (legacy) hosted on MTT
+In the IIS Website Advanced Settings:
+Update Physical Path Credentials to use your deployment/service account credentials.
+Please also verify that the required folder permissions are available for the configured credentials so both API and UI deployments can access their respective physical paths without issues.
+
+### [Heading2] 13. Conclusion
+This solution design defines a modern, maintainable frontend architecture for AQS while preserving the stability and integrity of existing backend logic. By introducing a React-based user interface and integrating it through a .NET Framework 4.8 Web API layer, the solution establishes a clear separation of responsibilities between the UI, orchestration, and backend layers, enforces strong security boundaries, and minimizes implementation risk.
+The proposed architecture supports scalable UI development, consistent user experience, and phased modernization without requiring changes to core business logic. The design is implementation-ready, supports incremental delivery, and provides a robust foundation for current requirements as well as future enhancements. Overall, it is well aligned with enterprise architectural, security, and maintainability standards.
+
+### [Heading2] 14. References
+
+### [Heading3] - API Design Document

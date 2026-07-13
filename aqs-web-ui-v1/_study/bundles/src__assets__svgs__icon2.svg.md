@@ -1,0 +1,17 @@
+# BUNDLE for src/assets/svgs/icon2.svg
+# 1 photo fragment(s), ascending start-line order.
+
+
+========== IMG_1859.md ==========
+---
+photo: IMG_1859.JPG
+type: vscode-code
+file: aqs-web-ui/src/assets/svgs/icon2.svg
+lines: n/a (image preview, no code)
+orientation: 0
+confidence: high
+notes: VS Code SVG preview. Tab icon2.svg; breadcrumb aqs-web-ui > src > assets > svgs > icon2.svg. Rendered icon = folders/copy-style glyph (two overlapping folder shapes), white. Status bar bottom-right "Whole Image 55x48, 619B". Explorer same tree as IMG_1858 with icon2.svg selected. Status bar: aqs-web-ui, hitanshu/experimental*, 0 errors 0 warnings, "No Solution". Taskbar 4:28 PM 7/10/2026. Same Copilot CHAT sessions panel.
+---
+Explorer sidebar (same tree as IMG_1858): src/assets/images/brandLogo.png; src/assets/svgs/icon1.svg, icon2.svg (selected), icon3.svg, icon4.svg; components, config, constants, features, hooks, lib, pages, providers, services, types, utils, app.css, app.tsx.
+
+No code content — editor pane shows rendered SVG preview only (overlapping-folders icon, 55x48, 619B).
