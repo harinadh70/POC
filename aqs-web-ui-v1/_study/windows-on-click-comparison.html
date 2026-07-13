@@ -1,0 +1,288 @@
+<title>Windows on Click — Before vs After, Explained</title>
+<style>
+  :root{
+    --paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;
+    --accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;--bad:#b3261e;
+    --now-bg:#fbf1e7;--now-line:#c07d2a;--better-bg:#eaf5ef;--better-line:#2e7d5b;
+    --code-bg:#0f1620;--code-fg:#d7e0ea;--code-dim:#8fa0b4;--code-key:#7cc0ff;--code-str:#9bd69b;--code-com:#6b7c8f;
+    --shadow:0 1px 2px rgba(20,30,45,.05),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --measure:70ch;
+  }
+  @media (prefers-color-scheme:dark){:root{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--bad:#e5776e;--now-bg:#241a10;--now-line:#a9702a;--better-bg:#10231a;--better-line:#3f9d6f;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 26px rgba(0,0,0,.35);}}
+  :root[data-theme="light"]{--paper:#F1F4F7;--ink:#151A21;--ink-soft:#3A4250;--muted:#69727F;--line:#DCE2EA;--card:#FFFFFF;--card-2:#F7F9FB;--accent:#2C6BB0;--accent-ink:#1F4E82;--legacy:#A96C22;--ok:#2E7D5B;--warn:#B07D12;--bad:#b3261e;--now-bg:#fbf1e7;--now-line:#c07d2a;--better-bg:#eaf5ef;--better-line:#2e7d5b;}
+  :root[data-theme="dark"]{--paper:#0E1218;--ink:#E7ECF2;--ink-soft:#B7C0CD;--muted:#8A94A3;--line:#242C37;--card:#151B23;--card-2:#11161D;--accent:#6EA9E7;--accent-ink:#9CC6F2;--legacy:#D89E58;--ok:#5EBE93;--warn:#E0B84D;--bad:#e5776e;--now-bg:#241a10;--now-line:#a9702a;--better-bg:#10231a;--better-line:#3f9d6f;}
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  h1,h2,h3,h4{text-wrap:balance;line-height:1.16;letter-spacing:-.02em}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  p{max-width:var(--measure)}
+  .m{font-family:var(--mono);font-size:.85em}
+
+  header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:12px;height:52px}
+  .brand{font-family:var(--mono);font-size:13px;font-weight:600} .brand b{color:var(--accent)}
+  .nav{margin-left:auto;display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;max-width:62%}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:0 0 auto;font-family:var(--mono);font-size:12px;color:var(--muted);padding:5px 9px;border-radius:6px;white-space:nowrap}
+  .nav a:hover{color:var(--ink);background:var(--card-2);text-decoration:none}
+
+  .hero{padding:50px 0 8px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(28px,4.8vw,42px);font-weight:760;margin:13px 0 0}
+  .lede{font-size:clamp(17px,2.3vw,20px);color:var(--ink-soft);max-width:var(--measure);margin:15px 0 0}
+  .primer{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+  .primer h3{margin:0 0 6px;font-size:16px}
+  .primer p{margin:6px 0 0;font-size:14.5px;color:var(--ink-soft)}
+
+  section{padding:26px 0;border-top:1px solid var(--line);margin-top:22px}
+  .num{font-family:var(--mono);font-size:12px;color:var(--legacy);font-weight:700;letter-spacing:.06em}
+  h2{font-size:clamp(20px,3vw,26px);font-weight:740;margin:6px 0 4px}
+  .oneline{color:var(--muted);margin:0 0 10px;font-size:15px}
+
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  @media (max-width:720px){.cmp{grid-template-columns:1fr}}
+  .panel{border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:var(--card)}
+  .panel .ph{padding:9px 15px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+  .panel.now .ph{background:var(--now-bg);color:var(--legacy);border-bottom:1px solid var(--line)}
+  .panel.better .ph{background:var(--better-bg);color:var(--ok);border-bottom:1px solid var(--line)}
+  .panel.now{border-left:4px solid var(--now-line)}
+  .panel.better{border-left:4px solid var(--better-line)}
+  .panel .plain{padding:12px 15px;font-size:13.5px;color:var(--ink-soft)}
+  .panel .plain b{color:var(--ink)}
+
+  pre{margin:0;background:var(--code-bg);color:var(--code-fg);padding:13px 15px;overflow-x:auto;font-family:var(--mono);font-size:12px;line-height:1.55}
+  pre .c{color:var(--code-com)} pre .k{color:var(--code-key)} pre .s{color:var(--code-str)} pre .d{color:var(--code-dim)}
+
+  .why{margin-top:12px;background:var(--card-2);border:1px solid var(--line);border-radius:10px;padding:13px 16px;font-size:14.5px;color:var(--ink-soft)}
+  .why b{color:var(--ink)}
+  .say{margin-top:10px;background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:13px 16px}
+  .say .lbl{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+  .say p{margin:5px 0 0;font-size:15.5px;color:var(--ink);font-style:italic}
+
+  .memo{background:var(--accent);color:#fff;border-radius:13px;padding:22px 24px;margin:8px 0;box-shadow:var(--shadow)}
+  .memo h3{margin:0 0 10px;color:#fff;font-size:14px;text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)}
+  .memo p{margin:0;font-size:17px;color:#fff;max-width:none}
+  .memo .hi{background:rgba(255,255,255,.18);border-radius:5px;padding:.05em .35em}
+
+  .gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px;margin-top:12px}
+  .g{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 15px}
+  .g dt{font-weight:700;font-size:14px}
+  .g dd{margin:4px 0 0;font-size:13.5px;color:var(--ink-soft)}
+  footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:13px;margin-top:30px}
+  @media (max-width:640px){body{font-size:16px}.nav{max-width:48%}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <span class="brand">windows<b>·</b>on-click</span>
+    <nav class="nav" aria-label="Sections">
+      <a href="#what">What it is</a>
+      <a href="#r1">1 Reuse</a>
+      <a href="#r2">2 Secrets</a>
+      <a href="#r3">3 Messages</a>
+      <a href="#r4">4 Guards</a>
+      <a href="#r5">5 Testable</a>
+      <a href="#say">Say it</a>
+      <a href="#gloss">Glossary</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Before vs After · "Windows on Click" · explained for confident talking</div>
+    <h1>The same feature — clumsy port vs. done right.</h1>
+    <p class="lede">Some clicks in AQS open a <b>separate window</b>. The recovered code opens it the exact way the 20-year-old VBScript did — which causes real problems in a modern browser. Here's each problem, the fix, why it's better, and <b>the one line to say</b> so you can hold your own with any engineer.</p>
+    <div class="primer">
+      <h3>The 20-second primer (so the rest lands)</h3>
+      <p><b>A "window"</b> = a separate browser pop-up window. <b>"On click"</b> = it happens when the user clicks something. <b>The rule to remember:</b> the old code was copied line-for-line from VBScript, so it kept habits that were fine in 2005 but are wrong for a browser today. Every fix below is about <b>doing the same feature the modern, safe way.</b></p>
+    </div>
+  </div>
+
+  <!-- WHAT -->
+  <section id="what">
+    <div class="num">00 — CONTEXT</div>
+    <h2>What actually happens on a click</h2>
+    <p>The click asks the server "what next?" The server says <span class="m">frame: NEWWINDOW</span> — "open this in a separate window." The code then builds a web address, opens a pop-up, and shows it. Simple in theory. The five problems below are all in <em>how</em> it does that.</p>
+  </section>
+
+  <!-- 1 REUSE -->
+  <section id="r1">
+    <div class="num">01 — REUSE THE WINDOW</div>
+    <h2>Every click opens a brand-new window</h2>
+    <p class="oneline">The biggest issue — and it's a real bug against your own design doc (SDD §11: "one window per policy").</p>
+    <div class="cmp">
+      <div class="panel now"><div class="ph">▲ Now — the problem</div>
+        <pre><span class="c">// a NEW unique name every single time</span>
+<span class="k">const</span> windowName =
+  <span class="s">`AQS_Window_${policyId}_${timestamp}`</span>;
+window.<span class="k">open</span>(url, windowName, features);</pre>
+        <div class="plain">Because the name has a <b>timestamp</b>, it's different on every click. The browser can only reuse a window if the name matches — so it <b>never reuses</b>. Click 5 times → <b>5 windows</b> pile up.</div>
+      </div>
+      <div class="panel better"><div class="ph">● Better — the fix</div>
+        <pre><span class="c">// stable key → reuse the same window</span>
+<span class="k">const</span> existing = registry.<span class="k">get</span>(key);
+<span class="k">if</span> (existing &amp;&amp; !existing.closed) {
+  existing.<span class="k">focus</span>();   <span class="c">// bring it forward</span>
+  <span class="k">return</span> <span class="s">'focused'</span>;
+}
+<span class="c">// else open one and remember it</span>
+registry.<span class="k">set</span>(key, window.<span class="k">open</span>(url, <span class="s">`AQS_${key}`</span>, features));</pre>
+        <div class="plain">A <b>registry</b> (a little address book of open windows) keyed by policy+page. If one's already open, <b>focus it</b>. One window per policy — exactly what the design doc asks for.</div>
+      </div>
+    </div>
+    <div class="why">🧠 <b>Analogy:</b> The old way is like opening a <b>new browser tab</b> every time you click a link to the same page — you end up with 20 tabs of the same thing. The fix <b>switches you to the tab you already have open.</b></div>
+    <div class="say"><div class="lbl">💬 Say this</div><p>"The current port names every popup uniquely with a timestamp, so `window.open`'s name-reuse never fires — every click spawns a new window. I'd add a window registry keyed by policy so we reuse and focus, which is what SDD §11 specifies anyway."</p></div>
+  </section>
+
+  <!-- 2 SECRETS -->
+  <section id="r2">
+    <div class="num">02 — KEEP DATA OUT OF THE ADDRESS BAR</div>
+    <h2>Sensitive data is passed in the web address</h2>
+    <p class="oneline">The pop-up's URL carries the raw session detail — visible, logged, and stored in history.</p>
+    <div class="cmp">
+      <div class="panel now"><div class="ph">▲ Now — the problem</div>
+        <pre><span class="c">// packs everything into the URL</span>
+params.<span class="k">set</span>(<span class="s">'action'</span>, followupAction);
+params.<span class="k">set</span>(<span class="s">'nodeKey'</span>, nodeKey);
+params.<span class="k">set</span>(<span class="s">'policyId'</span>, policyId);
+params.<span class="k">set</span>(<span class="s">'xmlDetail'</span>, xmlDetail); <span class="c">// ← big &amp; sensitive</span>
+url = <span class="s">`/form/${file}/${policyId}?${params}`</span>;</pre>
+        <div class="plain">All of it — including <span class="m">xmlDetail</span> (a chunk of policy data) — sits in the <b>address bar</b>. That's saved in browser history, server logs, and anything watching the URL.</div>
+      </div>
+      <div class="panel better"><div class="ph">● Better — the fix</div>
+        <pre><span class="c">// hand off privately, keep URL clean</span>
+<span class="k">if</span> (req.state)
+  setHandoff(<span class="s">'aqs:handoff:'</span> + key, req.state);
+<span class="c">// URL now carries only a tiny route</span>
+window.<span class="k">open</span>(req.url, <span class="s">`AQS_${key}`</span>, features);</pre>
+        <div class="plain">The data goes into <b>sessionStorage</b> — a private, in-browser drawer the new window reads on startup. The URL stays short and safe. This is the SDD §11.7 approach.</div>
+      </div>
+    </div>
+    <div class="why">🧠 <b>Analogy:</b> The old way <b>writes the customer's details on a postcard</b> — anyone handling it can read them. The fix puts them in a <b>sealed envelope</b> handed directly to the recipient.</div>
+    <div class="say"><div class="lbl">💬 Say this</div><p>"We're putting `xmlDetail` and session values in the popup's query string — that leaks into history and logs. The design doc says the child window should read its state from sessionStorage, so I'd hand off there and keep the URL minimal."</p></div>
+  </section>
+
+  <!-- 3 MESSAGES -->
+  <section id="r3">
+    <div class="num">03 — CALM MESSAGES, NOT BROWSER ALERTS</div>
+    <h2>A blocked pop-up throws a jarring browser alert</h2>
+    <p class="oneline">It uses the raw <span class="m">alert()</span> box instead of the app's own notification system.</p>
+    <div class="cmp">
+      <div class="panel now"><div class="ph">▲ Now — the problem</div>
+        <pre><span class="k">if</span> (!newWindow || newWindow.closed) {
+  <span class="k">alert</span>(
+    <span class="s">'Pop-up blocked!\n\n'</span> +
+    <span class="s">'Please allow pop-ups for this site...'</span>
+  );
+}</pre>
+        <div class="plain"><span class="m">alert()</span> <b>freezes the whole page</b>, looks like a system error, can't be styled, and ignores the app's design. Every other message in the app uses a clean banner — this one doesn't.</div>
+      </div>
+      <div class="panel better"><div class="ph">● Better — the fix</div>
+        <pre><span class="k">if</span> (!handle || handle.closed) {
+  notify(<span class="s">'warning'</span>,
+    <span class="s">'Pop-up blocked. Please allow pop-ups...'</span>);
+  <span class="k">return</span> <span class="s">'blocked'</span>;
+}</pre>
+        <div class="plain">Routes through the app's <b>notification system</b> — the same in-app banner used everywhere else. Non-blocking, on-brand, accessible. Matches SDD §11.10.</div>
+      </div>
+    </div>
+    <div class="why">🧠 <b>Analogy:</b> The old way is a <b>blaring fire alarm</b> that stops everything. The fix is a <b>polite notification</b> that slides in and lets you keep working.</div>
+    <div class="say"><div class="lbl">💬 Say this</div><p>"Popup-blocked uses a native `alert()`, which blocks the UI and breaks our design language. I'd route it through our notification store like every other message — the SDD even calls for an in-app banner."</p></div>
+  </section>
+
+  <!-- 4 GUARDS -->
+  <section id="r4">
+    <div class="num">04 — ONE SAFETY GUARD, NOT THREE</div>
+    <h2>The loop-prevention logic is scattered and duplicated</h2>
+    <p class="oneline">The "don't open windows forever" safety check lives in three places across two files.</p>
+    <div class="cmp">
+      <div class="panel now"><div class="ph">▲ Now — the problem</div>
+        <pre><span class="c">// guard A — in execute-action.ts</span>
+<span class="k">if</span> (popupContext || sessionGuardMatched) …
+<span class="c">// guard B — in the provider</span>
+<span class="k">if</span> (window.opener &amp;&amp; url === current) <span class="k">return</span>;
+<span class="c">// guard C — also in the provider</span>
+<span class="k">if</span> (lastOpenedUrlRef.current === url) <span class="k">return</span>;</pre>
+        <div class="plain">Three overlapping checks in two files. They can <b>drift apart</b>, and the reconstruction even flagged "duplicate command logic exists twice." Hard to reason about, easy to break.</div>
+      </div>
+      <div class="panel better"><div class="ph">● Better — the fix</div>
+        <pre><span class="c">// one guard, one place</span>
+<span class="k">if</span> (deps.isChildWindow()) <span class="k">return</span> <span class="s">'skipped'</span>;
+<span class="c">// reuse handles the "already open" case,</span>
+<span class="c">// so the other two guards disappear</span></pre>
+        <div class="plain">The registry (fix #1) already prevents duplicates, so two of the three guards <b>vanish</b>. One clear rule — "never open from inside a popup" — in one module.</div>
+      </div>
+    </div>
+    <div class="why">🧠 <b>Analogy:</b> The old way has <b>three different people all checking the same door lock</b> and sometimes disagreeing. The fix is <b>one doorman</b> who owns the door.</div>
+    <div class="say"><div class="lbl">💬 Say this</div><p>"Loop-prevention is duplicated across execute-action and the provider — three guards that can drift. Once we have the registry, dedup is automatic, so I'd consolidate to a single guard in one window-manager module."</p></div>
+  </section>
+
+  <!-- 5 TESTABLE -->
+  <section id="r5">
+    <div class="num">05 — TESTABLE, AND NO DATA IN THE LOGS</div>
+    <h2>Can't be tested, and it prints session data to the console</h2>
+    <p class="oneline">It calls the browser directly (untestable) and logs customer/session details.</p>
+    <div class="cmp">
+      <div class="panel now"><div class="ph">▲ Now — the problem</div>
+        <pre>console.<span class="k">log</span>(<span class="s">'[DEBUG] 📘 NEW WINDOW OPENING'</span>);
+console.<span class="k">log</span>(<span class="s">'[DEBUG] sessionInformation:'</span>,
+            sessionInfo); <span class="c">// ← prints PII</span>
+<span class="c">// calls window.open directly → hard to test</span></pre>
+        <div class="plain">Leftover <span class="m">[DEBUG]</span> lines print <b>session info, policy id, node key</b> to the browser console — noise and a small data leak. And because it talks to the browser directly, it <b>can't be unit-tested.</b></div>
+      </div>
+      <div class="panel better"><div class="ph">● Better — the fix</div>
+        <pre><span class="c">// browser access is injected → testable</span>
+createWindowManager({
+  openWindow, isChildWindow,
+  setHandoff, notify,
+});
+<span class="c">// debug logs removed; use logger.debug if needed</span></pre>
+        <div class="plain">The browser calls are <b>passed in</b>, so a test can swap in fakes and verify behavior. Debug logs are gone. Cleaner, safer, verifiable.</div>
+      </div>
+    </div>
+    <div class="why">🧠 <b>Analogy:</b> The old way is a <b>car welded shut</b> — you can't service it — that also <b>prints the customer's details on every receipt.</b> The fix opens the hood for servicing and stops printing private data.</div>
+    <div class="say"><div class="lbl">💬 Say this</div><p>"There are leftover debug logs printing session data, and the code calls `window.open` directly so it isn't testable. I'd inject the browser dependencies behind a small interface and drop the console logs — testable and no PII in the console."</p></div>
+  </section>
+
+  <!-- SAY -->
+  <section id="say">
+    <div class="num">★ — THE ONE THING TO SAY</div>
+    <h2>If you remember one sentence</h2>
+    <div class="memo">
+      <h3>The confident summary</h3>
+      <p>"The window-on-click code is a <span class="hi">literal 1-to-1 port of the old VBScript</span> — it works, but it keeps browser-unfriendly habits: it <span class="hi">spawns a new window every click</span>, <span class="hi">passes sensitive data in the URL</span>, uses a <span class="hi">jarring native alert</span>, and duplicates its safety checks. The fix is the <span class="hi">window registry from our own design doc §11</span> — reuse and focus one window per policy, hand off state via sessionStorage, use our in-app notifications, and consolidate the guards. One clean module replaces all of it."</p>
+    </div>
+    <p style="margin-top:16px">That single paragraph names the problem, the cause, the fix, and cites the design doc — which is exactly how a senior engineer would frame it.</p>
+  </section>
+
+  <!-- GLOSSARY -->
+  <section id="gloss">
+    <div class="num">📖 — GLOSSARY</div>
+    <h2>Every term you just used, in one line</h2>
+    <div class="gloss">
+      <dl class="g"><dt>window.open()</dt><dd>The browser command that opens a new pop-up window.</dd></dl>
+      <dl class="g"><dt>Registry</dt><dd>A small in-memory address book of the windows we've opened, so we can reuse them.</dd></dl>
+      <dl class="g"><dt>focus()</dt><dd>Bring an already-open window to the front instead of opening another.</dd></dl>
+      <dl class="g"><dt>sessionStorage</dt><dd>A private in-browser drawer for data — not shown in the address bar.</dd></dl>
+      <dl class="g"><dt>Query string / URL params</dt><dd>The <span class="m">?key=value</span> part of a web address; visible and logged.</dd></dl>
+      <dl class="g"><dt>PII</dt><dd>Personally identifiable / sensitive data (e.g. policy details) that shouldn't leak.</dd></dl>
+      <dl class="g"><dt>alert()</dt><dd>The old, page-freezing browser message box.</dd></dl>
+      <dl class="g"><dt>Guard</dt><dd>A safety check that stops something bad (here: opening windows in an endless loop).</dd></dl>
+      <dl class="g"><dt>window.opener</dt><dd>A flag that's set only when the current window was opened by another — i.e. "am I a pop-up?"</dd></dl>
+      <dl class="g"><dt>Inject / injectable</dt><dd>Passing a component's dependencies in from outside, so you can swap them in tests.</dd></dl>
+      <dl class="g"><dt>Unit test</dt><dd>An automated check that a small piece of code behaves correctly.</dd></dl>
+      <dl class="g"><dt>SDD §11</dt><dd>The Multi-Window Support section of your Solution Design Document — the "target" design these fixes align to.</dd></dl>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Windows on Click — before vs after · current code from the reconstructed <span class="m">browser-commands-provider.tsx</span>, improved code from <span class="m">window-manager.ts</span> (compiles) · aligned to SDD §11.</div>
+</footer>
