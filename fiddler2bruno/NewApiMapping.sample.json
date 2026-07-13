@@ -1,0 +1,8 @@
+{
+  "_comment1": "Rename this file to NewApiMapping.json to activate it.",
+  "_comment2": "valueFields[i] = JSON property name for legacy positional <value> #i+1.",
+  "_comment3": "Use \"\" to leave a position unmapped (it will be listed in converted.bru's docs tab).",
+  "_comment4": "Fill these from one known-good original/converted pair in the team's collection.",
+  "newApiPath": "/AQS.Advantage.NewWebApi/api/v1/ui/page/data",
+  "valueFields": ["", "", "", "", "", ""]
+}

@@ -1,0 +1,22 @@
+meta {
+  name: GET navigation
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/ui/navigation?NodeKey=POL123&Action=view
+  body: none
+  auth: none
+}
+
+params:query {
+  NodeKey: POL123
+  Action: view
+}
+
+headers {
+  Accept: application/json
+  Authorization: Bearer tok123
+  User-Agent: Mozilla/5.0
+}
