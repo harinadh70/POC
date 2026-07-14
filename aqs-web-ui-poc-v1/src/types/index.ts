@@ -193,4 +193,10 @@ export interface PageConfig {
   /** Grid list names this page hosts. */
   gridListNames?: string[];
   permissions?: string[];
+  /**
+   * Per-page hooks — the typed replacement for the legacy PageUniqueRoutine
+   * Execute calls ("local_window_onload" / "local_before_window_unload").
+   */
+  onLoad?: () => void;
+  onBeforeUnload?: () => void;
 }

@@ -1,0 +1,1668 @@
+<title>EEBrowser.vbs → React: Detailed Side-by-Side</title>
+<style>
+  :root {
+    --bg:#F8F8FA;--surface:#FFFFFF;--surface-2:#F0F1F5;--ink:#1A1D26;--ink-2:#3D4255;--ink-3:#5E6477;
+    --rule:#D6DAE3;--vbs:#9B6B2F;--vbs-bg:#FDF7EF;--vbs-border:#E6D4B8;--vbs-ink:#6B4A1F;
+    --react:#1B7B8A;--react-bg:#EEF7F9;--react-border:#B3DAE2;--react-ink:#135A66;
+    --accent:#2D5DA1;--accent-bg:#EBF0F8;
+    --gone:#B03030;--gone-bg:#FDEEEE;--kept:#1D7A42;--kept-bg:#EDF7F0;
+    --shadow:0 1px 3px rgba(26,29,38,.05),0 4px 16px rgba(26,29,38,.04);
+    --mono:'SF Mono','Cascadia Code','JetBrains Mono',Menlo,Consolas,monospace;
+    --body:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#111318;--surface:#1A1E26;--surface-2:#22262F;--ink:#E0E4ED;--ink-2:#B0B6C8;--ink-3:#7A8194;
+    --rule:#2A2F3B;--vbs:#D4A04A;--vbs-bg:#1E1810;--vbs-border:#3E3320;--vbs-ink:#D4A04A;
+    --react:#5CC0D0;--react-bg:#101E22;--react-border:#1E3A42;--react-ink:#5CC0D0;
+    --accent:#7BAEE0;--accent-bg:#1A2636;
+    --gone:#E07066;--gone-bg:#2A1616;--kept:#5EBE7A;--kept-bg:#14261A;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }}
+  :root[data-theme="light"]{
+    --bg:#F8F8FA;--surface:#FFFFFF;--surface-2:#F0F1F5;--ink:#1A1D26;--ink-2:#3D4255;--ink-3:#5E6477;
+    --rule:#D6DAE3;--vbs:#9B6B2F;--vbs-bg:#FDF7EF;--vbs-border:#E6D4B8;--vbs-ink:#6B4A1F;
+    --react:#1B7B8A;--react-bg:#EEF7F9;--react-border:#B3DAE2;--react-ink:#135A66;
+    --accent:#2D5DA1;--accent-bg:#EBF0F8;
+    --gone:#B03030;--gone-bg:#FDEEEE;--kept:#1D7A42;--kept-bg:#EDF7F0;
+    --shadow:0 1px 3px rgba(26,29,38,.05),0 4px 16px rgba(26,29,38,.04);
+  }
+  :root[data-theme="dark"]{
+    --bg:#111318;--surface:#1A1E26;--surface-2:#22262F;--ink:#E0E4ED;--ink-2:#B0B6C8;--ink-3:#7A8194;
+    --rule:#2A2F3B;--vbs:#D4A04A;--vbs-bg:#1E1810;--vbs-border:#3E3320;--vbs-ink:#D4A04A;
+    --react:#5CC0D0;--react-bg:#101E22;--react-border:#1E3A42;--react-ink:#5CC0D0;
+    --accent:#7BAEE0;--accent-bg:#1A2636;
+    --gone:#E07066;--gone-bg:#2A1616;--kept:#5EBE7A;--kept-bg:#14261A;
+    --shadow:0 1px 3px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  code,.mono{font-family:var(--mono);font-size:.84em}
+  code{background:var(--surface-2);border:1px solid var(--rule);border-radius:4px;padding:.06em .38em}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  :focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:4px}
+  h1,h2,h3,h4{text-wrap:balance;line-height:1.2;letter-spacing:-.012em}
+
+  /* Header */
+  .hdr{padding:40px 0 0}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(24px,4vw,36px);font-weight:760;margin:10px 0 0}
+  .lede{font-size:15px;color:var(--ink-2);margin:10px 0 0;max-width:64ch}
+
+  /* TOC */
+  .toc{margin:24px 0 0;padding:16px 20px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;box-shadow:var(--shadow)}
+  .toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:8px}
+  .toc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px}
+  @media(max-width:600px){.toc-grid{grid-template-columns:1fr}}
+  .toc-grid a{font-size:14px;padding:3px 0;display:flex;gap:8px;align-items:baseline}
+  .toc-grid .n{font-family:var(--mono);font-size:12px;color:var(--ink-3);min-width:22px}
+
+  /* Section */
+  .sec{margin-top:32px;border-top:1px solid var(--rule);padding-top:28px}
+  .sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .sec-num{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);min-width:24px}
+  h2{font-size:clamp(18px,2.5vw,22px);font-weight:720}
+  .sec-lines{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+  .sec-desc{font-size:14.5px;color:var(--ink-2);margin:4px 0 16px;max-width:64ch}
+
+  /* Two-column code */
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin:14px 0}
+  @media(max-width:700px){.pair{grid-template-columns:1fr}}
+  .pair-col{min-width:0}
+  .pair-label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:8px 14px;border-bottom:1px solid}
+  .pair-label.vbs{background:var(--vbs-bg);color:var(--vbs-ink);border-color:var(--vbs-border)}
+  .pair-label.react{background:var(--react-bg);color:var(--react-ink);border-color:var(--react-border)}
+  .pair pre{margin:0;border:none;border-radius:0;font-size:12.5px;line-height:1.6;padding:14px;min-height:100%;overflow-x:auto}
+  .pair pre.vbs{background:var(--vbs-bg)}
+  .pair pre.tsx{background:var(--react-bg)}
+  .pair-col:first-child{border-right:1px solid var(--rule)}
+  @media(max-width:700px){.pair-col:first-child{border-right:none;border-bottom:1px solid var(--rule)}}
+
+  /* Explanation blocks */
+  .expl{margin:14px 0 0;padding:16px 18px;background:var(--surface);border:1px solid var(--rule);border-radius:9px}
+  .expl h4{font-size:14.5px;font-weight:700;margin:0 0 6px;color:var(--ink)}
+  .expl p{font-size:14px;color:var(--ink-2);margin:6px 0;max-width:64ch;line-height:1.6}
+  .expl ul,.expl ol{font-size:14px;color:var(--ink-2);padding-left:20px;margin:6px 0}
+  .expl li{margin:4px 0;line-height:1.55}
+  .expl li code{font-size:12px}
+  .expl strong{color:var(--ink);font-weight:640}
+
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+  .tag.elim{background:var(--gone-bg);color:var(--gone)}
+  .tag.repl{background:var(--react-bg);color:var(--react)}
+  .tag.simp{background:var(--kept-bg);color:var(--kept)}
+
+  .note{margin:12px 0;padding:12px 16px;background:var(--accent-bg);border-radius:8px;font-size:13.5px;color:var(--ink-2);border-left:3px solid var(--accent)}
+  .note strong{color:var(--accent)}
+
+  details{margin:14px 0}
+  details summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--accent);padding:6px 0;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:'▸ ';font-family:var(--mono);font-size:13px}
+  details[open] summary::before{content:'▾ '}
+
+  footer{border-top:1px solid var(--rule);padding:24px 0 50px;margin-top:36px;color:var(--ink-3);font-size:13px}
+</style>
+
+<main class="wrap">
+
+<div class="hdr">
+  <div class="kicker">Complete Reference · Sprint Task 5</div>
+  <h1>EEBrowser.vbs → React: Detailed Side-by-Side</h1>
+  <p class="lede">Every section of the 1,235-line legacy VBScript file shown alongside its exact React equivalent, with line-by-line explanations of what changed and why.</p>
+</div>
+
+<div class="toc">
+  <div class="toc-title">Jump to section</div>
+  <div class="toc-grid">
+    <a href="#s1"><span class="n">1</span> Module-Level Variables</a>
+    <a href="#s2"><span class="n">2</span> Variable Initialization</a>
+    <a href="#s3"><span class="n">3</span> window_onload — Modal &amp; Frames</a>
+    <a href="#s4"><span class="n">4</span> window_onload — Flags &amp; Data Island</a>
+    <a href="#s5"><span class="n">5</span> window_onload — UI Setup &amp; Focus</a>
+    <a href="#s6"><span class="n">6</span> Event Delegation Handlers</a>
+    <a href="#s7"><span class="n">7</span> FillCallArray2</a>
+    <a href="#s8"><span class="n">8</span> XML Conversion Utilities</a>
+    <a href="#s9"><span class="n">9</span> CallServer</a>
+    <a href="#s10"><span class="n">10</span> Button &amp; Checkbox Handlers</a>
+    <a href="#s11"><span class="n">11</span> Window_OnBeforeUnload</a>
+    <a href="#s12"><span class="n">12</span> PageUniqueRoutine &amp; Helpers</a>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 1 -->
+<!-- ================================================================ -->
+<div class="sec" id="s1">
+  <div class="sec-head">
+    <span class="sec-num">1</span>
+    <h2>Module-Level Variables (Dim Statements)</h2>
+    <span class="sec-lines">Lines 1–97</span>
+    <span class="tag repl">replaced</span>
+  </div>
+  <p class="sec-desc">EEBrowser declares 20+ module-scope variables at the top of the file. These act as the page's "global state" — every function reads and writes them directly. In React, each group of related state lives in its own Zustand store.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 1–97</div>
+<pre class="vbs">' ---- Boolean flags ----
+Dim mblnPageLoaded          ' False until init completes
+Dim mblnCallServer          ' True = OK to make server calls
+Dim mblnDoBrowserCommands   ' True = execute returned commands
+Dim mblnEEDataChanged       ' dirty flag — unsaved changes
+Dim mblnNavButtonClicked    ' True = user clicked nav button
+Dim mblnClosing             ' True = page is closing
+Dim mblnRespondTabClick     ' True = tabs are interactive
+
+' ---- Frame references ----
+Dim mobjAQSMain             ' parent frame (AQSMain.asp)
+Dim mobjMenuFrame           ' menu frame ref
+Dim mobjTreeFrame           ' tree frame ref
+
+' ---- Data holders ----
+Dim mxmlDoc                 ' XML Data Island (DOMDocument)
+Dim marrEEData(12)          ' 13-slot server call array
+Dim marrSessionInformation()' session info array
+Dim marrServerCalls()       ' pre/post server call configs
+Dim marrListItems()         ' combo/list items from server
+Dim mstrServerCallXML       ' accumulated XML payload
+Dim mobjServerRequest       ' XMLHTTP request object
+
+' ---- Timing / display ----
+Dim mintTiming              ' page load timer
+Dim mstrXMLHttpPath         ' base URL for server calls
+Dim mstrAction              ' current action mode string</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — Zustand stores</div>
+<pre class="tsx">// stores/app-store.ts — replaces boolean flags
+// + session info + action mode
+interface AppState {
+  variables: Record&lt;string, unknown&gt;;
+  isDirty: boolean;          // was mblnEEDataChanged
+  setVariable: (name: string, value: unknown) =&gt; void;
+  getVariable: (name: string) =&gt; unknown;
+  setDirty: (dirty: boolean) =&gt; void;
+  reset: () =&gt; void;
+}
+export const useAppStore = create&lt;AppState&gt;((set, get) =&gt; ({
+  variables: {},
+  isDirty: false,
+  setDirty: (isDirty) =&gt; set({ isDirty }),
+  // ...
+}));
+
+// stores/page-store.ts — replaces mxmlDoc +
+// marrEEData + marrListItems
+interface PageState {
+  pageId: string | null;
+  title: string;
+  controls: Record&lt;string, ControlDef&gt;;
+  order: string[];
+  loadPage: (pb, merged) =&gt; void;
+  setValue: (matchcode, value) =&gt; void;
+  applyCommands: (commands) =&gt; void;
+  clear: () =&gt; void;
+}
+export const usePageStore = create&lt;PageState&gt;(...)
+
+// stores/auth-store.ts — replaces
+// marrSessionInformation
+interface AuthState {
+  session: SessionInfo | null;
+  login: (userId, compLoc) =&gt; void;
+  logout: () =&gt; void;
+}</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>What changed and why</h4>
+    <ul>
+      <li><strong><code>mblnPageLoaded</code> → eliminated entirely.</strong> In VBScript, every handler checks this flag because the page HTML loads before <code>window_onload</code> finishes, so users can click things before the page is ready. In React, the route loader fetches data BEFORE the component renders — the page literally cannot appear until it's ready. No flag needed.</li>
+      <li><strong><code>mblnCallServer</code> / <code>mblnDoBrowserCommands</code> → eliminated.</strong> These prevent re-entrant server calls (a server call during a server call). React's <code>async/await</code> pattern handles this naturally — <code>executeAction</code> returns a Promise, so callers can <code>await</code> it. For the recursive CALL_SERVER scenario, the POC uses a depth guard (<code>maxDepth: 3</code>) in the existing <code>use-form-commit</code> hook.</li>
+      <li><strong><code>mblnEEDataChanged</code> → <code>appStore.isDirty</code>.</strong> Same purpose (track unsaved changes), but it's a reactive Zustand property — any component can read it with <code>useAppStore(s =&gt; s.isDirty)</code> and will re-render when it changes. No manual checking.</li>
+      <li><strong><code>mblnNavButtonClicked</code> → not needed.</strong> This flag distinguishes "user clicked a navigation button" from "user closed the browser tab." In React, <code>useBlocker</code> from React Router handles in-app navigation blocking, and the <code>beforeunload</code> event handles browser close. They're separate code paths, not flag-checked in one handler.</li>
+      <li><strong><code>mobjAQSMain</code> / <code>mobjMenuFrame</code> / <code>mobjTreeFrame</code> → eliminated.</strong> There are no frames. The entire app is one React component tree. The sidebar, header, and content area are all children of <code>AppLayout</code>, sharing state through Zustand stores. No cross-frame references, no <code>Set obj = Nothing</code> cleanup.</li>
+      <li><strong><code>mxmlDoc</code> (XML Data Island) → <code>pageStore.controls</code>.</strong> The XML Data Island was an XML document embedded in the page HTML that contained the page's control definitions, matchcodes, and server call configurations. In React, the PageBuild API returns this as JSON. The <code>pageStore.loadPage()</code> method normalizes it into a <code>Record&lt;string, ControlDef&gt;</code> map.</li>
+      <li><strong><code>marrEEData(12)</code> → <code>ActionRequest</code> typed object.</strong> The 13-slot array with indices 0–12 (where slot 1 = matchcode, slot 5 = pre/post indicator, slot 8 = rule attribute, slot 12 = control XML) becomes <code>{ matchcode, action, value, formData }</code>. Named properties instead of numeric indices.</li>
+      <li><strong><code>marrSessionInformation()</code> → <code>authStore.session</code>.</strong> A typed <code>SessionInfo</code> object with named properties (<code>userId</code>, <code>compLoc</code>, <code>policyId</code>, etc.) instead of a positional array.</li>
+      <li><strong><code>marrServerCalls()</code> → server-side.</strong> The pre/post-process call chain configuration moves to the backend. The client doesn't need to know which server routines will run — it just sends the action and the server handles the chain.</li>
+      <li><strong><code>mobjServerRequest</code> (XMLHTTP object) → <code>fetch()</code>.</strong> The browser's native <code>fetch</code> API replaces the ActiveX <code>MSXML2.XMLHTTP.6.0</code> object. No <code>CreateObject</code>, no <code>Set obj = Nothing</code> cleanup.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 2 -->
+<!-- ================================================================ -->
+<div class="sec" id="s2">
+  <div class="sec-head">
+    <span class="sec-num">2</span>
+    <h2>Variable Initialization</h2>
+    <span class="sec-lines">Lines 98–113</span>
+    <span class="tag elim">eliminated</span>
+  </div>
+  <p class="sec-desc">After the <code>Dim</code> statements, EEBrowser sets default values for every flag. In React, Zustand store initial values serve this purpose — they're declared inline at store creation.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 98–113</div>
+<pre class="vbs">mblnPageLoaded = False
+mblnCallServer = True
+mblnDoBrowserCommands = True
+mblnEEDataChanged = False
+mblnNavButtonClicked = False
+mblnClosing = False
+mblnRespondTabClick = False
+mstrServerCallXML = ""
+mintTiming = 0
+
+Set mobjAQSMain = Nothing
+Set mobjMenuFrame = Nothing
+Set mobjTreeFrame = Nothing
+Set mxmlDoc = Nothing
+Set mobjServerRequest = Nothing</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — store default values (inline)</div>
+<pre class="tsx">// In Zustand, defaults are in the create() call:
+export const useAppStore = create((set, get) =&gt; ({
+  variables: {},       // was mstrServerCallXML etc.
+  isDirty: false,      // was mblnEEDataChanged = False
+  // No mblnPageLoaded — React lifecycle handles it
+  // No mblnCallServer — async/await handles it
+  // No frame refs — SPA has no frames
+}));
+
+export const usePageStore = create((set) =&gt; ({
+  pageId: null,        // no page loaded yet
+  title: '',
+  controls: {},        // was mxmlDoc = Nothing
+  order: [],
+}));
+
+export const useAuthStore = create((set) =&gt; ({
+  session: null,       // was marrSessionInformation()
+}));
+
+// No Set obj = Nothing — JavaScript garbage
+// collects automatically when refs go out of scope</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>What changed and why</h4>
+    <p><strong>VBScript requires explicit initialization</strong> because <code>Dim</code> gives you an uninitialized <code>Variant</code>. Boolean flags default to <code>False</code> but it's defensive practice to set them. Object refs must be <code>Set ... = Nothing</code> to avoid stale pointer errors.</p>
+    <p><strong>React/JS doesn't need a separate init block</strong> because Zustand's <code>create()</code> function takes the initial state as its argument — the declaration IS the initialization. And JavaScript uses garbage collection, so there's no <code>Set obj = Nothing</code> pattern. When a component unmounts, its refs are cleaned up automatically.</p>
+    <p><strong>The 5 <code>Set ... = Nothing</code> lines</strong> at the bottom of the VBS init block are entirely unnecessary in JavaScript — objects are garbage-collected when no references remain. The React equivalent is simply not holding the reference in the first place.</p>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 3 -->
+<!-- ================================================================ -->
+<div class="sec" id="s3">
+  <div class="sec-head">
+    <span class="sec-num">3</span>
+    <h2>window_onload — Modal Sizing &amp; Frame References</h2>
+    <span class="sec-lines">Lines 120–166</span>
+    <span class="tag elim">eliminated</span>
+  </div>
+  <p class="sec-desc">The first phase of <code>second_window_onload</code>: resize the modal dialog if it exceeds screen dimensions, then walk up the frame hierarchy to find <code>mobjAQSMain</code>, <code>mobjMenuFrame</code>, and <code>mobjTreeFrame</code>.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 120–166</div>
+<pre class="vbs">Sub window_onload()
+  Call second_window_onload()
+End Sub
+
+Sub second_window_onload()
+  On Error Resume Next
+
+  ' ---- Modal sizing (133-143) ----
+  If document.all("hddIsModal").Value = "1" Then
+    If CLng(document.all("hddWindowWidth").Value) _
+        > screen.availWidth Then
+      window.dialogWidth = screen.availWidth
+    End If
+    If CLng(document.all("hddWindowHeight").Value) _
+        > screen.availHeight Then
+      window.dialogHeight = screen.availHeight
+    End If
+  End If
+
+  ' ---- Frame references (145-157) ----
+  If document.all("hddIsModal").Value = "1" Then
+    Set mobjAQSMain = _
+      window.dialogArguments.parent _
+        .frames("fraAQSMain")
+  Else
+    Set mobjAQSMain = _
+      parent.frames("fraAQSMain")
+  End If
+  Set mobjMenuFrame = _
+    mobjAQSMain.parent.frames("menu")
+  Set mobjTreeFrame = _
+    mobjAQSMain.parent.frames("tree")
+
+  ' ---- Timing (159-166) ----
+  mintTiming = Timer()
+  If Not mobjAQSMain Is Nothing Then
+    mobjAQSMain.SetTimingMilestone _
+      "EEBrowser:second_window_onload:start"
+  End If</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — MUI Dialog + no frames</div>
+<pre class="tsx">// ---- Modal sizing ----
+// MUI Dialog handles responsive sizing via CSS.
+// No manual screen.availWidth check needed.
+&lt;Dialog
+  open={!!pendingModal}
+  maxWidth="lg"          // auto-constrains to screen
+  fullWidth
+  fullScreen={isMobile}  // responsive breakpoint
+&gt;
+  {/* modal content */}
+&lt;/Dialog&gt;
+
+// ---- Frame references ----
+// COMPLETELY ELIMINATED.
+// There are no frames in a React SPA.
+// The "parent frame" (AQSMain) is now AppLayout:
+function AppLayout() {
+  return (
+    &lt;Box sx={{ display: 'flex' }}&gt;
+      &lt;Sidebar /&gt;      {/* was mobjTreeFrame */}
+      &lt;Box&gt;
+        &lt;Header /&gt;      {/* was mobjMenuFrame */}
+        &lt;Outlet /&gt;      {/* was content frame */}
+      &lt;/Box&gt;
+    &lt;/Box&gt;
+  );
+}
+
+// ---- Timing ----
+// Browser Performance API:
+performance.mark('page-load-start');
+// No cross-frame call needed — same JS context</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Line-by-line breakdown</h4>
+    <ul>
+      <li><strong>Lines 120–122 (<code>window_onload</code> → <code>second_window_onload</code>):</strong> The indirection exists because some pages override <code>window_onload</code> directly. The two-function pattern lets the core init run even when the page has a custom load handler. In React, the route loader is the "core init" and the LOB config <code>onLoad</code> hook is the "custom override" — they're separate by design, not by convention.</li>
+      <li><strong>Lines 133–143 (modal sizing):</strong> VBScript's <code>showModalDialog</code> opens a fixed-size window. If the specified size exceeds the screen, the dialog goes offscreen. So EEBrowser checks <code>screen.availWidth</code> and caps the size. MUI's <code>&lt;Dialog&gt;</code> uses CSS (<code>max-width</code>, <code>max-height</code>) to constrain itself automatically. The <code>fullScreen</code> prop on mobile viewports is a one-prop solution for small screens.</li>
+      <li><strong>Lines 145–157 (frame references):</strong> This is the most architecturally significant code in EEBrowser. It establishes the communication channel between the content page and the shell. The <code>If hddIsModal</code> check handles two different frame hierarchies — modal pages reach the parent via <code>window.dialogArguments.parent</code>, regular pages via <code>parent.frames("fraAQSMain")</code>. In React, there's ONE component tree. The sidebar, header, and content are all children of <code>AppLayout</code>. They communicate through Zustand stores, not frame references. This eliminates:</li>
+      <li style="list-style:none;margin-left:20px">— The modal vs. non-modal frame-walking logic</li>
+      <li style="list-style:none;margin-left:20px">— All <code>mobjAQSMain.SomeMethod()</code> cross-frame calls (used 15+ times in the file)</li>
+      <li style="list-style:none;margin-left:20px">— The <code>Set mobjAQSMain = Nothing</code> cleanup in <code>Window_OnBeforeUnload</code></li>
+      <li style="list-style:none;margin-left:20px">— The <code>If Not mobjAQSMain Is Nothing Then</code> guard before every cross-frame call</li>
+      <li><strong>Lines 159–166 (timing):</strong> <code>Timer()</code> returns seconds since midnight. The cross-frame call <code>mobjAQSMain.SetTimingMilestone</code> records the timestamp in the parent frame. In React, <code>performance.mark()</code> and <code>performance.measure()</code> are the standard APIs — no cross-frame call needed because everything runs in the same JavaScript context.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 4 -->
+<!-- ================================================================ -->
+<div class="sec" id="s4">
+  <div class="sec-head">
+    <span class="sec-num">4</span>
+    <h2>window_onload — Data Flags &amp; XML Data Island</h2>
+    <span class="sec-lines">Lines 175–211</span>
+    <span class="tag repl">replaced</span>
+  </div>
+  <p class="sec-desc">Sets the dirty flag based on the current action mode (EDIT/ADD/INQUIRY/SELECT), then loads the XML Data Island from a hidden HTML element into an MSXML DOM document.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 175–211</div>
+<pre class="vbs">' ---- Data-changed flags (175-195) ----
+mstrAction = UCase(document.all("hddAction").Value)
+Select Case mstrAction
+  Case "EDIT"
+    mblnEEDataChanged = True
+  Case "ADD"
+    mblnEEDataChanged = True
+  Case "INQUIRY"
+    mblnEEDataChanged = False
+  Case "SELECT"
+    mblnEEDataChanged = False
+  Case Else
+    mblnEEDataChanged = False
+End Select
+
+' ---- XML Data Island load (198-211) ----
+Set mxmlDoc = CreateObject("MSXML2.DOMDocument.6.0")
+mxmlDoc.async = False
+mxmlDoc.resolveExternals = False
+mxmlDoc.validateOnParse = False
+
+' xdiPageData is a hidden &lt;xml&gt; island in the HTML
+If Not document.all("xdiPageData") Is Nothing Then
+  mxmlDoc.loadXML( _
+    document.all("xdiPageData").innerHTML)
+  If mxmlDoc.parseError.errorCode &lt;&gt; 0 Then
+    ' Handle XML parse error
+    Call TrapBrowserError("second_window_onload|2")
+  End If
+End If</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — action from API + JSON data</div>
+<pre class="tsx">// ---- Data-changed flags ----
+// The action mode comes from the Navigation API:
+const nav = await api.navigate(session, pageId);
+// nav.action = "EDIT" | "ADD" | "INQUIRY" | "SELECT"
+
+// In the component, set dirty based on action:
+useEffect(() =&gt; {
+  const isEditable =
+    nav.action === 'EDIT' || nav.action === 'ADD';
+  useAppStore.getState().setDirty(isEditable);
+}, [nav.action]);
+// 15 lines of Select Case → 2 lines
+
+
+// ---- XML Data Island ----
+// ELIMINATED. The backend converts XML → JSON.
+// PageBuild API returns the control definitions
+// as a typed JSON array:
+const pageBuild = await api.pageBuild(
+  session, nav.pageId
+);
+// pageBuild.controls = [
+//   { matchcode: "PolicyStatus", type: "combo",
+//     value: "Active", options: [...],
+//     visible: true, required: false },
+//   { matchcode: "EffectiveDate", type: "date",
+//     value: "2026-01-15" },
+//   ...
+// ]
+// No MSXML2.DOMDocument. No XPath queries.
+// No parse error handling. Just typed JSON.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Line-by-line breakdown</h4>
+    <ul>
+      <li><strong>Lines 175–195 (action mode flags):</strong> The VBS reads a hidden HTML field <code>hddAction</code> to determine if the page is in EDIT/ADD/INQUIRY/SELECT mode, then sets <code>mblnEEDataChanged</code> accordingly. EDIT and ADD mean "data will change," so dirty = true. In React, the action mode comes from the Navigation API response — it's a property of the route, not a hidden form field. The 15-line <code>Select Case</code> becomes a one-line boolean: <code>action === 'EDIT' || action === 'ADD'</code>.</li>
+      <li><strong>Lines 198–211 (XML Data Island):</strong> This is a critical piece of the legacy architecture. The ASP page embeds an <code>&lt;xml id="xdiPageData"&gt;</code> "data island" — an XML document inside the HTML — that contains every control's definition, matchcode, validation rules, and server call configuration. EEBrowser parses this into an <code>MSXML2.DOMDocument.6.0</code> object so it can XPath-query it later (in <code>FillCallArray2</code>, for example). In React, the PageBuild API returns this same data as JSON. The backend performs the XML → JSON conversion (SDD §5.3). The client never sees XML. This eliminates:
+        <ul>
+          <li>The <code>CreateObject("MSXML2.DOMDocument.6.0")</code> ActiveX instantiation</li>
+          <li>The <code>.async</code>, <code>.resolveExternals</code>, <code>.validateOnParse</code> configuration</li>
+          <li>The <code>.loadXML()</code> parse step</li>
+          <li>The parse error handling</li>
+          <li>Every subsequent <code>mxmlDoc.selectNodes()</code> XPath call in the file</li>
+        </ul>
+      </li>
+    </ul>
+    <div class="note"><strong>Key insight:</strong> The XML Data Island is the page's "schema" — it defines what controls exist, what their matchcodes are, what events they have. In React, this same information comes as JSON from the PageBuild API and gets stored as <code>pageStore.controls</code> — a <code>Record&lt;string, ControlDef&gt;</code> map. Every place the legacy code does an XPath query on <code>mxmlDoc</code>, the React code does a simple property access on a JavaScript object.</div>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 5 -->
+<!-- ================================================================ -->
+<div class="sec" id="s5">
+  <div class="sec-head">
+    <span class="sec-num">5</span>
+    <h2>window_onload — UI Setup, Tabs &amp; Focus</h2>
+    <span class="sec-lines">Lines 222–397</span>
+    <span class="tag simp">simplified</span>
+  </div>
+  <p class="sec-desc">The remainder of <code>second_window_onload</code>: ShowNextOnEdit button visibility, required field indicators, path/breadcrumb labels, tab selection, first-field focus, timing completion, and setting <code>mblnPageLoaded = True</code>.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 222–397</div>
+<pre class="vbs">' ---- ShowNextOnEdit button (222-280) ----
+If mstrAction = "EDIT" Then
+  If document.all("hddShowNextOnEdit").Value _
+      = "1" Then
+    If Not document.all("btnShowNext") _
+        Is Nothing Then
+      document.all("btnShowNext").style.display _
+        = "inline"
+    End If
+  End If
+  ' ... 50+ lines of nested conditions for
+  ' different button states based on action mode,
+  ' whether prior page was INQUIRY, etc.
+End If
+
+' ---- Required indicators (282-285) ----
+Call SetRequiredIndicators()
+
+' ---- Path/page labels (287-327) ----
+If Not mobjAQSMain Is Nothing Then
+  document.all("lblPagePath").innerHTML = _
+    mobjAQSMain.GetPathLabel()
+  document.all("lblPageName").innerHTML = _
+    mobjAQSMain.GetPageLabel()
+End If
+' ... 30+ lines for building breadcrumb strings
+' from session info + frame data
+
+' ---- Tab selection (335-358) ----
+If document.all("hddSelectedTab").Value &lt;&gt; "" Then
+  intTab = CInt( _
+    document.all("hddSelectedTab").Value)
+  If Not document.all("tabstrip") Is Nothing Then
+    document.all("tabstrip").selectedIndex = intTab
+    Call OnTabClickHandler(intTab)
+  End If
+End If
+
+' ---- Focus first control (362-384) ----
+If document.all("hddFocusControl").Value &lt;&gt; "" Then
+  document.all( _
+    document.all("hddFocusControl").Value).focus()
+End If
+
+' ---- Finish (386-397) ----
+If Not mobjAQSMain Is Nothing Then
+  mobjAQSMain.SetTimingMilestone _
+    "EEBrowser:second_window_onload:end"
+  Call mobjAQSMain.HideLoading()
+  Call mobjAQSMain.UpdateMenuState()
+End If
+mblnPageLoaded = True</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — declarative JSX</div>
+<pre class="tsx">// ALL of this is declarative in the component JSX.
+
+export function LobPage() {
+  const { pageBuild, pageConfig } = useLoaderData();
+  const [tab, setTab] = useState(0);
+
+  useEffect(() =&gt; {
+    // Hydrate page store (one call)
+    const merged = mergeControlsWithPageBuild(
+      pageConfig, pageBuild
+    );
+    usePageStore.getState().loadPage(pageBuild, merged);
+    // Apply initial server commands
+    if (pageBuild.commands?.length)
+      dispatchCommands(pageBuild.commands);
+    // LOB-specific onLoad hook
+    pageConfig?.onLoad?.(usePageStore.getState());
+  }, [pageBuild, pageConfig]);
+
+  return (
+    &lt;Box&gt;
+      {/* Path/breadcrumb — React Router knows */}
+      &lt;Breadcrumbs /&gt;
+
+      {/* Tabs — one useState, declarative */}
+      {pageBuild.tabs?.length &gt; 0 &amp;&amp; (
+        &lt;Tabs value={tab}
+              onChange={(_, v) =&gt; setTab(v)}&gt;
+          {pageBuild.tabs.map(t =&gt;
+            &lt;Tab key={t.id} label={t.label} /&gt;
+          )}
+        &lt;/Tabs&gt;
+      )}
+
+      {/* Form — renders all fields */}
+      {/* required indicators = required prop */}
+      {/* ShowNextOnEdit = server sends visibility */}
+      {/* Focus = MUI autoFocus prop */}
+      &lt;FormRenderer /&gt;
+      &lt;ButtonsRenderer actions={pageBuild.actions} /&gt;
+    &lt;/Box&gt;
+  );
+}
+// mblnPageLoaded = True is IMPLICIT:
+// the component renders = the page is loaded.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Line-by-line breakdown</h4>
+    <ul>
+      <li><strong>Lines 222–280 (ShowNextOnEdit, ~60 lines):</strong> Complex nested logic to show/hide a "Show Next" button based on the action mode, prior page mode, and several hidden field values. In React, the server sends a <code>SET_VISIBLE</code> BrowserCommand for this button as part of the initial commands. The <code>dispatchCommands(pageBuild.commands)</code> call in <code>useEffect</code> applies it. The client code is zero lines — the server decides visibility.</li>
+      <li><strong>Lines 282–285 (required indicators):</strong> <code>SetRequiredIndicators()</code> walks every control and adds a red asterisk if the field is required. In React, each <code>ControlDef</code> has a <code>required: boolean</code> property. MUI's <code>&lt;TextField required /&gt;</code> prop automatically shows the asterisk. This is built into the <code>FieldRenderer</code> — no separate init pass needed.</li>
+      <li><strong>Lines 287–327 (path/breadcrumb labels, ~40 lines):</strong> Reaches up to <code>mobjAQSMain</code> to get the current path label, then constructs a breadcrumb string from session information + frame data. In React, React Router already knows the current route path. A <code>&lt;Breadcrumbs&gt;</code> component reads the route params directly. No cross-frame call, no string building.</li>
+      <li><strong>Lines 335–358 (tab selection):</strong> Reads a hidden field for the selected tab index, sets the tabstrip's <code>selectedIndex</code> property, and fires the tab click handler. In React: <code>const [tab, setTab] = useState(0)</code> plus MUI's <code>&lt;Tabs value={tab}&gt;</code>. The initial tab comes from the route or PageBuild response. Two lines replace twenty-four.</li>
+      <li><strong>Lines 362–384 (focus first control):</strong> Reads a hidden field for which control to focus, then calls <code>.focus()</code> on it by ID. In React, the first editable field in <code>FormRenderer</code> gets the <code>autoFocus</code> prop. MUI handles focus management, including keyboard tab order.</li>
+      <li><strong>Lines 386–397 (finish):</strong> Records the end timing milestone, hides the loading indicator, updates the menu state, and finally sets <code>mblnPageLoaded = True</code>. In React: the loading indicator is React Suspense (automatic — shows a fallback while the loader runs, hides when the component renders). The menu state updates reactively when the route changes (Zustand). And <code>mblnPageLoaded = True</code> is implicit — if the component has rendered, the page is loaded.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 6 -->
+<!-- ================================================================ -->
+<div class="sec" id="s6">
+  <div class="sec-head">
+    <span class="sec-num">6</span>
+    <h2>Event Delegation Handlers</h2>
+    <span class="sec-lines">Lines 404–446</span>
+    <span class="tag elim">eliminated</span>
+  </div>
+  <p class="sec-desc">A block of nearly-identical handler stubs that all follow the same pattern: check <code>mblnPageLoaded</code>, check <code>mobjAQSMain Is Not Nothing</code>, then call the matching method on the parent frame.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 404–446</div>
+<pre class="vbs">Sub OnFocusHandler(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.OnFocusHandler(strID, Window)
+    End If
+  End If
+End Sub
+
+Sub DateOnFocusHandler(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.DateOnFocusHandler( _
+        strID, Window)
+    End If
+  End If
+End Sub
+
+Sub DateOnKeyUpHandler(strID)
+  ' EOLA ActiveX date control patch
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.DateOnKeyUpHandler( _
+        strID, Window)
+    End If
+  End If
+End Sub
+
+Function GetRefOnFocusHandler()
+  Set GetRefOnFocusHandler = GetRef("OnFocusHandler")
+End Function
+
+Function GetRefDateOnFocusHandler()
+  Set GetRefDateOnFocusHandler = _
+    GetRef("DateOnFocusHandler")
+End Function
+
+Function GetRefDateOnKeyUpHandler()
+  Set GetRefDateOnKeyUpHandler = _
+    GetRef("DateOnKeyUpHandler")
+End Function</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — direct event props</div>
+<pre class="tsx">// NONE of this exists in React.
+//
+// In the legacy system, the content frame can't
+// handle events itself — it MUST delegate to the
+// parent frame (mobjAQSMain) because the action
+// logic lives there.
+//
+// In React, the component that renders the control
+// IS the handler. There's no delegation layer.
+//
+// Example — FieldRenderer handles focus directly:
+function FieldRenderer({ control }: Props) {
+  const handleFocus = (e: FocusEvent) =&gt; {
+    e.target.select();  // select text on focus
+    // No mobjAQSMain.OnFocusHandler() call
+    // No mblnPageLoaded check
+    // No Is Nothing check
+  };
+
+  return (
+    &lt;TextField
+      onFocus={handleFocus}
+      // DateOnFocusHandler → same handler, MUI
+      //   DatePicker has its own focus behavior
+      // DateOnKeyUpHandler → not needed, MUI
+      //   DatePicker handles keyboard input
+    /&gt;
+  );
+}
+
+// GetRef* functions → not needed.
+// VBScript's GetRef() returns a function pointer
+// for late-binding events. In JavaScript, functions
+// are first-class values — you just pass them:
+//   onFocus={handleFocus}
+// No GetRef wrapper needed.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Why the delegation pattern exists (and why it disappears)</h4>
+    <p><strong>The architectural reason:</strong> In the legacy frameset, business logic (what happens when a user focuses/clicks/changes a control) lives in <code>AQSMain.asp</code> — the parent frame. The content page (where EEBrowser runs) only has the HTML controls and this thin delegation layer. Every user interaction must cross the frame boundary to reach the logic. The <code>mblnPageLoaded</code> check prevents events during initialization. The <code>Is Nothing</code> check prevents errors if the frame reference failed.</p>
+    <p><strong>In React:</strong> There is no frame boundary. The component that renders the control also contains the event handler. The handler calls <code>executeAction()</code> directly (which calls the backend API). The two-check pattern (<code>mblnPageLoaded</code> + <code>Is Nothing</code>) disappears because: (1) the component can't receive events before it renders, and (2) there are no frame references to be null.</p>
+    <p><strong>The <code>GetRef*</code> functions (lines 435–446):</strong> These exist because VBScript doesn't support first-class functions. <code>GetRef("OnFocusHandler")</code> returns a function pointer that can be assigned to an element's event handler via <code>Set element.onfocus = GetRefOnFocusHandler()</code>. In JavaScript, functions ARE first-class values — you pass them directly: <code>onFocus={handleFocus}</code>. The entire <code>GetRef</code> pattern is a VBScript limitation workaround.</p>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 7 -->
+<!-- ================================================================ -->
+<div class="sec" id="s7">
+  <div class="sec-head">
+    <span class="sec-num">7</span>
+    <h2>FillCallArray2 — Pre/Post Server Call Config</h2>
+    <span class="sec-lines">Lines 452–523</span>
+    <span class="tag repl">replaced</span>
+  </div>
+  <p class="sec-desc">Queries the XML Data Island to find which server-side subroutines should run before/after a control's value changes, then builds the <code>marrServerCalls()</code> array with the call chain.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 452–523</div>
+<pre class="vbs">Sub FillCallArray2(strMatchcode, strType)
+  ' strType = "pre" or "post"
+  On Error Resume Next
+
+  ' XPath query on the XML Data Island
+  Dim objNodeList
+  Set objNodeList = mxmlDoc.selectNodes( _
+    "//control[@matchcode='" & strMatchcode & _
+    "']/calls[@type='" & strType & "']/call")
+
+  Dim intNodeCount
+  intNodeCount = objNodeList.length
+
+  If intNodeCount = 0 Then
+    ReDim marrServerCalls(0, 3)
+    Exit Sub
+  End If
+
+  ' Resize the server calls array
+  ReDim marrServerCalls(intNodeCount - 1, 3)
+
+  Dim intC
+  For intC = 0 To intNodeCount - 1
+    Dim objNode
+    Set objNode = objNodeList.item(intC)
+
+    ' Slot 0: subroutine name
+    marrServerCalls(intC, 0) = _
+      objNode.getAttribute("subroutine")
+    ' Slot 1: object name
+    marrServerCalls(intC, 1) = _
+      objNode.getAttribute("object")
+    ' Slot 2: parameter
+    marrServerCalls(intC, 2) = _
+      objNode.getAttribute("parameter")
+    ' Slot 3: call type (pre/post)
+    marrServerCalls(intC, 3) = strType
+  Next
+
+  Set objNodeList = Nothing
+  Call TrapBrowserError("FillCallArray2|1")
+End Sub</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — server handles the call chain</div>
+<pre class="tsx">// FillCallArray2 is ELIMINATED from the client.
+//
+// In the legacy system, the XML Data Island carries
+// the pre/post call config TO the browser, and
+// FillCallArray2 parses it client-side before
+// CallServer packages and sends it back.
+//
+// ROUND TRIP:
+// Server → XML Data Island → browser parses it
+// → browser sends it back to server → server uses it
+//
+// This is unnecessary. The server already HAS the
+// call configuration — it created the Data Island.
+// So in React, the server keeps it:
+//
+// Client just says WHAT happened:
+const result = await api.pageLayout(session, {
+  matchcode: 'PolicyStatus',  // which control
+  action: 'change',           // what happened
+  value: 'Cancelled',         // new value
+  formData: currentFormState,  // all field values
+});
+// The server looks up the pre/post calls internally
+// (same DB/config it used to build the Data Island)
+// and runs them in order, then returns the result.
+//
+// The pre/post call chain is a SERVER concern.
+// The client doesn't need to know that changing
+// PolicyStatus triggers:
+//   1. Pre: ValidatePolicyStatus
+//   2. Main: UpdatePolicyStatus
+//   3. Post: CheckCancellationReason
+// It just sends the action and gets back commands.
+//
+// XML Data Island structure that FillCallArray2
+// was parsing:
+// &lt;control matchcode="PolicyStatus"&gt;
+//   &lt;calls type="post"&gt;
+//     &lt;call subroutine="CheckCancellation"
+//           object="ZEntEdtCtl"
+//           parameter="POL" /&gt;
+//   &lt;/calls&gt;
+// &lt;/control&gt;
+// ↑ This XML is now parsed server-side only.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Detailed explanation</h4>
+    <p><strong>What <code>FillCallArray2</code> does:</strong> Given a matchcode (e.g., "PolicyStatus") and a type ("pre" or "post"), it runs an XPath query against the XML Data Island to find all configured server calls. It builds a 2D array (<code>marrServerCalls</code>) where each row has 4 columns: subroutine name, object name, parameter, and call type. This array is later used by <code>CallServer</code> to tell the backend which subroutines to execute.</p>
+    <p><strong>The circular data flow problem:</strong> The server creates the XML Data Island (containing the call config), sends it to the browser, the browser parses it with <code>FillCallArray2</code>, then the browser sends that same configuration back to the server in <code>CallServer</code>. The data round-trips through the browser unnecessarily.</p>
+    <p><strong>The React solution:</strong> The server keeps the call chain configuration. When the client sends an action (via <code>api.pageLayout()</code>), the server looks up the pre/post calls in the same configuration source it used to build the original Data Island. The client just says "PolicyStatus changed to Cancelled" — the server handles the rest. This eliminates:</p>
+    <ul>
+      <li>The <code>mxmlDoc.selectNodes()</code> XPath query</li>
+      <li>The <code>marrServerCalls</code> 2D array and its <code>ReDim</code></li>
+      <li>The for-loop that reads XML attributes into array slots</li>
+      <li>The entire concept of the client parsing server-side call configuration</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 8 -->
+<!-- ================================================================ -->
+<div class="sec" id="s8">
+  <div class="sec-head">
+    <span class="sec-num">8</span>
+    <h2>XML Conversion Utilities</h2>
+    <span class="sec-lines">Lines 525–651</span>
+    <span class="tag elim">eliminated</span>
+  </div>
+  <p class="sec-desc">Five functions that serialize VBScript arrays to XML strings and back. These exist because the server speaks XML and VBScript arrays can't cross the HTTP boundary.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 525–651</div>
+<pre class="vbs">' ---- convertArrayToXML ----
+' Converts a 1D VBScript array to XML string
+Sub convertArrayToXML(strName, arrData, strXML)
+  strXML = "&lt;" & strName & "&gt;"
+  Dim intI
+  For intI = 0 To UBound(arrData)
+    strXML = strXML & "&lt;item index=""" & intI _
+      & """&gt;" & _
+      EscapeForHTTPTrip(CStr(arrData(intI))) & _
+      "&lt;/item&gt;"
+  Next
+  strXML = strXML & "&lt;/" & strName & "&gt;"
+End Sub
+
+' ---- convertXMLToArray ----
+' Parses XML response back into a VBScript array
+Sub convertXMLToArray(strName, objXMLDoc, arrData)
+  Dim objNodes
+  Set objNodes = objXMLDoc.selectNodes( _
+    "//" & strName & "/item")
+  ReDim arrData(objNodes.length - 1)
+  Dim intI
+  For intI = 0 To objNodes.length - 1
+    arrData(intI) = UnEscapeFromHTTPTrip( _
+      objNodes.item(intI).text)
+  Next
+End Sub
+
+' ---- convertBrowserXMLTo2DArray ----
+' Parses browser command XML into 2D array
+Sub convertBrowserXMLTo2DArray( _
+    strName, objXMLDoc, arrData)
+  ' ... parses &lt;BrowserCommands&gt;&lt;command&gt; nodes
+  ' into arrData(row, col) 2D array
+  ' Each command has: type, target, value, message
+End Sub
+
+' ---- EscapeForHTTPTrip ----
+' XML-safe encoding for values in the payload
+Function EscapeForHTTPTrip(strValue)
+  Dim strResult
+  strResult = strValue
+  strResult = Replace(strResult, "&amp;", "&amp;amp;")
+  strResult = Replace(strResult, "&lt;", "&amp;lt;")
+  strResult = Replace(strResult, "&gt;", "&amp;gt;")
+  strResult = Replace(strResult, """", "&amp;quot;")
+  strResult = Replace(strResult, "'", "&amp;apos;")
+  ' Also handles Chr(0), Chr(10), Chr(13)
+  EscapeForHTTPTrip = strResult
+End Function
+
+' ---- UnEscapeFromHTTPTrip ----
+Function UnEscapeFromHTTPTrip(strValue)
+  ' Reverse of EscapeForHTTPTrip
+  ' Replaces &amp;amp; → &amp;, &amp;lt; → &lt;, etc.
+  UnEscapeFromHTTPTrip = strResult
+End Function</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — JSON native (zero lines)</div>
+<pre class="tsx">// ALL 127 LINES ARE ELIMINATED.
+//
+// The legacy code needs these because:
+// 1. VBScript arrays aren't serializable
+// 2. The server expects XML
+// 3. The response is XML
+// 4. Special characters must be manually escaped
+//
+// In React/JavaScript:
+// 1. JSON.stringify() serializes any object/array
+// 2. The .NET wrapper API accepts JSON
+// 3. The response is JSON
+// 4. JSON handles escaping natively
+//
+// What these functions did → the JS equivalent:
+
+// convertArrayToXML:
+//   VBS: manually build XML string from array
+//   JS:  JSON.stringify(array) — built in
+
+// convertXMLToArray:
+//   VBS: XPath query + loop to fill array
+//   JS:  JSON.parse(response) — built in
+
+// convertBrowserXMLTo2DArray:
+//   VBS: parse &lt;BrowserCommands&gt; XML to 2D array
+//   JS:  response.commands is already a typed array:
+//        BrowserCommand[] = [
+//          { type: 'SET_VISIBLE', target: 'fld', value: true },
+//          { type: 'DISPLAY_WARNING', message: '...' },
+//        ]
+
+// EscapeForHTTPTrip / UnEscapeFromHTTPTrip:
+//   VBS: manual XML entity encoding/decoding
+//   JS:  JSON handles this. Strings are UTF-8.
+//        No manual &amp;amp; / &amp;lt; / &amp;gt; needed.
+
+// The entire serialization layer is built into
+// the language and the transport format.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Why these 127 lines exist</h4>
+    <p><strong>VBScript has no serialization.</strong> When you have an array like <code>marrEEData(12)</code> and need to send it over HTTP, you must manually convert each element to an XML string, XML-escape special characters, wrap it in tags, and reverse the process on the response. This is 127 lines of boilerplate plumbing.</p>
+    <p><strong>JavaScript has JSON built in.</strong> <code>JSON.stringify({ matchcode: "PolicyStatus", action: "change", value: "Cancelled" })</code> does the same job as <code>convertArrayToXML</code> + <code>EscapeForHTTPTrip</code> combined. <code>JSON.parse(responseText)</code> does the same as <code>convertXMLToArray</code> + <code>UnEscapeFromHTTPTrip</code>. The browser's <code>fetch</code> API handles content-type headers automatically.</p>
+    <p><strong>No React code to show because there is none.</strong> This is the cleanest example of "the modern stack eliminates the workaround."</p>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 9 -->
+<!-- ================================================================ -->
+<div class="sec" id="s9">
+  <div class="sec-head">
+    <span class="sec-num">9</span>
+    <h2>CallServer — Core Server Communication</h2>
+    <span class="sec-lines">Lines 654–857</span>
+    <span class="tag repl">replaced</span>
+  </div>
+  <p class="sec-desc">The heart of EEBrowser. 203 lines that package arrays into XML, POST synchronously to the server, parse the XML response, extract session info / data / list items / browser commands, and then execute those commands against the page.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 654–857</div>
+<pre class="vbs">Sub CallServer()
+  On Error Resume Next
+
+  ' ---- Guard: prevent re-entrant calls ----
+  If Not mblnCallServer Then Exit Sub
+  mblnCallServer = False
+
+  ' ---- Build the server call XML ----
+  ' (uses FillCallArray2 output + module arrays)
+  Dim strSessionXML, strEEData
+  Call convertArrayToXML("SessionInformation", _
+    marrSessionInformation, strSessionXML)
+  Call convertArrayToXML("EEData", _
+    marrEEData, strEEData)
+  mstrServerCallXML = mstrServerCallXML _
+    & strSessionXML & strEEData
+
+  ' ---- Build URL ----
+  Dim strURL
+  strURL = mstrXMLHttpPath & _
+    "system/asp/xmlservercall.asp?object=ZEntEdtCtl"
+
+  ' ---- Send synchronous POST ----
+  Set mobjServerRequest = _
+    CreateObject("MSXML2.XMLHTTP.6.0")
+  With mobjServerRequest
+    .open "POST", strURL, False   ' FALSE = sync
+    .setRequestHeader "Content-Type", "text-xml-SOAP"
+    .setRequestHeader "MessageType", "Call"
+    .Send "&lt;aqs&gt;" & mstrServerCallXML & "&lt;/aqs&gt;"
+  End With
+
+  ' ---- Check HTTP status ----
+  If mobjServerRequest.status &lt;&gt; 200 Then
+    Call ShowUserMessage("Server Error: " & _
+      mobjServerRequest.statusText, "Error", 0)
+    mblnCallServer = True
+    Exit Sub
+  End If
+
+  ' ---- Parse response XML ----
+  Dim objResponseDoc
+  Set objResponseDoc = _
+    CreateObject("MSXML2.DOMDocument.6.0")
+  objResponseDoc.loadXML( _
+    mobjServerRequest.responseText)
+
+  ' Extract SessionInformation
+  Call convertXMLToArray("SessionInformation", _
+    objResponseDoc, marrSessionInformation)
+
+  ' Extract EEData
+  Call convertXMLToArray("EEData", _
+    objResponseDoc, marrEEData)
+
+  ' Extract ListItems (if present)
+  If Not objResponseDoc.selectSingleNode( _
+      "//ListItems") Is Nothing Then
+    Call convertXMLToArray("ListItems", _
+      objResponseDoc, marrListItems)
+  End If
+
+  ' Extract BrowserCommands
+  Dim arrBrowserCommands()
+  If Not objResponseDoc.selectSingleNode( _
+      "//BrowserCommands") Is Nothing Then
+    Call convertBrowserXMLTo2DArray( _
+      "BrowserCommands", objResponseDoc, _
+      arrBrowserCommands)
+  End If
+
+  ' ---- Reset server call XML ----
+  mstrServerCallXML = ""
+
+  ' ---- Execute browser commands ----
+  If mblnDoBrowserCommands Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.ExecuteBrowserCommands( _
+        arrBrowserCommands, Window)
+    End If
+  End If
+
+  ' ---- Re-enable server calls ----
+  mblnCallServer = True
+
+  Set objResponseDoc = Nothing
+  Call TrapBrowserError("CallServer|1")
+End Sub</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — 3 focused functions</div>
+<pre class="tsx">// ---- 1. API client (engine/api/client.ts) ----
+// Replaces: URL building + XMLHTTP + send + receive
+export interface AqsApi {
+  navigate(session, target): Promise&lt;NavigationResponse&gt;;
+  pageBuild(session, pageId): Promise&lt;PageBuildResponse&gt;;
+  pageLayout(session, req): Promise&lt;ExecuteActionResult&gt;;
+}
+// Implementation (real, not mock):
+async pageLayout(session, req) {
+  const resp = await fetch('/api/v1/ui/pagelayout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session,
+      matchcode: req.matchcode,
+      action: req.action,
+      value: req.value,
+      formData: req.formData,
+    }),
+  });
+  if (!resp.ok) throw new Error(resp.statusText);
+  return resp.json();
+}
+
+// ---- 2. Command dispatch (commands/dispatch.ts) ----
+// Replaces: mobjAQSMain.ExecuteBrowserCommands()
+export function dispatchCommands(commands) {
+  const controlCmds = commands.filter(c =&gt;
+    CONTROL_COMMANDS.has(c.type));
+  if (controlCmds.length)
+    usePageStore.getState().applyCommands(controlCmds);
+
+  for (const cmd of commands) {
+    switch (cmd.type) {
+      case 'DISPLAY_ERROR':
+        bc.notify('error', cmd.message); break;
+      case 'DISPLAY_WARNING':
+        bc.notify('warning', cmd.message); break;
+      case 'OPEN_WINDOW':
+        bc.openModal(cmd); break;
+      case 'NAVIGATE':
+        navigateTo = cmd.pageId; break;
+    }
+  }
+  return { navigateTo };
+}
+
+// ---- 3. Execute action (commands/execute-action.ts)
+// Replaces: the marrEEData slot-filling + CallServer
+export async function executeAction(req, navigate) {
+  const { controls } = usePageStore.getState();
+  const formData = Object.fromEntries(
+    Object.values(controls)
+      .map(c =&gt; [c.matchcode, c.value])
+  );
+  const result = await api.pageLayout(
+    req.session, { ...req, formData }
+  );
+  const { navigateTo } = dispatchCommands(
+    result.commands
+  );
+  if (result.frame === 'MODAL')
+    bc.openModal({ pageId: result.navigateTo });
+  else if (navigateTo)
+    navigate(navigateTo);
+  return result;
+}</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Detailed change breakdown</h4>
+    <ul>
+      <li><strong>Re-entrancy guard (<code>mblnCallServer</code>):</strong> The VBS sets <code>mblnCallServer = False</code> before the call and <code>True</code> after, preventing a second call during the synchronous POST. In React, <code>async/await</code> handles this naturally — <code>executeAction</code> is an async function, so the caller awaits its result before proceeding. For the recursive CALL_SERVER command (where the server response contains a command to make another server call), the reconstructed source's <code>use-form-commit</code> hook has a <code>maxDepth: 3</code> guard.</li>
+      <li><strong>Synchronous POST → async <code>fetch()</code>:</strong> <code>mobjServerRequest.open "POST", strURL, False</code> — that <code>False</code> means synchronous. The browser freezes completely until the response arrives. Users can't click anything, can't cancel, can't even scroll. React's <code>fetch()</code> is async by default — the UI stays responsive. A loading spinner can show during the request.</li>
+      <li><strong>XML packaging → JSON:</strong> The VBS manually builds XML from 3 arrays using <code>convertArrayToXML</code>, then wraps it in <code>&lt;aqs&gt;</code> tags. React sends a single <code>JSON.stringify()</code> call. The Content-Type changes from <code>text/xml-SOAP</code> to <code>application/json</code>.</li>
+      <li><strong>Response parsing:</strong> The VBS creates another <code>MSXML2.DOMDocument</code>, loads the response XML, then calls <code>convertXMLToArray</code> three times (SessionInformation, EEData, ListItems) and <code>convertBrowserXMLTo2DArray</code> once (BrowserCommands). React does <code>response.json()</code> — the response is already a typed object with <code>.commands</code>, <code>.session</code>, etc.</li>
+      <li><strong>ExecuteBrowserCommands:</strong> The VBS calls <code>mobjAQSMain.ExecuteBrowserCommands(arrBrowserCommands, Window)</code> — crossing the frame boundary to the parent frame. React calls <code>dispatchCommands(result.commands)</code> — a local function that routes each command to the right Zustand store. No frame crossing.</li>
+      <li><strong>Error handling:</strong> The VBS checks <code>mobjServerRequest.status &lt;&gt; 200</code> and shows a user message. React's <code>if (!resp.ok) throw new Error()</code> lets the error propagate to the Error Boundary component, which shows a proper error UI.</li>
+    </ul>
+    <div class="note"><strong>The 13-slot <code>marrEEData</code> array deserves special attention.</strong> Here's what each slot was:
+    <br>(0) = unused, (1) = matchcode, (2) = unused, (3) = unused, (4) = unused, (5) = pre/post indicator (0 or 1), (6) = unused, (7) = unused, (8) = rule attribute, (9) = unused, (10) = unused, (11) = unused, (12) = control XML from data island.
+    <br>In React this becomes: <code>{ matchcode: string, action: string, value: unknown }</code>. Three named properties replace 13 indexed slots (of which only 3–4 were actually used).</div>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 10 -->
+<!-- ================================================================ -->
+<div class="sec" id="s10">
+  <div class="sec-head">
+    <span class="sec-num">10</span>
+    <h2>Button, Nav &amp; Checkbox Handlers</h2>
+    <span class="sec-lines">Lines 870–1068</span>
+    <span class="tag simp">simplified</span>
+  </div>
+  <p class="sec-desc">Specific click handlers for navigation buttons, regular buttons, calendar buttons, info buttons, checkboxes, and the "enable button when combo has a selection" utility. Each follows the delegate-to-parent pattern, some with additional <code>marrEEData</code> slot-filling.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 870–1068</div>
+<pre class="vbs">' ---- NavButtonOnClick (870-909) ----
+Sub NavButtonOnClick(strAction, strMatchcode)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      ' Check for errors in browser commands
+      ' before navigating
+      mblnNavButtonClicked = True
+      Call mobjAQSMain.NavButtonOnClick( _
+        strAction, strMatchcode, Window)
+    End If
+  End If
+End Sub
+
+' ---- ButtonOnClickHandler (912-935) ----
+Sub ButtonOnClickHandler(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.ButtonOnClickHandler( _
+        strID, Window)
+    End If
+  End If
+End Sub
+
+' ---- CalendarButtonOnClick (937-948) ----
+Sub CalendarButtonOnClick(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.CalendarButtonOnClick( _
+        strID, Window)
+    End If
+  End If
+End Sub
+
+' ---- InfoButtonOnClick (950-960) ----
+Sub InfoButtonOnClick(strID)
+  ' Same pattern ...
+End Sub
+
+' ---- ListButtonOnClick / ListButtonClick ----
+Sub ListButtonOnClick(strID)
+  ' Same pattern ...
+End Sub
+
+' ---- OnCheckBoxClick (990-1017) ----
+Sub OnCheckBoxClick(strMatchcode)
+  If mblnPageLoaded Then
+    marrEEData(1) = strMatchcode
+    marrEEData(5) = 1   ' post-process
+    marrEEData(12) = GetControlXML(strMatchcode)
+    Call CallServer()
+  End If
+End Sub
+
+' ---- OnTabClickHandler ----
+Sub OnTabClickHandler(intIndex)
+  If mblnPageLoaded Then
+    If mblnRespondTabClick Then
+      If Not mobjAQSMain Is Nothing Then
+        Call mobjAQSMain.OnTabClickHandler( _
+          intIndex, Window)
+      End If
+    End If
+  End If
+End Sub
+
+' ---- EnableButtonOnSelection (1044-1068) ----
+Sub EnableButtonOnSelection(strCombo, strBtn)
+  If document.all(strCombo).listIndex > 0 Then
+    document.all(strBtn).disabled = False
+  Else
+    document.all(strBtn).disabled = True
+  End If
+End Sub</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — inline event props + executeAction</div>
+<pre class="tsx">// ---- Nav button ----
+// In ButtonsRenderer or a page action bar:
+&lt;Button onClick={() =&gt; {
+  navigate(`/lob/${lob}/${targetPage}`);
+}}&gt;
+  Next
+&lt;/Button&gt;
+// No mblnNavButtonClicked flag needed — React
+// Router handles the navigation directly.
+// Dirty-check happens via useBlocker, not a flag.
+
+// ---- Regular button ----
+// In ButtonsRenderer:
+&lt;Button onClick={() =&gt; {
+  executeAction({
+    session, matchcode: action.matchcode,
+    action: 'click',
+  }, navigate);
+}}&gt;
+  {action.label}
+&lt;/Button&gt;
+
+// ---- Calendar button ----
+// Not a separate handler — MUI DatePicker has
+// the calendar icon built in:
+&lt;DatePicker
+  value={control.value}
+  onChange={(date) =&gt; {
+    pageStore.setValue(control.matchcode, date);
+    if (control.hasAction)
+      executeAction({ ... }, navigate);
+  }}
+/&gt;
+
+// ---- Info button ----
+// MUI InputAdornment:
+&lt;TextField
+  InputProps={{
+    endAdornment: (
+      &lt;IconButton onClick={() =&gt;
+        openInfoDialog(control.matchcode)
+      }&gt;
+        &lt;InfoIcon /&gt;
+      &lt;/IconButton&gt;
+    ),
+  }}
+/&gt;
+
+// ---- Checkbox ----
+// Same executeAction pattern as everything else:
+&lt;Checkbox onChange={(e) =&gt; {
+  executeAction({
+    session, matchcode: control.matchcode,
+    action: 'change', value: e.target.checked,
+  }, navigate);
+}} /&gt;
+// No marrEEData slot-filling. No GetControlXML.
+
+// ---- Tab click ----
+&lt;Tabs value={tab} onChange={(_, v) =&gt; setTab(v)}&gt;
+  {tabs.map(t =&gt; &lt;Tab key={t.id} label={t.label}/&gt;)}
+&lt;/Tabs&gt;
+
+// ---- Enable button on selection ----
+// Pure declarative JSX:
+&lt;Button disabled={!comboValue}&gt;Go&lt;/Button&gt;
+// React re-renders when comboValue changes.
+// No imperative enable/disable.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Detailed breakdown</h4>
+    <ul>
+      <li><strong>NavButtonOnClick (870–909):</strong> Sets <code>mblnNavButtonClicked = True</code> (used later in <code>Window_OnBeforeUnload</code> to skip the CANCEL CallServer) then delegates. In React, navigation is a <code>navigate()</code> call through React Router. The dirty-data check is handled by <code>useBlocker</code> — it intercepts the navigation if <code>isDirty</code> is true and asks the user. The flag-based approach becomes a declarative blocker.</li>
+      <li><strong>ButtonOnClickHandler (912–935):</strong> Generic button handler. In React, the <code>ButtonsRenderer</code> component renders each action button with an <code>onClick</code> that calls <code>executeAction</code>. The button's matchcode comes from the PageBuild response, not a DOM ID.</li>
+      <li><strong>CalendarButtonOnClick (937–948):</strong> Opens a calendar picker for a date field. In React, MUI's <code>&lt;DatePicker&gt;</code> component includes the calendar icon and popup. There's no separate "calendar button" — it's part of the date control. The handler-per-button-type pattern collapses because MUI components are self-contained.</li>
+      <li><strong>OnCheckBoxClick (990–1017) — the interesting one:</strong> This doesn't just delegate — it fills <code>marrEEData</code> slots (1 = matchcode, 5 = 1 for post-process, 12 = control XML from data island) and calls <code>CallServer</code> directly. In React, this is the same <code>executeAction({ matchcode, action: 'change', value })</code> pattern used for every control type. No array slots, no <code>GetControlXML</code>.</li>
+      <li><strong>EnableButtonOnSelection (1044–1068):</strong> Imperative DOM manipulation: read a combo's <code>listIndex</code>, set a button's <code>disabled</code> property. In React: <code>&lt;Button disabled={!comboValue}&gt;</code>. When <code>comboValue</code> changes in the store, React re-renders the button with the new disabled state automatically. No imperative DOM access.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 11 -->
+<!-- ================================================================ -->
+<div class="sec" id="s11">
+  <div class="sec-head">
+    <span class="sec-num">11</span>
+    <h2>Window_OnBeforeUnload &amp; OnUnload</h2>
+    <span class="sec-lines">Lines 1084–1133</span>
+    <span class="tag repl">replaced</span>
+  </div>
+  <p class="sec-desc">Cleanup when the page is about to close: if it's a modal with unsaved changes and the user didn't click a nav button, send a CANCEL to the server. Then nullify all frame references. OnUnload is minimal — just TrapBrowserError.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 1084–1133</div>
+<pre class="vbs">Sub Window_OnBeforeUnload()
+  On Error Resume Next
+
+  ' If this is a modal with changed data
+  ' and user didn't click a nav button,
+  ' send CANCEL to rollback server state
+  If document.all("hddIsModal").Value = "1" Then
+    If mblnEEDataChanged Then
+      If Not mblnNavButtonClicked Then
+        ' Rollback: tell server to cancel
+        marrEEData(1) = "CANCEL"
+        marrEEData(5) = 0
+        mblnDoBrowserCommands = False
+        Call CallServer()
+      End If
+    End If
+  End If
+
+  ' Nullify ALL frame references (IE memory leak)
+  Set mobjAQSMain = Nothing
+  Set mobjMenuFrame = Nothing
+  Set mobjTreeFrame = Nothing
+  Set mxmlDoc = Nothing
+  Set mobjServerRequest = Nothing
+
+  ' Call page-specific cleanup hook
+  Call PageUniqueRoutine( _
+    "local_before_window_unload")
+
+  Call TrapBrowserError( _
+    "Window_OnBeforeUnload|1")
+End Sub
+
+Sub Window_OnUnload()
+  On Error Resume Next
+  Call TrapBrowserError("Window_OnUnload|1")
+End Sub</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — useBlocker + useEffect cleanup</div>
+<pre class="tsx">function LobPage() {
+  const isDirty = useAppStore(s =&gt; s.isDirty);
+  const navigate = useNavigate();
+
+  // ---- Block in-app navigation if dirty ----
+  const blocker = useBlocker(isDirty);
+  // React Router shows a confirmation dialog.
+  // If user confirms leaving:
+  useEffect(() =&gt; {
+    if (blocker.state === 'proceeding') {
+      // Send CANCEL to server (rollback)
+      api.pageLayout(session, {
+        matchcode: 'CANCEL',
+        action: 'cancel',
+        formData: {},
+      });
+    }
+  }, [blocker.state]);
+
+  // ---- Block browser close/refresh ----
+  useEffect(() =&gt; {
+    const handler = (e: BeforeUnloadEvent) =&gt; {
+      if (isDirty) {
+        e.preventDefault();
+        // Browser shows native "Leave site?" dialog
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () =&gt;
+      window.removeEventListener('beforeunload',
+        handler);
+  }, [isDirty]);
+
+  // ---- Cleanup on unmount ----
+  useEffect(() =&gt; {
+    return () =&gt; {
+      useAppStore.getState().reset();
+      usePageStore.getState().clear();
+      // LOB-specific cleanup hook
+      pageConfig?.onBeforeUnload?.();
+    };
+  }, []);
+  // No Set obj = Nothing — JS garbage collects.
+  // No TrapBrowserError — Error Boundary catches.
+}</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Detailed breakdown</h4>
+    <ul>
+      <li><strong>The CANCEL CallServer (lines 1090–1100):</strong> When a user closes a modal with unsaved changes (without clicking Save/Next), the legacy system sends a CANCEL to the server to roll back any partial server state. This is critical — without it, the server might have half-committed data. In React, the <code>useBlocker</code> hook intercepts the navigation, shows a confirmation, and if the user confirms, the cleanup effect fires the cancel API call. The behavior is the same, but the trigger mechanism is React Router-native.</li>
+      <li><strong>The <code>mblnNavButtonClicked</code> check:</strong> This flag prevents the CANCEL when the user navigated intentionally (clicked Save/Next). In React, this distinction is structural: <code>useBlocker</code> only fires when navigation is "unintentional" (back button, route change, page close). Intentional navigation (clicking a Save button) goes through <code>executeAction</code>, which handles its own server call — the blocker doesn't fire because the action handler calls <code>setDirty(false)</code> after success.</li>
+      <li><strong>The 5 <code>Set ... = Nothing</code> lines:</strong> These prevent IE memory leaks. Internet Explorer (which the legacy system targets) has a known bug where circular references between COM objects (XMLHTTP, DOMDocument) and JavaScript/VBScript variables cause memory leaks unless explicitly broken. Modern browsers don't have this problem — JavaScript's garbage collector handles circular references. The React equivalent: nothing. The store's <code>reset()</code> / <code>clear()</code> methods set state back to initial values; React handles the rest.</li>
+      <li><strong><code>PageUniqueRoutine("local_before_window_unload")</code>:</strong> Calls a page-specific cleanup function if one exists. In React, this is the <code>pageConfig?.onBeforeUnload?.()</code> call in the cleanup effect — same concept, typed and explicit instead of dynamic <code>Execute</code>.</li>
+      <li><strong><code>Window_OnUnload</code> (lines 1128–1133):</strong> Just calls <code>TrapBrowserError</code>. This is a catch-all error reporter that logs any unhandled errors during unload. In React, the Error Boundary component catches render errors, and unhandled promise rejections are caught by a global listener. No VBScript error trapping needed.</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!-- SECTION 12 -->
+<!-- ================================================================ -->
+<div class="sec" id="s12">
+  <div class="sec-head">
+    <span class="sec-num">12</span>
+    <h2>PageUniqueRoutine, SelectControlText &amp; Helpers</h2>
+    <span class="sec-lines">Lines 1136–1235</span>
+    <span class="tag simp">simplified</span>
+  </div>
+  <p class="sec-desc">The final block: dynamic page-specific script execution via VBScript's <code>Execute</code>, a 52-line control-type switch for text selection on focus, array resizing, and a message display wrapper.</p>
+
+  <div class="pair">
+    <div class="pair-col">
+      <div class="pair-label vbs">EEBrowser.vbs — Lines 1136–1235</div>
+<pre class="vbs">' ---- PageUniqueRoutine (1136-1149) ----
+Sub PageUniqueRoutine(strRoutine)
+  On Error Resume Next
+  Execute strRoutine
+  Call TrapBrowserError("PageUniqueRoutine|1")
+End Sub
+' Called as:
+'   Call PageUniqueRoutine("local_window_onload")
+'   Call PageUniqueRoutine("local_before_window_unload")
+' If the function doesn't exist on this page,
+' the error handler swallows the "Sub not defined" error.
+
+' ---- SelectControlText (1152-1204) ----
+Sub SelectControlText(strID)
+  On Error Resume Next
+  ' Handle info/calendar button ID prefixes
+  If Left(strID,3) = "inf" Or _
+     Left(strID,3) = "cal" Then
+    Set objCurrentControl = document.all( _
+      "dta" & Right(strID, Len(strID)-3))
+  Else
+    Set objCurrentControl = document.all(strID)
+  End If
+
+  Select Case UCase(objCurrentControl.tagname)
+    Case "OBJECT"
+      Select Case UCase(objCurrentControl.classid)
+        Case "CLSID:CC696B63-4159-11D0-..."
+          ' Protoview Date/Time Control
+        Case "CLSID:C2000000-FFFF-1100-..."
+          ' Protoview Numeric Control
+      End Select
+    Case "RADIOBUTTON", "IBUTTON"
+      ' No text selection for buttons
+    Case "XMLLIST"
+      ' No text selection for grids
+    Case "COMBO", "KPCOMBO"
+      objCurrentControl.Select()
+    Case "SELECT"
+      ' HTML select — no text selection
+    Case "INPUT"
+      Select Case UCase(objCurrentControl.type)
+        Case "TEXT"
+          objCurrentControl.select()
+        Case "PASSWORD","BUTTON","SUBMIT"
+          ' No selection
+        Case "CHECKBOX"
+          ' No selection
+        Case "RADIO"
+          ' Not using — using RADIOBUTTON control
+      End Select
+    Case "TEXTAREA"
+      objCurrentControl.Select()
+  End Select
+  Set objCurrentControl = Nothing
+End Sub
+
+' ---- ReDimBrowserArray (1210-1219) ----
+Sub ReDimBrowserArray(intRows, intCols, strArrayName)
+  Select Case LCase(strArrayName)
+    Case "marrservercalls"
+      ReDim marrServerCalls(intRows, intCols)
+    Case "marrlistitems"
+      ReDim marrListItems(intRows)
+  End Select
+End Sub
+
+' ---- ShowUserMessage (1221-1231) ----
+Function ShowUserMessage(ByVal strMessage, _
+    ByVal strType, ByVal intButtons)
+  Dim objMessageBox
+  Set objMessageBox = New UserMessage
+  objMessageBox.show strMessage, strType, intButtons
+  ShowUserMessage = objMessageBox.RetValue
+  Set objMessageBox = Nothing
+End Function</pre>
+    </div>
+    <div class="pair-col">
+      <div class="pair-label react">React — config hooks + MUI</div>
+<pre class="tsx">// ---- PageUniqueRoutine → LOB config hooks ----
+// lobs/policy/policy-config.ts:
+export const policyConfig: LobConfig = {
+  id: 'policy',
+  label: 'Policy',
+  pages: {
+    'policy-information': {
+      strategy: 'dynamic',
+      onLoad: (pageStore) =&gt; {
+        // "local_window_onload" equivalent
+        // Type-safe, debuggable, no eval
+      },
+      onBeforeUnload: () =&gt; {
+        // "local_before_window_unload" equivalent
+      },
+    },
+  },
+};
+
+// Engine calls it with optional chaining:
+pageConfig?.onLoad?.(pageStore);
+// If the hook isn't defined → nothing happens.
+// No error handler needed. No Execute/eval.
+// TypeScript catches typos at build time.
+
+
+// ---- SelectControlText → onFocus ----
+// MUI TextField handles this natively:
+&lt;TextField
+  autoFocus={isFirstField}
+  onFocus={(e) =&gt; e.target.select()}
+/&gt;
+// The "inf"/"cal" prefix convention is gone.
+// Each field is a self-contained component with
+// its own calendar/info icon built in.
+// No ID-prefix parsing, no tagname switch,
+// no ActiveX CLSID checking.
+// 52 lines → 1 prop.
+
+
+// ---- ReDimBrowserArray → not needed ----
+// JavaScript arrays grow dynamically:
+const items = [];
+items.push(newItem);  // no ReDim needed
+// VBScript arrays are fixed-size, so ReDim
+// (re-dimension) allocates a new array.
+// JS arrays are dynamic. This function has
+// no equivalent because it solves a VBScript
+// language limitation, not a business problem.
+
+
+// ---- ShowUserMessage → MUI Snackbar ----
+// browserCommandStore handles notifications:
+useBrowserCommandStore.getState().notify(
+  'warning',  // severity
+  'Policy status requires a reason'
+);
+// Renders as a non-blocking MUI Snackbar/Alert.
+// No ActiveX UserMessage object.
+// No modal blocking dialog.
+// No Set obj = Nothing cleanup.</pre>
+    </div>
+  </div>
+
+  <div class="expl">
+    <h4>Detailed breakdown</h4>
+    <ul>
+      <li><strong>PageUniqueRoutine (1136–1149):</strong> VBScript's <code>Execute</code> is equivalent to JavaScript's <code>eval()</code> — it runs a string as code. EEBrowser uses it to call page-specific functions that may or may not exist on the current page. For example, a policy page might have a <code>Sub local_window_onload()</code> in its own script block. <code>Execute "local_window_onload"</code> calls it; if it doesn't exist, <code>On Error Resume Next</code> swallows the error.
+        <br><br>In React, this customization pattern becomes typed config objects. Each LOB has a config file (<code>lobs/policy/policy-config.ts</code>) with optional hooks. The engine calls them with optional chaining: <code>pageConfig?.onLoad?.()</code>. This is fundamentally safer because:
+        <ul>
+          <li>TypeScript catches hook name typos at build time</li>
+          <li>No runtime <code>eval()</code> — no code injection risk</li>
+          <li>Each hook's signature is typed — the engine guarantees what arguments it provides</li>
+          <li>Missing hooks are <code>undefined</code>, not runtime errors</li>
+        </ul>
+      </li>
+      <li><strong>SelectControlText (1152–1204, 52 lines):</strong> A two-level <code>Select Case</code> switch that handles every possible control type in the legacy system. It first checks the ID prefix ("inf"/"cal" → redirect to the date control "dta" prefix), then switches on the tag name (OBJECT → check ActiveX CLSID, RADIOBUTTON, IBUTTON, XMLLIST, COMBO, KPCOMBO, SELECT, INPUT → sub-switch on type, TEXTAREA). For the ActiveX OBJECT cases, it checks literal CLSIDs (COM class identifiers) for Protoview date/time and numeric controls.
+        <br><br>In React: <code>onFocus={(e) =&gt; e.target.select()}</code>. One line. The 52-line switch exists because the legacy system has 10+ different control types (native HTML, ActiveX, custom HTC behaviors) that all handle focus differently. MUI normalizes all of this — a <code>TextField</code>, <code>DatePicker</code>, <code>Autocomplete</code>, etc. all support the standard <code>onFocus</code> event. The ID prefix convention ("inf"/"cal"/"dta") disappears because each field component contains its own info button and calendar icon as MUI <code>InputAdornment</code> — no external button with a name-linked ID.</li>
+      <li><strong>ReDimBrowserArray (1210–1219):</strong> <code>ReDim</code> is VBScript's array resize operation. VBScript arrays have a fixed size set at creation; to grow them, you must <code>ReDim Preserve</code> (allocate new, copy old, replace reference). This function centralizes that for two module-level arrays. JavaScript arrays are dynamic — <code>.push()</code>, <code>.splice()</code>, spread (<code>[...arr, newItem]</code>) all work without resizing. This function solves a language limitation that doesn't exist in JavaScript.</li>
+      <li><strong>ShowUserMessage (1221–1231):</strong> Creates a <code>UserMessage</code> ActiveX object (a custom COM component) to display a modal dialog with a message, type (Error/Warning/Info), and button options (OK, OK/Cancel, etc.). It blocks execution until the user responds and returns the button they clicked. In React, <code>browserCommandStore.notify(severity, message)</code> adds a notification to the store, and the <code>NotificationHost</code> component renders it as a non-blocking MUI Snackbar with auto-dismiss. For blocking confirmations (like "are you sure you want to delete?"), MUI's <code>&lt;Dialog&gt;</code> with action buttons replaces the modal dialog.</li>
+    </ul>
+  </div>
+</div>
+
+
+</main>
+
+<footer>
+  <div class="wrap">EEBrowser.vbs → React · Detailed Side-by-Side Reference · Sprint Task 5 · AQS ASP → React POC</div>
+</footer>

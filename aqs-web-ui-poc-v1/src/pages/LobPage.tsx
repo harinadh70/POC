@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLoaderData, type LoaderFunctionArgs } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -6,35 +6,25 @@ import Typography from '@mui/material/Typography';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Divider from '@mui/material/Divider';
-import type { PageBuildResponse, PageConfig } from '@/types';
-import { api } from '@/engine/api/client';
 import { useAuthStore } from '@/stores/auth-store';
 import { getLob } from '@/lobs/registry';
-import { mergeControlsWithPageBuild } from '@/config/routes';
-import { usePageStore } from '@/stores/page-store';
-import { dispatchCommands } from '@/engine/commands/dispatch';
+import { windowLoad, useWindowLoad, type WindowLoadResult } from '@/engine/load/window-load';
 import { FormRenderer } from '@/engine/renderers/FormRenderer';
 import { DataGridRenderer } from '@/engine/renderers/DataGridRenderer';
 import { ButtonsRenderer } from '@/engine/renderers/ButtonsRenderer';
 
-interface LobPageData {
-  pageBuild: PageBuildResponse;
-  pageConfig?: PageConfig;
-  lob: string;
-}
-
 /**
- * Route loader (SDD §4.5, §5.3): Navigation API → PageBuild API. Runs before
- * the page renders, exactly like the legacy Window_OnLoad moved into a loader.
+ * Route loader (SDD §4.5, §5.3): the loader half of the legacy Window_OnLoad.
+ * Delegates to windowLoad() — the Task 5 TS conversion of second_window_onload
+ * (Eebrowser.vbs lines 120–397). Runs before the page renders.
  */
-export async function lobPageLoader({ params }: LoaderFunctionArgs): Promise<LobPageData> {
+export async function lobPageLoader({ params }: LoaderFunctionArgs): Promise<WindowLoadResult> {
   const session = useAuthStore.getState().session ?? { userId: 'guest', compLoc: 'PIHW' };
   const lob = params.lob!;
-  const pageId = params.pageId!;
-  const nav = await api.navigate({ ...session, lob }, pageId);
-  const pageBuild = await api.pageBuild({ ...session, lob }, nav.pageId);
-  const pageConfig = getLob(lob)?.pages?.[pageId];
-  return { pageBuild, pageConfig, lob };
+  return windowLoad(
+    { session, lob, pageId: params.pageId! },
+    (pageId) => getLob(lob)?.pages?.[pageId],
+  );
 }
 
 /**
@@ -42,14 +32,13 @@ export async function lobPageLoader({ params }: LoaderFunctionArgs): Promise<Lob
  * LOB-specific itself; the engine + config do the work.
  */
 export function LobPage() {
-  const { pageBuild, pageConfig } = useLoaderData() as LobPageData;
+  const loadResult = useLoaderData() as WindowLoadResult;
+  const { pageBuild, pageConfig } = loadResult;
   const [tab, setTab] = useState(0);
 
-  useEffect(() => {
-    const merged = mergeControlsWithPageBuild(pageConfig, pageBuild);
-    usePageStore.getState().loadPage(pageBuild, merged);
-    if (pageBuild.commands?.length) dispatchCommands(pageBuild.commands);
-  }, [pageBuild, pageConfig]);
+  // The effect half of the legacy Window_OnLoad (hydrate, flags, commands,
+  // page hook, timing) — see engine/load/window-load.ts.
+  useWindowLoad(loadResult);
 
   const tabs = pageBuild.tabs ?? [];
 

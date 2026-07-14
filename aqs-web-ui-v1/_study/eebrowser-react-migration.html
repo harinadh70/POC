@@ -1,0 +1,993 @@
+<title>EEBrowser.vbs → React Migration Analysis</title>
+<style>
+  @font-face {
+    font-family: 'Display';
+    src: local('SF Pro Display'), local('Segoe UI'), local('Helvetica Neue');
+    font-weight: 100 900;
+  }
+
+  :root {
+    --ground: #F6F7FA;
+    --surface: #FFFFFF;
+    --surface-alt: #ECEEF3;
+    --ink: #1A1D24;
+    --ink-2: #3B4050;
+    --ink-3: #6B7185;
+    --rule: #D4D8E1;
+    --vbs: #8B5E1A;
+    --vbs-bg: #FEF7ED;
+    --vbs-rule: #E8D5B8;
+    --react: #1A6B8A;
+    --react-bg: #EDF6FA;
+    --react-rule: #B8D8E8;
+    --accent: #2D5DA1;
+    --accent-soft: #E8EFF8;
+    --gone: #C0392B;
+    --gone-bg: #FDECEB;
+    --kept: #27774A;
+    --kept-bg: #E9F5EE;
+    --shadow: 0 1px 3px rgba(26,29,36,.06), 0 6px 24px rgba(26,29,36,.05);
+    --mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+    --body: 'Display', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0F1115;
+      --surface: #181B22;
+      --surface-alt: #22262F;
+      --ink: #E2E5EC;
+      --ink-2: #B0B6C4;
+      --ink-3: #7A8194;
+      --rule: #2E3340;
+      --vbs: #D4A04A;
+      --vbs-bg: #251E12;
+      --vbs-rule: #4A3D26;
+      --react: #5CB8D6;
+      --react-bg: #121F26;
+      --react-rule: #264050;
+      --accent: #6EA2D9;
+      --accent-soft: #1A2636;
+      --gone: #E07066;
+      --gone-bg: #2A1616;
+      --kept: #5EBE7A;
+      --kept-bg: #14261A;
+      --shadow: 0 1px 3px rgba(0,0,0,.25), 0 8px 28px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F7FA; --surface: #FFFFFF; --surface-alt: #ECEEF3;
+    --ink: #1A1D24; --ink-2: #3B4050; --ink-3: #6B7185; --rule: #D4D8E1;
+    --vbs: #8B5E1A; --vbs-bg: #FEF7ED; --vbs-rule: #E8D5B8;
+    --react: #1A6B8A; --react-bg: #EDF6FA; --react-rule: #B8D8E8;
+    --accent: #2D5DA1; --accent-soft: #E8EFF8;
+    --gone: #C0392B; --gone-bg: #FDECEB; --kept: #27774A; --kept-bg: #E9F5EE;
+    --shadow: 0 1px 3px rgba(26,29,36,.06), 0 6px 24px rgba(26,29,36,.05);
+  }
+  :root[data-theme="dark"] {
+    --ground: #0F1115; --surface: #181B22; --surface-alt: #22262F;
+    --ink: #E2E5EC; --ink-2: #B0B6C4; --ink-3: #7A8194; --rule: #2E3340;
+    --vbs: #D4A04A; --vbs-bg: #251E12; --vbs-rule: #4A3D26;
+    --react: #5CB8D6; --react-bg: #121F26; --react-rule: #264050;
+    --accent: #6EA2D9; --accent-soft: #1A2636;
+    --gone: #E07066; --gone-bg: #2A1616; --kept: #5EBE7A; --kept-bg: #14261A;
+    --shadow: 0 1px 3px rgba(0,0,0,.25), 0 8px 28px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; margin: 0 }
+  body {
+    background: var(--ground); color: var(--ink);
+    font-family: var(--body); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px }
+  code, .mono { font-family: var(--mono); font-size: .84em }
+  code {
+    background: var(--surface-alt); border: 1px solid var(--rule);
+    border-radius: 4px; padding: .08em .4em;
+  }
+  pre {
+    font-family: var(--mono); font-size: 13px; line-height: 1.55;
+    padding: 16px 18px; border-radius: 8px; overflow-x: auto;
+    tab-size: 2; white-space: pre; margin: 0;
+  }
+  pre.vbs { background: var(--vbs-bg); border: 1px solid var(--vbs-rule); color: var(--ink) }
+  pre.tsx { background: var(--react-bg); border: 1px solid var(--react-rule); color: var(--ink) }
+  a { color: var(--accent); text-decoration: none }
+  a:hover { text-decoration: underline }
+  :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 3px; border-radius: 4px }
+  p { max-width: var(--measure) }
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.2; letter-spacing: -.015em }
+
+  /* ---- Hero ---- */
+  .hero { padding: 48px 0 10px }
+  .kicker {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  h1 { font-size: clamp(26px, 4.5vw, 40px); font-weight: 760; margin: 12px 0 0 }
+  .lede { font-size: clamp(15.5px, 2vw, 18px); color: var(--ink-2); margin: 14px 0 0; max-width: var(--measure) }
+  .sprint-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 16px; padding: 6px 14px;
+    background: var(--accent-soft); border: 1px solid var(--rule);
+    border-radius: 6px; font-family: var(--mono); font-size: 12px;
+    color: var(--accent); font-weight: 600;
+  }
+
+  /* ---- Thesis card ---- */
+  .thesis {
+    margin-top: 24px; padding: 20px 22px;
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent); border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  .thesis strong { color: var(--accent) }
+  .thesis p { font-size: 15.5px; color: var(--ink-2); margin-top: 8px }
+
+  /* ---- Sections ---- */
+  section { padding: 28px 0; border-top: 1px solid var(--rule); margin-top: 24px }
+  h2 { font-size: clamp(19px, 2.8vw, 24px); font-weight: 720; margin: 0 0 4px }
+  .sub { color: var(--ink-3); margin: 0 0 16px; font-size: 14.5px }
+  h3 { font-size: 17px; font-weight: 680; margin: 20px 0 6px }
+  h4 { font-size: 15px; font-weight: 660; margin: 14px 0 4px; color: var(--ink-2) }
+
+  /* ---- Migration block ---- */
+  .mig {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 22px 24px; margin: 16px 0;
+    box-shadow: var(--shadow);
+  }
+  .mig-head {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .mig-num {
+    display: inline-grid; place-items: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    font-family: var(--mono); font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .mig-title { font-size: 18px; font-weight: 720 }
+  .mig-lines {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-3);
+    letter-spacing: .02em;
+  }
+  .mig p { font-size: 15px; color: var(--ink-2); margin: 6px 0 }
+  .mig .label-pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 6px;
+  }
+  @media (max-width: 600px) { .mig .label-pair { grid-template-columns: 1fr } }
+  .mig .col-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 6px;
+  }
+  .col-label.vbs { color: var(--vbs) }
+  .col-label.react { color: var(--react) }
+
+  .verdict {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 5px;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .verdict.eliminated { background: var(--gone-bg); color: var(--gone) }
+  .verdict.replaced { background: var(--react-bg); color: var(--react) }
+  .verdict.simplified { background: var(--kept-bg); color: var(--kept) }
+
+  .say {
+    margin-top: 14px; padding: 12px 16px;
+    background: var(--accent-soft); border-radius: 8px;
+    font-size: 14px; color: var(--ink-2);
+  }
+  .say::before {
+    content: 'What to say'; display: block;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 4px;
+  }
+
+  /* ---- Summary table ---- */
+  .tbl-wrap { overflow-x: auto; margin: 16px 0 }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left; font-family: var(--mono); font-size: 11px;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+    padding: 8px 12px; border-bottom: 2px solid var(--rule);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 12px; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none }
+
+  /* ---- Footer ---- */
+  footer {
+    border-top: 1px solid var(--rule); padding: 24px 0 50px;
+    margin-top: 30px; color: var(--ink-3); font-size: 13px;
+  }
+</style>
+
+<main class="wrap">
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <div class="kicker">Sprint Task 5 · TS Conversion — Load</div>
+  <h1>EEBrowser.vbs → React Migration</h1>
+  <p class="lede">A line-by-line analysis of the 1,235-line legacy VBScript browser controller, mapped to the React architecture already proven in the POC. Every mechanism, its React replacement, and why.</p>
+  <div class="sprint-tag">Task 5: Windows_Load and supporting functions</div>
+</div>
+
+<div class="thesis">
+  <strong>The core insight</strong>
+  <p>EEBrowser.vbs is one file doing 8 distinct jobs (page init, server calls, event delegation, frame communication, data flags, XML data island, modal lifecycle, page-specific hooks). In React, each job is a <em>separate, testable unit</em> — a route loader, a Zustand store, a hook, or a config object. No single file replaces EEBrowser. The architecture replaces it.</p>
+</div>
+
+
+<!-- ============ OVERVIEW ============ -->
+<section>
+  <h2>What EEBrowser.vbs actually does</h2>
+  <p class="sub">1,235 lines. 8 responsibilities. Here's the map.</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Lines</th>
+          <th>VBScript mechanism</th>
+          <th>React replacement</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">1–113</td><td>20+ module-level Dim flags</td><td>Zustand stores (<code>appStore</code>, <code>pageStore</code>)</td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">120–397</td><td><code>window_onload</code> / <code>second_window_onload</code></td><td>React Router <code>loader</code> + <code>useEffect</code></td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">404–446</td><td>Event delegation handlers</td><td>React <code>onChange</code>/<code>onClick</code> + <code>executeAction</code></td><td><span class="verdict simplified">simplified</span></td></tr>
+        <tr><td class="mono">452–523</td><td><code>FillCallArray2</code> (XML Data Island queries)</td><td>JSON config pre/post-process hooks</td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">525–651</td><td>XML conversion utilities</td><td>Native JSON — not needed</td><td><span class="verdict eliminated">eliminated</span></td></tr>
+        <tr><td class="mono">654–857</td><td><code>CallServer</code> (sync XMLHTTP POST)</td><td><code>api.pageLayout()</code> + <code>dispatchCommands()</code></td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">870–987</td><td>Button/Nav/Checkbox click handlers</td><td>React event props → <code>executeAction</code></td><td><span class="verdict simplified">simplified</span></td></tr>
+        <tr><td class="mono">990–1017</td><td><code>OnCheckBoxClick</code> → <code>CallServer</code></td><td><code>onChange</code> → <code>executeAction</code></td><td><span class="verdict simplified">simplified</span></td></tr>
+        <tr><td class="mono">1044–1068</td><td><code>EnableButtonOnSelection</code></td><td>Declarative <code>disabled={!value}</code></td><td><span class="verdict simplified">simplified</span></td></tr>
+        <tr><td class="mono">1084–1133</td><td><code>Window_OnBeforeUnload</code> / <code>OnUnload</code></td><td>React Router <code>useBlocker</code> + <code>beforeunload</code></td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">1136–1149</td><td><code>PageUniqueRoutine</code> (<code>Execute</code> dynamic VBS)</td><td>LOB config hooks (<code>lobs/*/config.ts</code>)</td><td><span class="verdict replaced">replaced</span></td></tr>
+        <tr><td class="mono">1152–1204</td><td><code>SelectControlText</code></td><td>MUI <code>autoFocus</code> + <code>onFocus</code> select</td><td><span class="verdict simplified">simplified</span></td></tr>
+        <tr><td class="mono">1210–1231</td><td><code>ReDimBrowserArray</code> / <code>ShowUserMessage</code></td><td>JS arrays grow naturally / MUI Snackbar</td><td><span class="verdict eliminated">eliminated</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ============ #1 MODULE FLAGS ============ -->
+<section>
+  <h2>The 12 migrations, one by one</h2>
+  <p class="sub">Each block shows the legacy VBS, the React equivalent, what changed, and what to say on the call.</p>
+
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">1</span>
+      <span class="mig-title">Module-Level Flags → Zustand Stores</span>
+      <span class="mig-lines">Lines 1–113</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>EEBrowser keeps 20+ global variables (<code>mblnPageLoaded</code>, <code>mblnCallServer</code>, <code>mblnEEDataChanged</code>, <code>mblnClosing</code>, etc.) to coordinate timing between async operations and prevent race conditions. Every handler checks these flags before acting.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy VBScript</div>
+<pre class="vbs">Dim mblnPageLoaded      ' False until init done
+Dim mblnCallServer      ' True = OK to call server
+Dim mblnDoBrowserCommands
+Dim mblnEEDataChanged   ' dirty flag
+Dim mblnNavButtonClicked
+Dim mblnClosing
+Dim mobjAQSMain         ' parent frame ref
+Dim mxmlDoc             ' XML Data Island
+Dim marrEEData(12)      ' 13-slot call array
+Dim marrSessionInformation()</pre>
+      </div>
+      <div>
+        <div class="col-label react">React (Zustand stores)</div>
+<pre class="tsx">// appStore — global session state
+const useAppStore = create((set) => ({
+  isDirty: false,
+  variables: {},
+  setDirty: (d) => set({ isDirty: d }),
+}));
+
+// pageStore — per-page control state
+const usePageStore = create((set) => ({
+  pageId: null,
+  controls: {},
+  loadPage: (pb, merged) => set(...),
+}));</pre>
+      </div>
+    </div>
+
+    <p><strong>Why this is better:</strong> Each flag becomes a typed property in its own store. React's reactivity means components automatically re-render when state changes — no manual flag-checking in every handler. The <code>mblnPageLoaded</code> guard is completely unnecessary because React doesn't render until data arrives (the route loader ensures this).</p>
+
+    <div class="say">EEBrowser has 20+ global flags to prevent race conditions. In React, the component lifecycle handles that automatically — you can't interact with a page until it renders, and it doesn't render until the data is loaded. So all those <code>mblnPageLoaded</code> checks just disappear.</div>
+  </div>
+
+
+  <!-- ============ #2 WINDOW_ONLOAD ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">2</span>
+      <span class="mig-title">window_onload → Route Loader + useEffect</span>
+      <span class="mig-lines">Lines 120–397</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>The biggest function in the file (277 lines). It does 10 things sequentially: resize modals, get frame references, set timing, set dirty flags based on action mode, load the XML Data Island, handle ShowNextOnEdit, mark required indicators, build path labels, select tabs, and focus the first control.</p>
+
+    <h4>What each step becomes in React</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Legacy step (VBS)</th><th>React equivalent</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Modal sizing (133–143)</td><td>MUI Dialog — auto-sizes</td><td>CSS handles responsive sizing</td></tr>
+          <tr><td>Frame references (145–157)</td><td>Eliminated — SPA has no frames</td><td>React Router Outlet replaces frames entirely</td></tr>
+          <tr><td>Timing milestones (159–166)</td><td>Browser Performance API</td><td><code>performance.mark()</code> is the modern standard</td></tr>
+          <tr><td>Dirty flags by action (175–195)</td><td><code>appStore.setDirty()</code> in loader</td><td>Action mode comes from Navigation API response</td></tr>
+          <tr><td>XML Data Island load (198–211)</td><td>PageBuild API returns JSON</td><td>Backend converts XML→JSON before sending</td></tr>
+          <tr><td>ShowNextOnEdit logic (222–280)</td><td>Declarative <code>visible</code> prop</td><td>Server sends visibility in BrowserCommands</td></tr>
+          <tr><td>Required indicators (282–285)</td><td><code>required</code> prop on ControlDef</td><td>PageBuild includes field metadata</td></tr>
+          <tr><td>Path/page labels (287–327)</td><td>Breadcrumb component from Router</td><td>React Router knows the current path</td></tr>
+          <tr><td>Tab selection (335–358)</td><td><code>useState(0)</code> + MUI Tabs</td><td>One line of React state</td></tr>
+          <tr><td>Focus first control (362–384)</td><td>MUI <code>autoFocus</code> prop</td><td>Declarative, not imperative</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — 277 lines of sequential init</div>
+<pre class="vbs">Sub window_onload()
+  Call second_window_onload()
+End Sub
+
+Sub second_window_onload()
+  ' Resize modal if too big
+  If document.all("hddIsModal").Value = "1" Then
+    If CLng(document.all("hddWindowWidth").Value) _
+       > screen.availWidth Then ...
+  End If
+  ' Get parent frame
+  Set mobjAQSMain = parent.frames("menu") ...
+  ' Load XML Data Island
+  Set mxmlDoc = CreateObject("MSXML2.DOMDocument.6.0")
+  mxmlDoc.loadXML(document.all("xdiPageData").innerHTML)
+  ' ... 250 more lines of init ...
+  mblnPageLoaded = True
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — split across loader + component</div>
+<pre class="tsx">// BEFORE render: route loader fetches data
+export async function lobPageLoader({ params }) {
+  const nav = await api.navigate(session, pageId);
+  const pb = await api.pageBuild(session, nav.pageId);
+  return { pageBuild: pb };
+}
+
+// AFTER render: apply initial commands
+export function LobPage() {
+  const { pageBuild } = useLoaderData();
+  useEffect(() => {
+    usePageStore.getState().loadPage(pageBuild);
+    if (pageBuild.commands?.length)
+      dispatchCommands(pageBuild.commands);
+  }, [pageBuild]);
+  // Tabs, fields, buttons — all declarative
+  return &lt;FormRenderer /&gt;;
+}</pre>
+      </div>
+    </div>
+
+    <p><strong>Key difference:</strong> VBScript's <code>window_onload</code> runs imperatively AFTER the page HTML is loaded, then mutates the DOM. React's loader runs BEFORE the component renders, fetches all the data, then the component renders once with the correct state. No DOM mutation, no race conditions, no <code>mblnPageLoaded</code> flag.</p>
+
+    <div class="say">The legacy <code>window_onload</code> is 277 lines of sequential initialization — resize, find frames, load XML, set flags, focus controls. In React, this splits cleanly into two parts: a route loader that fetches data BEFORE the page renders, and a <code>useEffect</code> that applies the server's initial commands. Ten steps become two. The page can't even appear until the data is ready, so all the timing guards are unnecessary.</div>
+  </div>
+
+
+  <!-- ============ #3 EVENT DELEGATION ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">3</span>
+      <span class="mig-title">Event Delegation → React Event Props</span>
+      <span class="mig-lines">Lines 404–446, 912–987</span>
+      <span class="verdict simplified">simplified</span>
+    </div>
+    <p>Nearly every VBS event handler follows an identical pattern: check <code>mblnPageLoaded</code>, check <code>mobjAQSMain Is Not Nothing</code>, then delegate to the parent frame's handler. This exists because VBScript has no module system — the content frame has to reach up to the parent for any behavior.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy pattern (repeated 15+ times)</div>
+<pre class="vbs">Sub OnFocusHandler(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.OnFocusHandler(strID, Window)
+    End If
+  End If
+End Sub
+
+Sub ButtonOnClickHandler(strID)
+  If mblnPageLoaded Then
+    If Not mobjAQSMain Is Nothing Then
+      Call mobjAQSMain.ButtonOnClickHandler(strID, Window)
+    End If
+  End If
+End Sub
+' ... same for Calendar, Info, Note, List, Tab ...</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — events are local</div>
+<pre class="tsx">// FieldRenderer — each field handles its own events
+function FieldRenderer({ control }) {
+  const handleChange = (value) => {
+    usePageStore.getState().setValue(
+      control.matchcode, value
+    );
+    // If the field has a server action, fire it
+    if (control.hasAction) {
+      executeAction({
+        session, matchcode: control.matchcode,
+        action: 'change', value,
+      }, navigate);
+    }
+  };
+  return &lt;TextField onChange={handleChange} /&gt;;
+}</pre>
+      </div>
+    </div>
+
+    <p><strong>Why the delegation pattern disappears:</strong> In the frame architecture, the content page can't do anything alone — it has to call up to <code>mobjAQSMain</code> for every action. React is a single-page app with no frames. The component that renders the control IS the handler. The 15 nearly-identical delegation stubs (OnFocusHandler, ButtonOnClickHandler, CalendarButtonOnClick, InfoButtonOnClick, NoteButtonOnClick, ListButtonOnClick, ListButtonClick, OnTabClickHandler, DateOnFocusHandler, DateOnKeyUpHandler) all collapse into React's native event system.</p>
+
+    <div class="say">The legacy code has 15 event handlers that all do the same thing — check two flags, then delegate to the parent frame. That's a workaround for the frame architecture. In a React SPA, there are no frames, so the component handles its own events directly. Fifteen repetitive handlers become standard React <code>onChange</code> / <code>onClick</code> props — each written once on the field that needs it.</div>
+  </div>
+
+
+  <!-- ============ #4 FILLCALLARRAY2 ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">4</span>
+      <span class="mig-title">FillCallArray2 → JSON Config Hooks</span>
+      <span class="mig-lines">Lines 452–523</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>This function queries the XML Data Island for pre/post-process subroutine calls configured per matchcode, building the <code>marrServerCalls()</code> array. XPath query: <code>//control[@matchcode="X"]/calls[@type="post"]/call</code>. This is how the legacy system configures "when control X changes, call these server-side routines in order."</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — XPath queries on XML Data Island</div>
+<pre class="vbs">Sub FillCallArray2(strMatchcode, strType)
+  Set objNodeList = mxmlDoc.selectNodes( _
+    "//control[@matchcode='" & strMatchcode _
+    & "']/calls[@type='" & strType _
+    & "']/call")
+  intNodeCount = objNodeList.length
+  ReDim marrServerCalls(intNodeCount - 1, 3)
+  For intC = 0 To intNodeCount - 1
+    Set objNode = objNodeList.item(intC)
+    marrServerCalls(intC, 0) = objNode...
+    marrServerCalls(intC, 1) = objNode...
+  Next
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — config is already JSON</div>
+<pre class="tsx">// The PageBuild API returns controls with their
+// actions pre-configured as JSON:
+{
+  matchcode: "PolicyStatus",
+  type: "combo",
+  hasAction: true,
+  // Pre/post hooks are in the control definition
+  // No client-side XML query needed
+}
+
+// When the user changes the field:
+executeAction({
+  matchcode: "PolicyStatus",
+  action: "change",
+  value: newValue,
+  formData: currentFormState,
+}, navigate);
+// Server knows the pre/post calls internally</pre>
+      </div>
+    </div>
+
+    <p><strong>The shift:</strong> In the legacy system, the XML Data Island carries the call configuration to the browser, and <code>FillCallArray2</code> parses it client-side. In React, the backend keeps that configuration — the PageBuild API returns a simple <code>hasAction: true</code> flag, and the server handles the pre/post call orchestration internally. The client doesn't need to know what server-side routines will run.</p>
+
+    <div class="say"><code>FillCallArray2</code> parses an XML Data Island to figure out which server routines to call when a control changes. In React, we moved that responsibility to the backend. The PageBuild API just tells the client "this field has an action" — when the user changes it, the client sends one request, and the server handles the call chain internally. No XML parsing on the client at all.</div>
+  </div>
+
+
+  <!-- ============ #5 XML UTILITIES ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">5</span>
+      <span class="mig-title">XML Conversion Utilities → Eliminated</span>
+      <span class="mig-lines">Lines 525–651</span>
+      <span class="verdict eliminated">eliminated</span>
+    </div>
+    <p>127 lines of functions to convert between VBScript arrays and XML strings: <code>convertArrayToXML</code>, <code>convertXMLToArray</code>, <code>convertBrowserXMLTo2DArray</code>, <code>EscapeForHTTPTrip</code>, <code>UnEscapeFromHTTPTrip</code>. These exist because the server speaks XML and VBScript arrays aren't serializable.</p>
+
+    <p><strong>In React:</strong> The .NET wrapper API converts legacy XML to JSON on the server side (SDD §5.3). The client sends and receives JSON. <code>JSON.stringify()</code> and <code>JSON.parse()</code> are built into every browser. These 127 lines have no equivalent — they simply aren't needed.</p>
+
+    <div class="say">There are 127 lines of XML-to-array conversion code. That entire block is eliminated. The .NET wrapper API handles XML-to-JSON conversion on the server, so the React client only deals with native JSON objects — JavaScript handles serialization natively.</div>
+  </div>
+
+
+  <!-- ============ #6 CALLSERVER ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">6</span>
+      <span class="mig-title">CallServer → api.pageLayout() + dispatchCommands()</span>
+      <span class="mig-lines">Lines 654–857</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>The core of EEBrowser: 203 lines that package the 13-slot <code>marrEEData</code> array + session info + server call XML into an XML payload, POST it synchronously to <code>xmlservercall.asp</code>, parse the response XML back into arrays, and execute browser commands. This is the single communication channel between page and server.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — synchronous XML POST</div>
+<pre class="vbs">Sub CallServer()
+  strURL = mstrXMLHttpPath & _
+    "system/asp/xmlservercall.asp?object=ZEntEdtCtl"
+  Call convertArrayToXML("SessionInformation", _
+    marrSessionInformation, strSessionXML)
+  Call convertArrayToXML("EEData", marrEEData, strEEData)
+  mstrServerCallXML = mstrServerCallXML _
+    & strSessionXML & strEEData
+
+  Set mobjServerRequest = _
+    CreateObject("MSXML2.XMLHTTP.6.0")
+  mobjServerRequest.open "POST", strURL, False
+  mobjServerRequest.setRequestHeader _
+    "Content-Type", "text/xml-SOAP"
+  mobjServerRequest.Send _
+    "&lt;aqs&gt;" & mstrServerCallXML & "&lt;/aqs&gt;"
+
+  ' Parse response: SessionInfo, EEData,
+  '   ListItems, BrowserCommands
+  ' Then: ExecuteBrowserCommands(obj, Window)
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — async JSON + command dispatch</div>
+<pre class="tsx">// api/client.ts — the AqsApi interface
+pageLayout(session, req) {
+  // One async call, JSON in and out
+  return fetch('/api/v1/ui/pagelayout', {
+    method: 'POST',
+    body: JSON.stringify({
+      session, matchcode: req.matchcode,
+      action: req.action, formData: req.formData,
+    }),
+  }).then(r => r.json());
+}
+
+// execute-action.ts — the caller
+const result = await api.pageLayout(session, req);
+const { navigateTo } = dispatchCommands(
+  result.commands   // typed array, not XML
+);
+// dispatchCommands routes each command type
+// to the right store (page or browser-command)</pre>
+      </div>
+    </div>
+
+    <p><strong>What changed architecturally:</strong></p>
+    <ul style="font-size:15px;color:var(--ink-2);padding-left:20px;margin:8px 0">
+      <li><strong>Sync → Async:</strong> The VBS call freezes the browser. React uses <code>async/await</code> — the UI stays responsive.</li>
+      <li><strong>XML → JSON:</strong> No <code>convertArrayToXML</code> / <code>convertXMLToArray</code> round-trip.</li>
+      <li><strong>13-slot array → typed object:</strong> <code>marrEEData(0..12)</code> becomes <code>{ matchcode, action, value, formData }</code> — self-documenting.</li>
+      <li><strong>Monolithic → split:</strong> CallServer = package + send + parse + execute. React splits this: <code>api.pageLayout()</code> sends/receives, <code>dispatchCommands()</code> executes.</li>
+    </ul>
+
+    <div class="say"><code>CallServer</code> is the heart of EEBrowser — 203 lines that build XML, POST it synchronously (freezing the browser), parse the response XML, and execute commands. In React, this becomes two clean functions: <code>api.pageLayout()</code> sends JSON and gets JSON back asynchronously, and <code>dispatchCommands()</code> routes each command to the right place. The 13-slot <code>marrEEData</code> array becomes a typed object with named properties. The browser never freezes.</div>
+  </div>
+
+
+  <!-- ============ #7 ONCHECKBOXCLICK ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">7</span>
+      <span class="mig-title">OnCheckBoxClick / EnableButton → Declarative Props</span>
+      <span class="mig-lines">Lines 990–1068</span>
+      <span class="verdict simplified">simplified</span>
+    </div>
+    <p><code>OnCheckBoxClick</code> manually sets 3 slots of <code>marrEEData</code>, then calls <code>CallServer</code>. <code>EnableButtonOnSelection</code> manually enables/disables a button based on a combo's <code>listIndex</code>. Both are imperative DOM manipulation.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — manual slot-setting</div>
+<pre class="vbs">Sub OnCheckBoxClick(strMatchcode)
+  marrEEData(1) = strMatchcode
+  marrEEData(5) = 1   ' post-process indicator
+  marrEEData(12) = GetControlXML(strMatchcode)
+  Call CallServer()
+End Sub
+
+Sub EnableButtonOnSelection(strCombo, strBtn)
+  If document.all(strCombo).listIndex > 0 Then
+    document.all(strBtn).disabled = False
+  Else
+    document.all(strBtn).disabled = True
+  End If
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — declarative</div>
+<pre class="tsx">// Checkbox change: same executeAction path
+&lt;Checkbox onChange={(e) =>
+  executeAction({
+    matchcode: "MyCheckbox",
+    action: "change",
+    value: e.target.checked,
+  }, navigate)
+} /&gt;
+
+// Button enabled by selection: just JSX
+&lt;Button disabled={!comboValue}&gt;
+  Go
+&lt;/Button&gt;
+// React re-renders when comboValue changes —
+// no imperative enable/disable needed</pre>
+      </div>
+    </div>
+
+    <div class="say">Things like <code>OnCheckBoxClick</code> manually fill array slots then call the server. <code>EnableButtonOnSelection</code> manually toggles a button's disabled state. In React, the checkbox change goes through the same <code>executeAction</code> pipeline as every other control. And enabling a button based on a combo value is just <code>disabled={!comboValue}</code> — React re-renders automatically when the value changes.</div>
+  </div>
+
+
+  <!-- ============ #8 BEFOREUNLOAD ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">8</span>
+      <span class="mig-title">Window_OnBeforeUnload → useBlocker + beforeunload</span>
+      <span class="mig-lines">Lines 1084–1133</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>Handles unsaved data: if the page is a modal with changed data and the user didn't click a nav button, it fires a CANCEL CallServer to roll back server state, then nullifies all frame references to prevent memory leaks in IE.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — manual cleanup</div>
+<pre class="vbs">Sub Window_OnBeforeUnload()
+  If document.all("hddIsModal").Value = "1" Then
+    If mblnEEDataChanged Then
+      If Not mblnNavButtonClicked Then
+        marrEEData(1) = "CANCEL"
+        Call CallServer()
+      End If
+    End If
+  End If
+  Set mobjAQSMain = Nothing
+  Set mobjMenuFrame = Nothing
+  Set mobjTreeFrame = Nothing
+  Call PageUniqueRoutine(
+    "local_before_window_unload")
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — Router blocker + effect cleanup</div>
+<pre class="tsx">function LobPage() {
+  const isDirty = useAppStore(s => s.isDirty);
+
+  // Block in-app navigation if dirty
+  const blocker = useBlocker(isDirty);
+
+  // Block browser close/refresh if dirty
+  useEffect(() => {
+    const handler = (e) => {
+      if (isDirty) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener(
+      'beforeunload', handler
+    );
+  }, [isDirty]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => useAppStore.getState().reset();
+  }, []);
+}</pre>
+      </div>
+    </div>
+
+    <p><strong>Key differences:</strong> No manual frame reference cleanup (no frames exist). The CANCEL CallServer for rollback moves to the blocker confirmation handler — if the user confirms leaving, fire the cancel API call. React's <code>useEffect</code> cleanup function replaces <code>Set obj = Nothing</code> for memory management.</p>
+
+    <div class="say">The legacy <code>Window_OnBeforeUnload</code> does two things: sends a CANCEL to the server to roll back if data changed, and manually nullifies frame references to prevent IE memory leaks. In React, <code>useBlocker</code> from React Router handles the "are you sure?" prompt for in-app navigation, and the standard <code>beforeunload</code> event handles browser close. Memory management is automatic — React cleans up when a component unmounts.</div>
+  </div>
+
+
+  <!-- ============ #9 PAGEUNIQUEROUTINE ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">9</span>
+      <span class="mig-title">PageUniqueRoutine → LOB Config Hooks</span>
+      <span class="mig-lines">Lines 1136–1149</span>
+      <span class="verdict replaced">replaced</span>
+    </div>
+    <p>The customization escape hatch: uses VBScript's <code>Execute</code> statement to dynamically run page-specific scripts like <code>local_window_onload</code> or <code>local_before_window_unload</code> — if the function exists on the page, it runs; if not, the error handler swallows the failure.</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — dynamic eval</div>
+<pre class="vbs">Sub PageUniqueRoutine(strRoutine)
+  On Error Resume Next
+  Execute strRoutine
+  Call TrapBrowserError("PageUniqueRoutine|1")
+End Sub
+
+' Called as:
+Call PageUniqueRoutine("local_window_onload")
+Call PageUniqueRoutine("local_before_window_unload")</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — typed config per LOB</div>
+<pre class="tsx">// lobs/policy/policy-config.ts
+export const policyConfig: LobConfig = {
+  id: 'policy',
+  label: 'Policy',
+  pages: {
+    'policy-information': {
+      strategy: 'dynamic',
+      // LOB-specific hooks (typed, not eval'd)
+      onLoad: (pageStore) => {
+        // local_window_onload equivalent
+      },
+      onBeforeUnload: (appStore) => {
+        // local_before_window_unload equivalent
+      },
+    },
+  },
+};
+
+// Engine calls it safely:
+pageConfig?.onLoad?.(pageStore);</pre>
+      </div>
+    </div>
+
+    <p><strong>Why this matters:</strong> <code>Execute</code> is VBScript's <code>eval()</code> — it runs arbitrary code strings at runtime. It's how the legacy system achieves per-page customization. In React, the LOB config object serves the same purpose: each LOB defines typed hook functions in its config file. The engine calls them with optional chaining (<code>?.onLoad?.()</code>). If a hook isn't defined, nothing runs — no error handler needed. This is the same pattern that lets 156 LOBs share one engine.</p>
+
+    <div class="say"><code>PageUniqueRoutine</code> uses VBScript's <code>Execute</code> — essentially <code>eval</code> — to run page-specific code that may or may not exist. It's the customization hook for individual pages. In React, each LOB has a typed config file with optional hook functions — <code>onLoad</code>, <code>onBeforeUnload</code>, etc. The engine calls them with optional chaining. If the hook isn't defined, nothing happens. No <code>eval</code>, no error swallowing, and TypeScript catches mistakes at build time.</div>
+  </div>
+
+
+  <!-- ============ #10 SELECTCONTROLTEXT ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">10</span>
+      <span class="mig-title">SelectControlText → MUI autoFocus / onFocus</span>
+      <span class="mig-lines">Lines 1152–1204</span>
+      <span class="verdict simplified">simplified</span>
+    </div>
+    <p>52 lines with a <code>Select Case</code> on the control's <code>tagName</code> (OBJECT, RADIOBUTTON, IBUTTON, XMLLIST, COMBO, KPCOMBO, SELECT, INPUT/TEXT/PASSWORD/CHECKBOX/RADIO, TEXTAREA) to select text on focus. Also handles the "info"/"cal" button prefix convention — if the focused control starts with "inf" or "cal", it redirects focus to the associated date control (<code>dta</code> prefix).</p>
+
+    <div class="label-pair">
+      <div>
+        <div class="col-label vbs">Legacy — 52-line tag switch</div>
+<pre class="vbs">Sub SelectControlText(strID)
+  If Left(strID,3) = "inf" Or _
+     Left(strID,3) = "cal" Then
+    Set objCurrentControl = _
+      document.all("dta" & Right(strID,Len(strID)-3))
+  Else
+    Set objCurrentControl = document.all(strID)
+  End If
+  Select Case UCase(objCurrentControl.tagname)
+    Case "OBJECT" ...
+    Case "COMBO", "KPCOMBO"
+      objCurrentControl.Select()
+    Case "INPUT"
+      Select Case UCase(objCurrentControl.type)
+        Case "TEXT" ...
+      End Select
+    Case "TEXTAREA"
+      objCurrentControl.Select()
+  End Select
+End Sub</pre>
+      </div>
+      <div>
+        <div class="col-label react">React — built into MUI</div>
+<pre class="tsx">// MUI TextField selects text on focus natively:
+&lt;TextField
+  autoFocus={isFirstField}
+  onFocus={(e) => e.target.select()}
+/&gt;
+
+// The "inf"/"cal" prefix convention is gone —
+// each field is a self-contained component
+// with its own calendar/info button integrated.
+// No ID-prefix parsing needed.</pre>
+      </div>
+    </div>
+
+    <div class="say"><code>SelectControlText</code> is 52 lines of tag-name switching to select text when a control gets focus. It also has to parse ID prefixes like "inf" and "cal" to redirect focus to the right control. In React, MUI components handle focus natively — <code>onFocus={(e) => e.target.select()}</code> is one line. And the prefix convention disappears because each field component contains its own calendar or info button.</div>
+  </div>
+
+
+  <!-- ============ #11 FRAME COMM ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">11</span>
+      <span class="mig-title">Frame Communication → Eliminated by SPA</span>
+      <span class="mig-lines">Lines 145–157 + throughout</span>
+      <span class="verdict eliminated">eliminated</span>
+    </div>
+    <p>EEBrowser runs in the content frame of a frameset. It communicates upward to <code>mobjAQSMain</code> (the main frame, <code>AQSMain.asp</code>) for every operation — menu updates, tree selection, navigation, browser commands. The parent frame references (<code>mobjAQSMain</code>, <code>mobjMenuFrame</code>, <code>mobjTreeFrame</code>) are established in <code>window_onload</code> and used everywhere.</p>
+
+    <p><strong>In React:</strong> There is no frameset. The entire application is a single page. What was the "main frame" is now the <code>AppLayout</code> shell component (sidebar, header, breadcrumbs). What was the "content frame" is now a React Router <code>Outlet</code>. Communication between "frames" is just Zustand store reads — the sidebar reads <code>appStore.currentLob</code>, the header reads <code>appStore.pageTitle</code>. No cross-frame scripting, no <code>parent.frames("menu")</code>, no <code>Set mobjAQSMain = Nothing</code> cleanup.</p>
+
+    <div class="say">The whole frame architecture — <code>mobjAQSMain</code>, <code>mobjMenuFrame</code>, <code>mobjTreeFrame</code>, all the cross-frame calls — is eliminated. React is a single-page app. The sidebar, header, and content area are all components in the same page that share state through Zustand stores. No frames, no cross-frame communication, no reference cleanup. The 15 delegation handlers that call <code>mobjAQSMain.SomeHandler()</code> are just gone.</div>
+  </div>
+
+
+  <!-- ============ #12 HELPERS ============ -->
+  <div class="mig">
+    <div class="mig-head">
+      <span class="mig-num">12</span>
+      <span class="mig-title">ReDimBrowserArray / ShowUserMessage → Native JS / MUI</span>
+      <span class="mig-lines">Lines 1210–1231</span>
+      <span class="verdict eliminated">eliminated</span>
+    </div>
+    <p><code>ReDimBrowserArray</code> resizes VBScript arrays (<code>marrServerCalls</code>, <code>marrListItems</code>) because VBScript arrays are fixed-size. <code>ShowUserMessage</code> wraps a <code>UserMessage</code> ActiveX object to display dialogs.</p>
+
+    <p><strong>In React:</strong> JavaScript arrays grow dynamically — <code>.push()</code> just works, no <code>ReDim</code> needed. User messages display via the <code>browserCommandStore</code> notification system, rendered as MUI Snackbar/Alert components. No ActiveX, no modal blocking dialogs.</p>
+
+    <div class="say"><code>ReDimBrowserArray</code> exists because VBScript arrays are fixed-size — JavaScript arrays grow automatically. <code>ShowUserMessage</code> uses an ActiveX control for dialogs — React uses MUI Snackbar notifications, non-blocking and accessible. Both functions are simply unnecessary in a modern stack.</div>
+  </div>
+</section>
+
+
+<!-- ============ ARCHITECTURE COMPARISON ============ -->
+<section>
+  <h2>Architecture: before and after</h2>
+  <p class="sub">How the data flows in legacy vs. React</p>
+
+  <div class="mig" style="padding:18px 20px">
+    <h4 style="margin-top:0">Legacy flow (EEBrowser.vbs)</h4>
+    <pre class="vbs" style="font-size:12.5px">Page loads in content frame
+  → window_onload() fires
+    → get parent frame references (mobjAQSMain)
+    → load XML Data Island (MSXML2.DOMDocument)
+    → set 20+ module flags
+    → focus first control, set mblnPageLoaded = True
+
+User changes a control
+  → OnFocusHandler → mobjAQSMain.OnFocusHandler (delegate UP)
+  → ButtonOnClickHandler → mobjAQSMain.ButtonOnClickHandler
+  → OnCheckBoxClick → fill marrEEData slots → CallServer()
+    → convertArrayToXML (3 arrays)
+    → synchronous XMLHTTP POST to xmlservercall.asp
+    → parse response XML → convertXMLToArray
+    → mobjAQSMain.ExecuteBrowserCommands()
+      → SET_VISIBLE, SET_DISABLED, DISPLAY_MESSAGE, etc.
+
+User leaves page
+  → Window_OnBeforeUnload
+    → if dirty + modal + not nav-clicked: CANCEL CallServer
+    → nullify frame references
+    → PageUniqueRoutine("local_before_window_unload")</pre>
+
+    <h4>React flow (POC architecture)</h4>
+    <pre class="tsx" style="font-size:12.5px">Route changes
+  → lobPageLoader() runs BEFORE render
+    → api.navigate(session, pageId)        // Navigation API
+    → api.pageBuild(session, nav.pageId)   // PageBuild API
+    → return { pageBuild, pageConfig }
+
+Component renders with data ready
+  → useEffect → pageStore.loadPage(pageBuild)
+  → dispatchCommands(pageBuild.commands)   // initial commands
+  → FormRenderer renders all controls from pageStore
+
+User changes a control
+  → onChange → pageStore.setValue(matchcode, value)
+  → if hasAction: executeAction(session, matchcode, value)
+    → api.pageLayout(session, req)         // JSON POST, async
+    → dispatchCommands(result.commands)
+      → SET_VISIBLE → pageStore.applyCommands()
+      → DISPLAY_WARNING → browserCommandStore.notify()
+      → NAVIGATE → router.navigate()
+
+User leaves page
+  → useBlocker(isDirty) shows confirmation
+  → useEffect cleanup → appStore.reset()
+  → pageConfig?.onBeforeUnload?.()        // LOB hook</pre>
+  </div>
+</section>
+
+
+<!-- ============ LINE COUNT ============ -->
+<section>
+  <h2>By the numbers</h2>
+  <p class="sub">What happens to 1,235 lines of VBScript</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Category</th><th>VBS lines</th><th>React equivalent</th><th>React lines</th></tr></thead>
+      <tbody>
+        <tr><td>Module flags + init</td><td class="mono">113</td><td><code>appStore.ts</code> + <code>pageStore.ts</code></td><td class="mono">~110</td></tr>
+        <tr><td><code>window_onload</code></td><td class="mono">277</td><td>Route loader + <code>useEffect</code> in LobPage</td><td class="mono">~30</td></tr>
+        <tr><td>Event delegation</td><td class="mono">133</td><td>React event props (inline)</td><td class="mono">~0 *</td></tr>
+        <tr><td><code>FillCallArray2</code></td><td class="mono">72</td><td>Server-side (not in client)</td><td class="mono">0</td></tr>
+        <tr><td>XML utilities</td><td class="mono">127</td><td>Eliminated (JSON native)</td><td class="mono">0</td></tr>
+        <tr><td><code>CallServer</code></td><td class="mono">203</td><td><code>api/client.ts</code> + <code>dispatch.ts</code> + <code>execute-action.ts</code></td><td class="mono">~120</td></tr>
+        <tr><td>Button/checkbox handlers</td><td class="mono">105</td><td>Inline event props</td><td class="mono">~0 *</td></tr>
+        <tr><td>BeforeUnload</td><td class="mono">50</td><td><code>useBlocker</code> hook</td><td class="mono">~15</td></tr>
+        <tr><td>PageUniqueRoutine</td><td class="mono">14</td><td>LOB config hooks</td><td class="mono">~5</td></tr>
+        <tr><td>SelectControlText</td><td class="mono">52</td><td>MUI <code>onFocus</code></td><td class="mono">~1</td></tr>
+        <tr><td>ReDim / ShowUserMessage</td><td class="mono">22</td><td>Native JS / MUI Snackbar</td><td class="mono">0</td></tr>
+        <tr style="font-weight:700;border-top:2px solid var(--rule)">
+          <td>Total</td><td class="mono">1,235</td><td></td><td class="mono">~280</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink-3)">* Event delegation lines go to zero because React components handle events natively — there's no separate delegation layer. The <code>onChange</code>/<code>onClick</code> props are part of the component JSX, counted in the renderers.</p>
+  <p style="font-size:15px;color:var(--ink-2);margin-top:10px"><strong>1,235 → ~280 lines</strong> — a 77% reduction. But the real win isn't line count. It's that the 280 lines are split across 6 focused files, each independently testable, vs. one 1,235-line file where everything depends on everything else.</p>
+</section>
+
+
+<!-- ============ SPRINT TASK 5 ============ -->
+<section>
+  <h2>Sprint Task 5 mapping</h2>
+  <p class="sub">How each deliverable maps to the POC code that already exists</p>
+
+  <div class="mig" style="border-left:4px solid var(--kept)">
+    <h4 style="margin-top:0">Task 5: "TS Conversion – Load: Windows_Load and supporting function"</h4>
+    <p>This task asks for the TypeScript conversion of <code>window_onload</code> and its supporting functions. Here's exactly where each piece lives in the POC:</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>VBS function</th><th>POC file</th><th>Function/hook</th></tr></thead>
+        <tbody>
+          <tr><td><code>window_onload</code> / <code>second_window_onload</code></td><td><code>pages/LobPage.tsx</code></td><td><code>lobPageLoader()</code> + <code>useEffect</code></td></tr>
+          <tr><td>XML Data Island load</td><td><code>engine/api/client.ts</code></td><td><code>api.pageBuild()</code> returns JSON</td></tr>
+          <tr><td>Module flag initialization</td><td><code>stores/app-store.ts</code></td><td>Store initial state</td></tr>
+          <tr><td>Page state hydration</td><td><code>stores/page-store.ts</code></td><td><code>loadPage()</code></td></tr>
+          <tr><td>Initial browser commands</td><td><code>engine/commands/dispatch.ts</code></td><td><code>dispatchCommands()</code></td></tr>
+          <tr><td>Tab selection</td><td><code>pages/LobPage.tsx</code></td><td><code>useState(0)</code> + MUI Tabs</td></tr>
+          <tr><td>Required indicators</td><td><code>stores/page-store.ts</code></td><td><code>required</code> in ControlDef</td></tr>
+          <tr><td>PageUniqueRoutine</td><td><code>lobs/policy/policy-config.ts</code></td><td><code>onLoad</code> hook</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ WHAT TO SAY ============ -->
+<section>
+  <h2>What to say on the call</h2>
+  <p class="sub">Five key points, ready to use</p>
+
+  <div class="mig">
+    <p><strong>1.</strong> "EEBrowser.vbs is 1,235 lines doing 8 different jobs in one file. In React, each job is a separate, focused module — stores, route loaders, command dispatchers, config hooks. The total is about 280 lines split across 6 files."</p>
+
+    <p><strong>2.</strong> "The biggest change is the page initialization. Legacy <code>window_onload</code> is 277 lines of sequential imperative code — resize, find frames, load XML, set flags. In React, the route loader fetches the data BEFORE the page renders, and one <code>useEffect</code> applies the initial commands. The page can't even show until the data is ready."</p>
+
+    <p><strong>3.</strong> "<code>CallServer</code> — the core server communication — goes from 203 lines of synchronous XML to about 60 lines of async JSON. The browser never freezes. The 13-slot <code>marrEEData</code> array becomes a typed object with named properties."</p>
+
+    <p><strong>4.</strong> "The entire frame architecture is eliminated. No <code>mobjAQSMain</code>, no cross-frame delegation, no reference cleanup. React is a single-page app — all the components share state through Zustand stores. The 15 repetitive delegation handlers simply disappear."</p>
+
+    <p><strong>5.</strong> "The per-page customization hook — <code>PageUniqueRoutine</code>, which uses VBScript's <code>eval</code> equivalent — becomes a typed config hook in each LOB's config file. Same flexibility, but type-safe and debuggable."</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">EEBrowser.vbs → React Migration Analysis · Sprint Task 5 · AQS ASP → React POC</div>
+</footer>
