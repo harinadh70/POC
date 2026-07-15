@@ -1,0 +1,3196 @@
+==================================================================================================
+Main_ISLLSYS_20010101.vbs — FULL ROUTINE REFERENCE
+The frameset-shell controller  ·  ~9,090 lines  ·  85 routines  ·  VBScript -> React POC
+==================================================================================================
+
+STATUS:  SHIPPED = real working POC code (window_onload).
+         SCAFFOLDED = a POC file partly covers it (execute-action.ts, dispatch.ts, window-manager.ts).
+         DESIGN = mapped, not built yet (where it WOULD live).
+         ELIMINATED = not needed in the SPA (frames, MSXML islands, IE timing hacks).
+
+THIS FILE:  3 shipped · 20 scaffolded · 52 design · 10 eliminated.
+Only window_onload is fully built; the rest is the migration map, in file order.
+
+##################################################################################################
+# SUMMARY — every routine at a glance
+##################################################################################################
+
+#    ROUTINE                            LINES        STATUS           AREA
+--------------------------------------------------------------------------------------------------
+1    window_onload                      216-410      SHIPPED          Shell/Lifecycle
+2    LoadNextPage                       414-434      DESIGN           Navigation
+3    LoadFirstPage                      438-452      DESIGN           Navigation
+4    ClearActionMenus                   456-490      DESIGN           Navigation
+5    IsEmptyEval                        500-513      ELIMINATED       Util
+6    AddWindowToCollection              516-528      SCAFFOLDED       Windows
+7    LogoutMain                         530-587      DESIGN           Logout
+8    Logout                             590-650      DESIGN           Logout
+9    LogoutGrandParent                  654-714      SCAFFOLDED       Logout
+10   ShowBatchEdits                     718-758      DESIGN           Windows
+11   ShowConversionReport               762-789      DESIGN           Windows
+12   LoadWindowReferences               792-810      SCAFFOLDED       Windows
+13   LoadNonPolicyWindowReferences      813-831      SCAFFOLDED       Windows
+14   LoadExternalWindowReferences       837-871      SCAFFOLDED       Windows
+15   ParentWindow_Navigate              875-901      DESIGN           Navigation
+16   ShowFrame                          904-989      SCAFFOLDED       Shell/Lifecycle
+17   SetFrameTitle                      992-1029     DESIGN           Shell/Lifecycle
+18   RefreshTree                        1032-1039    DESIGN           Tree
+19   DeleteAction                       1045-1362    DESIGN           Tree
+20   CheckForAsynchProcess              1364-1424    DESIGN           ServerCommands
+21   ExecuteAction                      1427-1872    SCAFFOLDED       Navigation
+22   FocusBatchEditWindow               1916-1934    SCAFFOLDED       Windows
+23   GetActionMenuNameException         1937-1964    DESIGN           Navigation
+24   GetFrameReference                  1968-1994    ELIMINATED       Windows
+25   UpdateToolBar                      1997-2020    DESIGN           Events/Buttons
+26   RefreshSelectedPage                2023-2057    ELIMINATED       Navigation
+27   SessionXML_SetItem                 2112-2183    DESIGN           Session/Config
+28   SessionXML_GetItem                 2187-2236    DESIGN           Session/Config
+29   SelectedNodeKey                    2474-2492    DESIGN           Tree
+30   PathDescription                    2495-2513 (b DESIGN           Tree
+31   BlankModelessWindowSetFocus        2614-2634    SCAFFOLDED       Windows
+32   mblnPolicyOpen                     2637-2674    SCAFFOLDED       Windows
+33   IsExternalWindowOpen               2677-2738    SCAFFOLDED       Windows
+34   Tree_IsNodeValid                   2741-2758    DESIGN           Tree
+35   Tree_SelectNode                    2761-2779    DESIGN           Tree
+36   SetExpiredNumber                   2782-2815    DESIGN           Util
+37   RefreshSearchPageLists             2818-2873 (b DESIGN           Windows
+38   window_onbeforeunload              2876-2997    DESIGN           Shell/Lifecycle
+39   window_onunload                    3000-3095    SCAFFOLDED       Windows
+40   ProgressBarTime_SetValue           3098-3111    ELIMINATED       Indicators
+41   UpdateActionMenuItems              3114-3131    ELIMINATED       Controls
+42   ShowUserMessage                    3134-3145    DESIGN           Indicators
+43   SetNextAction                      3148-3166    DESIGN           Navigation
+44   GetCyclingValues                   3169-3242    SCAFFOLDED       Navigation
+45   ApplySecurityPolicy                3252-3401    DESIGN           Security
+46   ButtonOnClickHandler               3404-3486    SCAFFOLDED       Events/Buttons
+47   CalendarButtonOnClick              3489-3533    ELIMINATED       Events/Buttons
+48   CheckRequiredIndicators            3536-3638    DESIGN           Indicators
+49   CheckSpecifiedIndicator            3641-3821    DESIGN           Indicators
+50   ExecuteBrowserCommands             3825-5005    SCAFFOLDED       ServerCommands
+51   FillCallArray                      5008-5093    ELIMINATED       ServerCommands
+52   FillComboList                      5100-5169    SHIPPED          Controls
+53   FillSelectList                     5172-5303    SCAFFOLDED       Controls
+54   FocusFirstControl                  5307-5347    DESIGN           Controls
+55   SelectControlFocus                 5350-5418    DESIGN           Controls
+56   GetControlAttribute                5422-5557    ELIMINATED       Controls
+57   GetControlValue                    5560-5695    ELIMINATED       Controls
+58   GetSecurityValues                  5697-5709    DESIGN           Security
+59   GetSecurityValuesWithExistCheck    5713-5725    DESIGN           Security
+60   GetSecurityValues_DefaultDisabled  5728-5740    DESIGN           Security
+61   SecurityValues_Read                5743-5759    DESIGN           Security
+62   GetXMLData                         5763-6304    SCAFFOLDED       Controls
+63   SetRequiredIndicator               6307-6361    SHIPPED          Indicators
+64   NoteButtonOnClick                  6365-6468    DESIGN           Events/Buttons
+65   InfoButtonOnClick                  6472-6549    DESIGN           Events/Buttons
+66   ListButtonClick                    6553-6590    DESIGN           Events/Buttons
+67   XMLListonItemSelected              6594-6605    DESIGN           Events/Buttons
+68   ListButtonOnClick                  6609-6708    DESIGN           Events/Buttons
+69   NavButtonOnClick                   6711-6875    SCAFFOLDED       Events/Buttons
+70   OnFocusHandler                     6878-7274    DESIGN           Events/Buttons
+71   OnKeyPressHandler                  7277-7349    DESIGN           Indicators
+72   OnKeyUpHandler                     7352-7414    DESIGN           Indicators
+73   OnTabClickHandler                  7417-7429    DESIGN           Events/Buttons
+74   PreProcess                         7432-7522    DESIGN           ServerCommands
+75   RunXMLBrowserProcedures            7525-7603    DESIGN           ServerCommands
+76   SetArrayData                       7606-7882    DESIGN           ServerCommands
+77   SetInitialValueData                7886-7981    DESIGN           ServerCommands
+78   SetControlAttribute                7984-8482    SCAFFOLDED       Controls
+79   SetControlFocus                    8485-8615    DESIGN           Controls
+80   SetControlValue                    8618-8884    SCAFFOLDED       Controls
+81   BuildTab                           8888-8977    DESIGN           Controls
+82   UnEscapeTextValueForXML            8979-8983    ELIMINATED       Util
+83   ShowZeroText                       8986-9022    DESIGN           Controls
+84   SetIconImages                      9026-9036    DESIGN           Tree
+85   ClearXMLDetail                     9040-9087    DESIGN           Session/Config
+
+##################################################################################################
+# ROUTINE-BY-ROUTINE DETAIL (file order)
+##################################################################################################
+
+==================================================================================================
+1. window_onload   [SHIPPED]
+   Sub · lines 216-410 · Shell/Lifecycle
+==================================================================================================
+Purpose: Boot routine for the frameset shell page. Sets up global references, decides whether this
+is a policy / search / utility shell, sizes the frame rows/cols, loads the security data island,
+and kicks off the serial (menu-then-tree-then-page) load.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub window_onload
+      On Error Resume Next
+      AddWindowToCollection window
+      Set GlobalVars = New globalVarsClass
+      Set mobjAQSMain = window
+      Set mobjParentWindow = window.opener
+      If mblnReplacementHomePage Then ... rebuild child-window refs ...
+      document.body.setAttribute "policyid", mstrPolicyID
+      If CLng(mstrPolicyID) > 0 Then fraHorizontal.rows="46,*": fraTreeColumn.rows="90,*"
+      ElseIf CLng(mstrPolicyID)=0 Then mblnSearchPage=True ...
+      Set mxmlSecurity = CreateObject("MSXML2.DOMDocument.6.0")
+      mxmlSecurity.loadXML(document.all("xdiSecurity").XMLDocument.xml)
+      Call ExecuteAction("menu", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+    End Sub
+
+--- React POC  (engine/load/shell-load.ts) -----------------------------------------------------
+    // engine/load/shell-load.ts (SHIPPED)
+    export async function shellLoad(session) {
+      const mode = resolveShellMode(session.policyId); // policy|search|utility
+      appStore.setGlobalVars(session);          // GlobalVars + marrSessionInformation
+      authStore.setSecurity(session.security);  // was the xdiSecurity island
+      const action = resolveInitialAction(session); // POL|POL default, LIB for -3
+      await executeAction('menu', `POL|POL|${session.expiredNumber}|`, -1);
+    }
+    export function useShellLoad() { useEffect(() => { shellLoad(...); }, []); }
+
+How it maps: This is the one routine in the section with real, working React code. shellLoad +
+useShellLoad reproduce the boot sequence: resolveShellMode replaces the CLng(mstrPolicyID) branch
+that chose policy vs. search vs. utility layout, resolveInitialAction replaces the mstrAction/-3
+logic, and the security XML island is parsed once into auth-store instead of an MSXML DOMDocument.
+The frame-sizing lines (fraHorizontal.rows, fraVertical.cols) are gone because the SPA uses CSS
+layout, not a frameset. The kickoff call to ExecuteAction('menu', ...) is preserved as
+executeAction, which begins the serial page load.
+
+
+==================================================================================================
+2. LoadNextPage   [DESIGN]
+   Sub · lines 414-434 · Navigation
+==================================================================================================
+Purpose: Second step of the serial load. The menu frame calls this from its own onload to load the
+tree (or the next page), deliberately staggered to avoid the browser trying to load every frame at
+once.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub LoadNextPage()
+      If StrComp(Left(mstrNodeKey, 3), "SYS", 0) = 0 Then
+        Call ExecuteAction(mstrAction, mstrNodeKey, 0, "")   ' utilities
+      Else
+        Select Case UCase(Left(mstrNodeKey,7))
+          Case "POL|POL"
+            ' load tree BEFORE first page for policy windows
+            Call ExecuteAction("TREE", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+          Case Else
+            Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber & "|", 0, "")
+        End Select
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/load/shell-load.ts (+ config/routes.ts route loaders)) ---
+    // would live in: engine/load/shell-load.ts (continuation of the load chain)
+    // The staggering hack disappears; ordering becomes explicit awaits / nested route loaders.
+    if (nodeKey.startsWith('SYS')) {
+      await executeAction(action, nodeKey, 0);            // utilities
+    } else if (nodeKey.startsWith('POL|POL')) {
+      await executeAction('TREE', `POL|POL|${expiredNumber}|`, -1); // tree first
+    } // else the first page load below handles it
+
+How it maps: The reason this routine exists at all — 'prevent timing problems caused by loading
+all the pages at once' — is a frameset artifact, so the callback-chaining mechanism is eliminated.
+What survives is the ordering decision: for a policy shell load the tree before the first page;
+for SYS utilities just load the action directly. In React that ordering is expressed as sequential
+awaits inside the shell loader (or nested React Router route loaders) rather than a frame calling
+back into the parent. The branch logic itself still needs to be built, so this is a design
+mapping, not shipped code.
+
+
+==================================================================================================
+3. LoadFirstPage   [DESIGN]
+   Sub · lines 438-452 · Navigation
+==================================================================================================
+Purpose: Third and final step of the serial load. The tree frame calls this from its onload to
+load the first content page the user actually sees, then (for real policies) polls the menu for
+umbrella-mapping status.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub LoadFirstPage
+      On Error Resume Next
+      Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber & "|", 0, "")
+      Call TrapBrowserError("LoadFirstPage|1")
+      If mstrPolicyID <> "0" Then
+        window.setTimeout "document.frames(""menu"").FetchUmbrellaMappingStatus()", 1000, "vbscript"
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/load/shell-load.ts (+ engine/commands/execute-action.ts)) 
+    // would live in: engine/load/shell-load.ts (final step) + engine/commands/execute-action.ts
+    await executeAction(action, `POL|POL|${expiredNumber}|`, 0);   // first visible page
+    if (policyId !== '0') {
+      // was a cross-frame setTimeout; becomes a normal async call / effect
+      await menuStore.fetchUmbrellaMappingStatus();
+    }
+
+How it maps: This is the payoff of the staggered chain: load the first page the user sees via
+ExecuteAction. In React it is simply the last await in the shell load sequence. The
+setTimeout(...,1000) that reaches across into document.frames('menu') to call
+FetchUmbrellaMappingStatus is a classic IE cross-frame timing hack — with no frames it becomes an
+ordinary async call or effect, so the 1-second delay is eliminated. The routine is a design
+mapping today: the first-page load routes through the scaffolded execute-action.ts, but this
+specific tail step and the umbrella-status fetch are not yet wired.
+
+
+==================================================================================================
+4. ClearActionMenus   [DESIGN]
+   Sub · lines 456-490 · Navigation
+==================================================================================================
+Purpose: Forces the per-LOB action menus (button bars) to reload after a rate-level change by
+pointing their frames at blank.htm. Given a nodekey it clears just that LOB's menu; with no
+nodekey it clears all action-type frames.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ClearActionMenus(pstrNodeKey)
+      On Error Resume Next
+      If Len(pstrNodeKey) > 0 Then
+        Set objFrames = fraMain.children(GetActionMenuNameException(pstrNodeKey))
+        If Not objFrames Is Nothing Then objFrames.src = "../../system/htm/blank.htm"
+      Else
+        Set objFrames = fraMain.children   ' all action frames
+        ' <GAP: loop that blanks each action frame's src>
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/renderers/ButtonsRenderer.tsx (+ stores/browser-command-store.ts)) 
+    // would live in: engine/renderers/ButtonsRenderer + stores/browser-command-store.ts
+    function clearActionMenus(nodeKey?: string) {
+      if (nodeKey) buttonsStore.invalidate(lobFromNodeKey(nodeKey));
+      else buttonsStore.invalidateAll();   // triggers a refetch of the action bar(s)
+    }
+
+How it maps: The mechanism here — setting a frame's src to blank.htm to make it reload — is pure
+frames-era plumbing and is eliminated. The intent, 'a rate-level change happened, so the action
+menus (buttons) are now stale, reload them,' survives as cache invalidation: mark the
+ButtonsRenderer data for one LOB (or all LOBs) stale and let it refetch. The nodekey-to-LOB
+mapping that GetActionMenuNameException did becomes a small lobFromNodeKey helper. Not built yet,
+so this is a design mapping.
+
+
+==================================================================================================
+5. IsEmptyEval   [ELIMINATED]
+   Function · lines 500-513 · Util
+==================================================================================================
+Purpose: A VBScript workaround: safely test whether an expression/variable is defined. Eval of an
+undefined name raises error 450, so this traps that error and reports whether the name existed.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function IsEmptyEval(value)
+      On Error Resume Next
+      IsEmpty(Eval(value))
+      If Err.Number = 450 Then emptyCheck = False Else emptyCheck = True
+      On Error GoTo 0
+      IsEmptyEval = emptyCheck
+    End Function
+
+--- React POC  (eliminated (no POC file)) ------------------------------------------------------
+    // No equivalent needed.
+    // VBScript: IsEmptyEval("window.opener.AddWindowToCollection")
+    // JS just does a normal existence check:
+    if (typeof opener?.addWindowToCollection === 'function') { ... }
+
+How it maps: This exists only to work around VBScript's behaviour where Eval-ing an undefined
+identifier throws error 450 instead of returning empty. Its sole caller, AddWindowToCollection,
+uses it to check whether window.opener exposes an AddWindowToCollection method. In JavaScript that
+check is a one-liner (typeof opener?.addWindowToCollection === 'function' or optional chaining),
+so the entire helper disappears. Marked eliminated: there is nothing to port.
+
+
+==================================================================================================
+6. AddWindowToCollection   [SCAFFOLDED]
+   Sub · lines 516-528 · Windows
+==================================================================================================
+Purpose: Registers a window in a global Scripting.Dictionary shared across all app windows. It
+walks up through openers to the top-most window that owns the collection, so every window can
+later be found and closed (e.g. on logout) even if the home window is gone.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub AddWindowToCollection(myWindow)
+      If Not IsEmpty(myWindow) Then
+        If IsObject(window.opener) And Not IsEmptyEval("window.opener.AddWindowToCollection") Then
+          window.opener.AddWindowToCollection myWindow      ' bubble up to top owner
+        Else
+          windowsCollection.Add CStr(windowsCollection.Count), myWindow
+          Set myWindow.windowsCollection = windowsCollection ' share ref down to all windows
+        End If
+      End If
+    End Sub
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // engine/window-manager.ts (SCAFFOLDED registry)
+    export function addWindow(win: AppWindow) {
+      windowRegistry.set(win.key, win);   // one shared module-level registry
+    }
+    // No opener-walking: in an SPA there is a single JS context, so every
+    // 'window' (modal / tab / panel) registers into the same in-memory map.
+
+How it maps: The whole reason this recursively bubbles up through window.opener is that each
+browser window in the old app has its own script context, so they must nominate one top window to
+hold the master list and then share the Dictionary reference back down. A single-page React app
+has one JS context, so the window-manager module already IS the single shared registry — the
+opener-walking and reference-propagation collapse to a plain map insert. window-manager.ts exists
+as a scaffolded registry keyed one-per-window, which is the right home; this specific add-and-
+share behaviour maps onto it directly but the logout-time enumeration it feeds is not fully built.
+
+
+==================================================================================================
+7. LogoutMain   [DESIGN]
+   Function · lines 530-587 · Logout
+==================================================================================================
+Purpose: Logout handler for the Home page. Closes every tracked window — external windows, policy
+child windows, and non-policy child windows — then closes itself and sets the logout flag.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function LogoutMain()
+      If Not mdicExternalWindows Is Nothing Then
+        For intCount = 0 To mdicExternalWindows.Count - 1
+          Set objWindowLogoutMain = arrWindowsMain(intCount)
+          If Not objWindowLogoutMain.closed Then objWindowLogoutMain.close
+        Next
+      End If
+      ' ... same loop for mdicChildWindows and mdicNonPolicyChildWindows ...
+      window.close
+      mblnLogout = True
+    End Function
+
+--- React POC  (would live in: engine/window-manager.ts (+ stores/auth-store.ts)) --------------
+    // would live in: engine/window-manager.ts + stores/auth-store.ts
+    function logoutFromHome() {
+      windowManager.closeAll();     // external + child + non-policy child registries
+      authStore.logout();           // sets the 'logged out' flag, clears session
+    }
+
+How it maps: Three near-identical loops walk the external / policy-child / non-policy-child
+dictionaries and close each still-open window. In React those three dictionaries collapse into the
+single window-manager registry, so this becomes windowManager.closeAll() plus an auth-store logout
+that raises the mblnLogout flag. window-manager.ts is scaffolded as a registry but its closeAll
+enumeration and the auth-store logout are not yet built, so this is a design mapping. Note that
+actual OS-level window.close of separate browser windows has no SPA analogue — 'windows' become
+in-app modals/tabs that are simply unmounted.
+
+
+==================================================================================================
+8. Logout   [DESIGN]
+   Function · lines 590-650 · Logout
+==================================================================================================
+Purpose: Logout handler invoked from a policy window rather than Home. It reaches up to the parent
+(home) window and closes all of its external, child, and non-policy child windows, then calls
+LogoutGrandParent and closes the parent, finally setting the logout flag.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function Logout()
+      If Not mobjParentWindow Is Nothing Then
+       If Not mobjParentWindow.closed Then
+        ' close mobjParentWindow.mdicExternalWindows (loop)
+        ' close mobjParentWindow.mdicChildWindows (loop)
+        ' close mobjParentWindow.mdicNonPolicyChildWindows (loop)
+       End If
+       LogoutGrandParent()
+       mobjParentWindow.close
+      End If
+      mblnLogout = True
+    End Function
+
+--- React POC  (would live in: engine/window-manager.ts (+ stores/auth-store.ts)) --------------
+    // would live in: engine/window-manager.ts + stores/auth-store.ts
+    function logoutFromPolicyWindow() {
+      // no parent/grandparent walk — one shared registry & one session
+      windowManager.closeAll();
+      authStore.logout();
+    }
+
+How it maps: This is the sibling of LogoutMain: same close-everything intent, but written for the
+case where the user clicked Logout inside a policy window, so it dereferences mobjParentWindow
+(the home window) and even LogoutGrandParent to climb the opener chain. That entire
+parent/grandparent hierarchy is an artifact of multiple independent browser windows; in a single-
+context SPA there is one registry and one session, so both LogoutMain and Logout converge to the
+same closeAll + auth-store.logout. Marked design — the window-manager close path and auth-store
+logout still need to be built, and the cross-window opener walking is eliminated.
+
+
+==================================================================================================
+9. LogoutGrandParent   [SCAFFOLDED]
+   Function · lines 654-714 · Logout
+==================================================================================================
+Purpose: When Logout is clicked on a deeply-nested (grand-child) popup, walk up two window levels
+and close every tracked popup on the grandparent window, then close the grandparent itself.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function LogoutGrandParent()
+      If Not mobjParentWindow Is Nothing Then
+        If StrComp(Left(mobjParentWindow.name,6),"policy")=0 Then
+          Set objGrandParentWindow = mobjParentWindow.opener
+          ' close every tracked popup on the grandparent:
+          For each objWindow in mdicExternalWindows.Items : objWindow.close : Next
+          For each objWindow in mdicChildWindows.Items : objWindow.close : Next
+          For each objWindow in mdicNonPolicyChildWindows.Items : objWindow.close : Next
+          objGrandParentWindow.close
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // engine/window-manager.ts (registry replaces the 3 dictionaries)
+    function closeAll(): void {
+      for (const w of registry.values())
+        try { if (!w.closed) w.close(); } catch {}
+      registry.clear();
+    }
+
+How it maps: The flat window registry means a single closeAll() replaces the two-level
+window.opener walk and the three parallel dictionaries the legacy code iterates. closeAll() is
+scaffolded and covers the surviving intent (logout closes every tracked window). The multi-window
+opener cascade itself is an IE-frameset artifact that the SPA does not reproduce.
+
+
+==================================================================================================
+10. ShowBatchEdits   [DESIGN]
+   Function · lines 718-758 · Windows
+==================================================================================================
+Purpose: If the mxmlBatchEdits data island holds XML, open a small top-right popup
+(batcheditsdisplay.asp) showing the policy's batch validation edits; if there is no data, close
+any existing batch-edits popup.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function ShowBatchEdits(ByVal pstrType)
+      If Not mxmlBatchEdits Is Nothing Then
+        If Len(mxmlBatchEdits.xml) > 0 Then
+          strURL = "../../system/asp/batcheditsdisplay.asp?policyid=" & mstrPolicyID & ...
+          Call OpenNewWindow(strURL, "batcheditdisplay"&pstrType&mstrPolicyID, opts)
+      Else ' no data -> close the existing popup via mdicChildWindows
+
+--- React POC  (would live in: stores/browser-command-store.ts (+ a BatchEdits modal component)) 
+    // design: pageLayout returns batchEdits -> enqueue a modal command
+    if (result.batchEdits?.length)
+      browserCommandStore.push({ type: 'OPEN_MODAL', view: 'batchEdits',
+        policyId, payload: result.batchEdits });
+    else
+      browserCommandStore.push({ type: 'CLOSE_MODAL', view: 'batchEdits' });
+
+How it maps: The batch-edits data island becomes a field on the pageLayout response, and the
+detached popup becomes an in-app modal driven by the browser-command queue. The command store is
+scaffolded, but there is no batch-edits view or the open/close-when-empty logic yet, so this is a
+plan. The unique-named popup window and the URL-carried policy id are eliminated in the modal
+design.
+
+
+==================================================================================================
+11. ShowConversionReport   [DESIGN]
+   Function · lines 762-789 · Windows
+==================================================================================================
+Purpose: If a conversion report id is set (mlngConversionReportID > 0), open a modeless dialog
+(ConversionSummaryDisplay.asp) showing the policy-conversion summary, then reset the id so it
+displays only once.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function ShowConversionReport
+      If mlngConversionReportID > 0 Then
+        strURL = "../../system/asp/ConversionSummaryDisplay.asp?...&reportid=" & mlngConversionReportID
+        window.showModelessDialog (strURL), window, (opts)
+        mlngConversionReportID = 0
+
+--- React POC  (would live in: stores/browser-command-store.ts (+ a ConversionReport modal component)) 
+    // design: report id flows from pageLayout into a modal command
+    if (result.conversionReportId)
+      browserCommandStore.push({ type: 'OPEN_MODAL', view: 'conversionReport',
+        reportId: result.conversionReportId });
+    // showModelessDialog is IE-only -> a normal MUI modal
+
+How it maps: Same shape as ShowBatchEdits: an id on the layout response triggers a modal instead
+of a dialog window. window.showModelessDialog is an IE-only API and is eliminated in favor of a
+standard React modal. The show-once reset (id = 0) becomes clearing the command/flag after the
+modal opens; none of this is built yet.
+
+
+==================================================================================================
+12. LoadWindowReferences   [SCAFFOLDED]
+   Sub · lines 792-810 · Windows
+==================================================================================================
+Purpose: Register (or replace) a reference to an open policy child window in the mdicChildWindows
+dictionary, keyed by a string, so the parent can later refocus or close it.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub LoadWindowReferences(ByVal pstrKey, ByRef pobjWindow)
+      If mdicChildWindows Is Nothing Then Set mdicChildWindows = CreateObject("Scripting.Dictionary")
+      If mdicChildWindows.Exists(CStr(pstrKey)) Then mdicChildWindows.Remove(CStr(pstrKey))
+      mdicChildWindows.Add CStr(pstrKey), pobjWindow
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // engine/window-manager.ts — the registry Map IS this dictionary
+    const registry = new Map<string, Window>();
+    registry.delete(req.key);      // remove stale copy
+    registry.set(req.key, handle); // add current handle
+
+How it maps: The Map<string, Window> registry in window-manager.ts is exactly this add-or-replace
+dictionary, and open() already performs registry.delete then registry.set. This is scaffolded. The
+legacy need to pass the whole Dictionary object between parent and child windows is a frameset
+artifact that is eliminated by having one registry in one process.
+
+
+==================================================================================================
+13. LoadNonPolicyWindowReferences   [SCAFFOLDED]
+   Sub · lines 813-831 · Windows
+==================================================================================================
+Purpose: Same as LoadWindowReferences but for non-policy child windows, tracked in a separate
+mdicNonPolicyChildWindows dictionary.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub LoadNonPolicyWindowReferences(ByVal pstrKey, ByRef pobjWindow)
+      If mdicNonPolicyChildWindows Is Nothing Then Set ... = CreateObject("Scripting.Dictionary")
+      If ...Exists(CStr(pstrKey)) Then ...Remove(CStr(pstrKey))
+      mdicNonPolicyChildWindows.Add CStr(pstrKey), pobjWindow
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // one registry; encode the 'non-policy' kind in the key
+    windowManager.open({ key: `nonpolicy:${pageId}`, url, state });
+    // registry.set(key, handle) tracks it — no second Map
+
+How it maps: The single registry replaces three parallel dictionaries; the policy vs non-policy
+distinction collapses into a key prefix. open()/registry.set already provides the tracking, so
+this is scaffolded. Maintaining a separate Map per window category is unnecessary bookkeeping that
+is eliminated.
+
+
+==================================================================================================
+14. LoadExternalWindowReferences   [SCAFFOLDED]
+   Sub · lines 837-871 · Windows
+==================================================================================================
+Purpose: Register an 'external' window reference; if the current window is a policy window it
+stores the reference on the parent window's mdicExternalWindows dictionary, otherwise on its own.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub LoadExternalWindowReferences(ByVal pstrKey, ByRef pobjWindow)
+      windowName = pobjWindow.name  ' probe cross-window access
+      If StrComp(Left(window.name,6),"policy")=0 Then
+        mobjParentWindow.mdicExternalWindows.Add CStr(pstrKey), pobjWindow
+      Else
+        mdicExternalWindows.Add CStr(pstrKey), pobjWindow
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // registry again; no parent-vs-self branch
+    windowManager.open({ key: `external:${id}`, url, state });
+    // 'store on opener when I'm a policy window' is a frameset artifact -> gone
+
+How it maps: In a single process there is no separate parent window to defer storage to, so the
+entire 'am I a policy window, push onto my opener's dictionary' branch is eliminated. The tracking
+intent is covered by open()/registry.set, so this is scaffolded. The cross-window access probe
+(reading pobjWindow.name under On Error Resume Next) is an IE-ism that disappears.
+
+
+==================================================================================================
+15. ParentWindow_Navigate   [DESIGN]
+   Sub · lines 875-901 · Navigation
+==================================================================================================
+Purpose: Acts as a Back button: if this is a policy window, focus its parent (the search/start
+page), reopening that search page via XmlCycling.aspx if the parent was closed; otherwise just
+focus the current window.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ParentWindow_Navigate
+      If StrComp(Left(window.name,6),"policy")=0 Then
+        If Not mobjParentWindow.closed Then mobjParentWindow.focus
+        Else window.open "../../system/asp/XmlCycling.aspx?...action=main&nodekey=pol|pol|0|&redirect=..."
+      Else
+        window.focus
+
+--- React POC  (would live in: config/routes.ts (React Router) / a nav action) -----------------
+    // design: no separate windows -> route back to search
+    navigate('/search');   // or navigate(-1) for browser Back
+    // the reopen-with-'replacement=t' handoff is eliminated (single SPA)
+
+How it maps: In a single-page app there is no separate parent window to focus or re-spawn; 'back
+to the search page' is just a route change. React Router is wired in the POC (routes.ts), but this
+specific back-to-search behavior is not implemented. The reopen-via-XmlCycling path and its
+replacement=t child-window re-parenting handoff are eliminated.
+
+
+==================================================================================================
+16. ShowFrame   [SCAFFOLDED]
+   Sub · lines 904-989 · Shell/Lifecycle
+==================================================================================================
+Purpose: Switches which frameset row is visible (MAIN for data entry, START for recall, or an LOB
+action-menu frame) by setting every frame height to 0 except the selected one to '*', clears the
+data-changed flags, toggles whether the tree is enabled, and retitles the window.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ShowFrame(ByVal pstrFrame)
+      mblnDataChanged=False : Call SessionXML_ClearItem("datachanged")
+      For each frame in fraMain.children:  build "0,0,*,0,..." (* for pstrFrame; tabIndex 1/-1)
+      fraMain.rows = strFrameRowSizes
+      mstrCurrentFrame = pstrFrame
+      If pstrFrame="MAIN" Then Tree_SetState(False) Else Tree_SetState(True)
+      Call SetFrameTitle()
+
+--- React POC  (engine/load/shell-load.ts (mode) + a shell layout component) -------------------
+    // engine/load/shell-load.ts (SHIPPED): frameset choice -> enum
+    export type ShellMode = 'policy'|'search'|'utility';
+    export function resolveShellMode(policyId){ /* >0 policy, 0 search, else utility */ }
+    // data-changed reset -> appStore
+    useAppStore.getState().setDirty(false);
+    // tree-gating + retitle are design (see RefreshTree / SetFrameTitle)
+
+How it maps: The three frameset configurations are already modeled as a ShellMode enum via
+resolveShellMode (shipped), and clearing mblnDataChanged maps directly to
+appStore.setDirty(false). But the full behavior — swapping the rendered layout, disabling the tree
+on MAIN, and calling SetFrameTitle — is not yet assembled in a shell component, so overall this is
+scaffolded. The literal fraMain.rows pixel-string manipulation and tabIndex juggling are
+eliminated.
+
+
+==================================================================================================
+17. SetFrameTitle   [DESIGN]
+   Sub · lines 992-1029 · Shell/Lifecycle
+==================================================================================================
+Purpose: Sets the browser window/document title from the useroptions 'windowtitle' value for the
+current window, appending the policy number and (when the useinsuredname option is on) the primary
+insured's name.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetFrameTitle()
+      strName = window.name ' strip the mstrPolicyID suffix
+      strTitle = UserValue(LCase(strName),"windowtitle")
+      If policy And UserOption("useinsuredname","T",strUsrOpt) Then
+        window.document.title = strTitle & strPolicyNumber & " - " & strPrimaryInsured
+      Else
+        window.document.title = strTitle & strPolicyNumber
+
+--- React POC  (would live in: a useDocumentTitle hook reading auth-store.ts) ------------------
+    // design: derive from authStore useroptions + nav-response windowTitle
+    useEffect(() => {
+      document.title = `${windowTitle}${policyNumber}` +
+        (useInsuredName ? ` - ${primaryInsured}` : '');
+    }, [windowTitle, policyNumber, primaryInsured]);
+
+How it maps: No document.title logic exists in the POC today (a grep for it returns nothing), so
+this is a plan. The 'windowtitle' value is exactly the string this migration intends to serve from
+the Navigation API instead of the heavy per-page user-permissions call, then read from authStore
+useroptions and applied in an effect. It is straightforward to build but not built.
+
+
+==================================================================================================
+18. RefreshTree   [DESIGN]
+   Sub · lines 1032-1039 · Tree
+==================================================================================================
+Purpose: Rebuilds the left navigation tree by reaching into the 'tree' frame and calling its
+Build_Tree method with the root node key POL|POL|0| in LOADTREE mode.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub RefreshTree()
+      Set objDoc = document.frames("tree")
+      Call objDoc.Build_Tree("POL|POL|0|", "LOADTREE")
+      Set objDoc = Nothing
+
+--- React POC  (would live in: config/routes.ts (route-loader revalidation) / a Tree component) 
+    // design: no tree frame -> revalidate/refetch the nav tree
+    // React Router: revalidator.revalidate()   // re-runs the tree loader
+    // or react-query: queryClient.invalidateQueries(['tree','POL|POL|0|'])
+
+How it maps: The tree is rendered from navigation data, but the POC has no dedicated Tree
+component or refresh action yet (DataGridRenderer handles XmlList grids, not the nav tree), so
+this is a plan. Refreshing becomes invalidating the navigation query/loader rather than reaching
+cross-frame into a 'tree' frame and calling its Build_Tree method. The document.frames("tree")
+cross-frame call is an eliminated IE-ism.
+
+
+==================================================================================================
+19. DeleteAction   [DESIGN]
+   Sub · lines 1045-1362 · Tree
+==================================================================================================
+Purpose: Deletes a policy node on the server, and on success removes it from the left-hand tree
+and refreshes the sibling/parent branches that the deletion affects (line-of-business specific).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub DeleteAction(ByVal pstrNodeKey, ByVal pstrAction)
+      strQueryString = "?object=DELETE&nodekey=" & Escape(SetExpiredNumber(pstrNodeKey)) & "&action=" & pstrAction & "&userid=" & mstrUserID ...
+      Set objResponse = CreateObject("MSXML2.DOMDocument.6.0")
+      objResponse.load "../../system/ASP/XmlServercall.aspx" & strQueryString
+      If status = "ERROR" Then ShowUserMessage(...) / ShowBatchEdits(...)
+      ElseIf status = "SUCCESS" Then
+         Set objDoc = document.frames("tree")
+         objDoc.Remove_TreeNode pstrNodeKey, ""
+         Select Case UCase(strLOB)   'BOP/KRM/LIA/PRP/CAU/PAU/INM/WOR
+            ... objDoc.Build_Tree(strNodeKey,"LOADBRANCH")
+            ... objDoc.Remove_TreeNodeIfNoChildren(strNodeKey)
+         End Select
+         GlobalVars.mblnPolicyRated = False
+
+--- React POC  (would live in: engine/commands/execute-action.ts (DELETE handler) + engine/api/client.ts (navigate) + a tree store) 
+    // DELETE command handler in execute-action.ts (design)
+    async function deleteAction(nodeKey: string, action: string) {
+      const res = await api.navigate({ object: 'DELETE', nodeKey, action })
+      if (res.status === 'ERROR') return showUserMessage(res.message, 'ERROR')
+      treeStore.removeNode(nodeKey)
+      for (const branch of affectedBranches(nodeKey, action)) // per-LOB rules
+        await treeStore.reloadBranch(branch)   // was Build_Tree LOADBRANCH
+      appStore.setPolicyRated(false)
+    }
+
+How it maps: In the legacy shell this is one big action: a synchronous MSXML call to
+XmlServercall.aspx, then direct DOM surgery on the separate 'tree' frame (Remove_TreeNode /
+Build_Tree / Remove_TreeNodeIfNoChildren) with a large Select Case of per-line-of-business rules
+deciding which neighbouring branches to reload. In React the server call becomes an async
+api.navigate on the shared client, and the tree becomes state: you remove the node from the tree
+store and re-fetch only the branches the deletion touched, letting the renderer re-draw. The
+scaffolded execute-action.ts/dispatch.ts give the command-routing skeleton, but this DELETE flow
+and its LOB-specific branch-refresh table are not built yet, so it is a design.
+
+
+==================================================================================================
+20. CheckForAsynchProcess   [DESIGN]
+   Sub · lines 1364-1424 · ServerCommands
+==================================================================================================
+Purpose: Asks the server whether a long-running background (asynchronous) process is already in
+progress for this node/action, and returns that yes/no to the caller so it can decide whether to
+show a progress bar.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub CheckForAsynchProcess(ByVal pstrNodeKey, ByVal pstrAction, ByRef pblnProgressBar)
+      pblnProgressBar = False
+      strQueryString = "?object=CHECKASYNCH&nodekey=" & Escape(SetExpiredNumber(pstrNodeKey)) & "&action=" & pstrAction & "&userid=" & mstrUserID ...
+      Set objResponse = CreateObject("MSXML2.DOMDocument.6.0")
+      objResponse.async = False
+      objResponse.load "../../system/ASP/xmlCheckAsynch.asp" & strQueryString
+      Set objNode = .selectSingleNode("//results")
+      If StrComp(objNode.Text, "ASYNCHPROGRESSBAR", vbTextCompare) = 0 Then
+         pblnProgressBar = True
+
+--- React POC  (would live in: engine/api/client.ts (checkAsyncProcess call) with progress-bar state in app-store.ts) 
+    // design: engine/api/client.ts helper
+    async function checkAsyncProcess(nodeKey: string, action: string): Promise<boolean> {
+      const res = await api.navigate({ object: 'CHECKASYNCH', nodeKey, action })
+      return res.results === 'ASYNCHPROGRESSBAR'
+    }
+    // caller: if (await checkAsyncProcess(...)) appStore.showProgressBar()
+
+How it maps: This is a small pre-flight probe: a synchronous MSXML request to xmlCheckAsynch.asp
+whose only result is a flag, returned through a VBScript ByRef out-parameter. In React the ByRef
+out-parameter becomes a normal Promise<boolean> returned from an async client call, and the 'is a
+progress bar needed' flag becomes progress state in app-store.ts rather than a variable the caller
+passes in by reference. It maps cleanly onto the api client pattern but no CHECKASYNCH endpoint or
+caller exists in the POC yet, so it is a design, not built.
+
+
+==================================================================================================
+21. ExecuteAction   [SCAFFOLDED]
+   Sub · lines 1427-1872 · Navigation
+==================================================================================================
+Purpose: The master navigation router: given an action + node key, it asks the server where to go,
+then decides whether the target renders in the MAIN frame, a side frame, a modal dialog, or a new
+browser window.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ExecuteAction(ByVal pstrAction, pstrNodeKey, pintTab, pstrXMLDetail)
+      ' DELETE -> confirm, then DeleteAction
+      ' ACTION already loaded -> ShowFrame + RefreshCurrentPage : Exit Sub
+      strQueryString = "?nodekey=...&action=...&tab=...&returntype=XML"
+      objResponse.load "XmlCycling.aspx" & strQueryString   ' resolve url + frame
+      strURL = url & qs : strFrame = UCase(GetNodeText(objNode,"frame"))
+      Select Case UCase(strFrame)
+        Case "MODAL","MODELESS": window.showModalDialog(strURL, ...)
+        Case "NEWWINDOW":        Call OpenNewWindow(strURL, name, options)
+        Case "HIDDEN":           objFrame.src = strURL
+        Case Else: GetFrameReference(strFrame).src = strURL : ShowFrame(strFrame)
+      End Select
+      Call UpdateToolBar
+    End Sub
+
+--- React POC  (engine/commands/execute-action.ts) ---------------------------------------------
+    export async function executeAction(req, navigate) {
+      const result = await api.pageLayout(req.session, { matchcode, action, value, formData });
+      const { navigateTo } = dispatchCommands(result.commands);
+      switch (result.frame) {
+        case 'MODAL':  useBrowserCommandStore.getState()
+            .openModal({ type:'OPEN_WINDOW', pageId: result.navigateTo }); break;
+        case 'MAIN':   if (result.navigateTo ?? navigateTo)
+            navigate((result.navigateTo ?? navigateTo)!); break;
+        case 'NEWWINDOW': case 'HIDDEN': default: break;
+      }
+      return result;
+    }
+
+How it maps: This is the single choke-point for 'the user did something'. The legacy version
+fetches routing from XmlCycling.aspx (returns a url + a frame name) and mutates frame .src / opens
+dialogs; the React port calls api.pageLayout() and then a switch on result.frame routes to React
+Router (MAIN), the modal host store (MODAL), or the window manager (NEWWINDOW). The POC file
+exists and captures the frame switch, but branches like DELETE-confirmation, the -1/90-99
+preload/refresh tab codes, MODELESS, HIDDEN, and the deferred-navigation-after-modal handshake are
+not built yet.
+
+
+==================================================================================================
+22. FocusBatchEditWindow   [SCAFFOLDED]
+   Sub · lines 1916-1934 · Windows
+==================================================================================================
+Purpose: Brings an already-open 'batch edit' popup window back to the foreground (focus) instead
+of opening a duplicate, keyed by edit type + policy id.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub FocusBatchEditWindow(ByVal batchEditType)
+      If Not mdicChildWindows Is Nothing Then
+        If mdicChildWindows.Exists("batcheditdisplay" & batchEditType & Cstr(mstrPolicyID)) Then
+          Set objWindow = mdicChildWindows.Item("batcheditdisplay" & batchEditType & Cstr(mstrPolicyID))
+          If Not objWindow.closed Then objWindow.focus
+        End If
+      End If
+    End Sub
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // createWindowManager registry already does reuse-and-focus:
+    const existing = registry.get(req.key);           // key = windowKey(session,'batchedit:'+type)
+    if (existing && !existing.closed) {
+      existing.focus();
+      return 'focused';
+    }
+    // (ExecuteAction schedules this via setTimeout today; in React the
+    //  modal-close handler would call windowManager focus for the key.)
+
+How it maps: The legacy code looks a window up by name in the mdicChildWindows dictionary and
+calls .focus() if it is still open. The window-manager registry (Map<key, Window>) already
+implements exactly this reuse-and-focus behaviour, so the mechanism is present. What is not wired
+is the batch-edit-specific key convention and the post-modal-close trigger (legacy fires it via
+window.setTimeout 500ms after ExecuteAction) — a small React effect on the modal host would
+replace the timing hack.
+
+
+==================================================================================================
+23. GetActionMenuNameException   [DESIGN]
+   Function · lines 1937-1964 · Navigation
+==================================================================================================
+Purpose: Derives the correct action-menu target name from a node key. Normally it is just the
+first '|'-delimited element, but BOP lines need a program-type suffix taken from the 4th (or 5th,
+for special coverages) element.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function GetActionMenuNameException(pstrNodeKey)
+      strFrame = GetStringField(pstrNodeKey,1,"|")        ' e.g. "BOP"
+      If StrComp(strFrame,"BOP",vbTextCompare) = 0 Then
+        If Left(GetStringField(pstrNodeKey,2,"|"),3) = "SPC" Then
+          strFrame = strFrame & GetStringField(pstrNodeKey,5,"|")  ' 5th elem
+        Else
+          strFrame = strFrame & GetStringField(pstrNodeKey,4,"|")  ' 4th elem
+        End If
+      End If
+      GetActionMenuNameException = strFrame
+    End Function
+
+--- React POC  (would live in: lobs/registry.ts (resolveLobKey) / config/routes.ts) ------------
+    // Resolve the LOB / program-type key from a NodeKey (frame concept dropped).
+    function resolveLobKey(nodeKey: string): string {
+      const p = nodeKey.split('|');
+      let lob = p[0];                                   // 'POL' | 'BOP' | ...
+      if (lob === 'BOP') {
+        lob += p[1]?.startsWith('SPC') ? p[4] : p[3];   // BOP program type
+      }
+      return lob;                                       // -> lobs/registry.ts lookup
+    }
+
+How it maps: This is pure node-key string parsing that maps a tree node to the right line-of-
+business/program-type bucket. In React the OUTPUT is no longer a frame id (frames are gone) but a
+key into the LOB registry that selects which config/route/renderer to use, so the parsing logic
+carries over 1:1 while the thing it names changes. It is not built yet — the LOB registry exists,
+but this BOP 4th/5th-element exception resolver is a design item to add there.
+
+
+==================================================================================================
+24. GetFrameReference   [ELIMINATED]
+   Function · lines 1968-1994 · Windows
+==================================================================================================
+Purpose: Returns the DOM frame with the given id, and if it does not exist, clones the hidden
+'action' frame, renames it, and injects it into the frameset — so any number of business-line
+frames can exist without being predefined in HTML.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function GetFrameReference(pstrFrame)
+      Set objFrame = document.all(pstrFrame)
+      If Not objFrame Is Nothing Then
+        Set GetFrameReference = objFrame
+      Else                                   ' create it on the fly
+        Set objNewFrame = document.all("action").cloneNode(True)
+        objNewFrame.id = pstrFrame
+        fraMain.insertBefore(objNewFrame)
+        Set GetFrameReference = document.all(pstrFrame)
+      End If
+    End Function
+
+--- React POC  (eliminated (replaced by config/routes.ts React Router + engine/renderers/FormRenderer)) 
+    // No equivalent — there are no <frame> elements in the SPA.
+    // A route + a rendered component replaces each dynamically-cloned frame:
+    <Route path=":lob/*" element={<FormRenderer />} />
+    // 'which LOB view is mounted' is React Router + conditional render,
+    // not DOM cloning into a frameset.
+
+How it maps: This routine exists only because the legacy shell is a frameset and needs arbitrary,
+dynamically-created frames per business line. A React single-page app has no frames at all — each
+'frame' becomes a routed/conditionally-mounted component, and the browser (React) manages
+mounting/unmounting instead of cloneNode + insertBefore. There is nothing to port; the capability
+is absorbed by the router and renderers.
+
+
+==================================================================================================
+25. UpdateToolBar   [DESIGN]
+   Sub · lines 1997-2020 · Events/Buttons
+==================================================================================================
+Purpose: After navigation, tells the toolbar/menu to re-evaluate its button enabled/disabled
+states by reaching into the 'menu' frame and invoking that page's UpdateToolBarButtons script.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub UpdateToolBar
+      If Not mblnSearchPage Then                 ' not on the search page
+        Set objDoc = document.frames("menu")
+        If Not objDoc Is Nothing Then
+          Set objScript = objDoc.document.scripts("Menu_ISLLSYS_20010101")
+          If Not objScript Is Nothing Then Call objDoc.UpdateToolBarButtons
+        End If
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/renderers/ButtonsRenderer.tsx (reads stores/page-store.ts)) 
+    // No cross-frame script call. Toolbar buttons subscribe to the store and
+    // re-render automatically when SET_DISABLED/SET_VISIBLE flow through dispatch:
+    function ButtonsRenderer() {
+      const buttons = usePageStore(s => s.buttons);   // reactive selector
+      return buttons.map(b =>
+        <ToolbarButton key={b.id} disabled={b.disabled} hidden={!b.visible} />);
+    }
+
+How it maps: Legacy has to manually poke a sibling frame's script to refresh button states because
+frames do not share state. In React the toolbar is just a component subscribed to the page/auth
+stores, so it re-renders on its own whenever button state changes — the explicit 'go update the
+toolbar now' call disappears. The plumbing that feeds it (dispatch.ts already routes
+SET_DISABLED/SET_VISIBLE into the page store) is scaffolded, but the ButtonsRenderer/toolbar
+component that consumes it is not built yet, so this is a design item.
+
+
+==================================================================================================
+26. RefreshSelectedPage   [ELIMINATED]
+   Function · lines 2023-2057 · Navigation
+==================================================================================================
+Purpose: Tells a page living inside a (possibly hidden) frame to refresh itself with the current
+tree/policy data by locating and invoking that page's own RefreshPage script.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function RefreshSelectedPage(pstrFrame, pstrAction, pstrNodeKey, pintTab, pstrXMLDetail)
+      If Len(pstrFrame)=0 Then pstrFrame = mstrCurrentFrame
+      Set objDoc = document.all(pstrFrame).contentWindow
+      Set objScript = objDoc.document.scripts("RefreshPage")
+      If Not objScript Is Nothing Then
+        objDoc.RefreshPage pstrAction, pstrNodeKey, pintTab, pstrXMLDetail
+        RefreshSelectedPage = True
+      End If
+
+--- React POC  (eliminated — no dedicated file; behavior absorbed by store subscriptions in engine/stores/page-store.ts) 
+    // No cross-frame call. Shared store updates re-render subscribers automatically.
+    usePageStore.setState({ action, nodeKey, tab, sessionXml });
+    // A hidden action menu subscribes to the same store:
+    const { action, nodeKey } = usePageStore();
+    useEffect(() => { /* recompute button/enabled state */ }, [action, nodeKey]);
+
+How it maps: This is a classic IE frameset trick: reach into another frame's window, look up a
+named <script> block, and call one of its methods directly. In a React SPA there are no frames and
+no cross-window scripting — a 'hidden action menu' is just a component reading shared state, so
+when action/nodeKey change in page-store it re-renders on its own with zero explicit 'refresh'
+call. The mechanism is therefore eliminated; only its intent (recompute a panel when context
+changes) survives, expressed as ordinary React reactivity.
+
+
+==================================================================================================
+27. SessionXML_SetItem   [DESIGN]
+   Function · lines 2112-2183 · Session/Config
+==================================================================================================
+Purpose: Stores a single name/value pair into the client-side session state, which is held as one
+compressed XML string (mstrXMLDetail); creates the <item> if absent, otherwise updates its value.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function SessionXML_SetItem(pstrName, pstrValue)
+      Set xml = CreateObject("MSXML2.DOMDocument.6.0")
+      mstrXMLDetail = Decompress(mstrXMLDetail) : xml.loadXML mstrXMLDetail
+      strValue = Replace(pstrValue,"'","#39;")
+      Set nod = xml.selectSingleNode("//item[@name='" & pstrName & "']")
+      If nod Is Nothing Then '...createElement item + name/value attrs, appendChild
+      Else nod.Attributes.getNamedItem("value").nodeValue = strValue
+      mstrXMLDetail = xml.xml  ' then strip Chr(34)->', Chr(10)/Chr(13)
+
+--- React POC  (would live in: engine/stores/app-store.ts (setSessionItem action on the session/marrSessionInformation slice)) 
+    // engine/stores/app-store.ts
+    setSessionItem(name: string, value: string) {
+      set(s => ({ session: { ...s.session, [name]: value } }));
+    }
+    // No MSXML, no Decompress/Compress round-trip, no quote/CRLF scrubbing.
+
+How it maps: The legacy app keeps session state as a single XML blob that is decompressed, DOM-
+parsed, mutated, re-serialized and hand-scrubbed of quotes/newlines on every single write — heavy
+machinery for what is really a key/value map. In React this becomes a one-line setter on the app-
+store session object; the MSXML parsing, the string compression, and the manual character
+sanitizing all disappear. The store exists conceptually but this typed keyed setter is not yet
+written, so it is a design target rather than shipped code.
+
+
+==================================================================================================
+28. SessionXML_GetItem   [DESIGN]
+   Function · lines 2187-2236 · Session/Config
+==================================================================================================
+Purpose: Reads one value by name out of the compressed session XML string, returning it via a
+ByRef parameter and returning True/False for found/not-found. The read counterpart to
+SessionXML_SetItem.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function SessionXML_GetItem(pstrName, ByRef pstrValue)
+      pstrValue = ""
+      mstrXMLDetail = Decompress(mstrXMLDetail) : xml.loadXML mstrXMLDetail
+      Set nod = xml.selectSingleNode("//item[@name='" & pstrName & "']")
+      If nod Is Nothing Then Exit Function
+      pstrValue = nod.Attributes.getNamedItem("value").nodeValue
+      pstrValue = Replace(pstrValue,"#39;","'")
+      SessionXML_GetItem = True
+
+--- React POC  (would live in: engine/stores/app-store.ts (getSessionItem selector on the session slice)) 
+    // engine/stores/app-store.ts selector
+    export const getSessionItem = (name: string) =>
+      useAppStore.getState().session[name] ?? "";
+    // Inside a component (reactive):
+    const inquiry = useAppStore(s => s.session.inquiry ?? "");
+
+How it maps: Callers like mblnInquiryMode, mblnReadOnly and mblnExposureActive all lean on this to
+pull flags such as inquiry and transactionid out of session state. In React it collapses to a
+plain object lookup / store selector: no XML parse, no decompression, no ByRef out-parameter, and
+no '#39;'->apostrophe un-escaping (that escaping only existed to survive XML serialization). It is
+a design target — the session store concept maps cleanly, but this selector and the derived flag
+helpers are not built yet.
+
+
+==================================================================================================
+29. SelectedNodeKey   [DESIGN]
+   Function · lines 2474-2492 · Tree
+==================================================================================================
+Purpose: Returns the key (id) of the currently highlighted node in the left-hand navigation tree
+by reading a property off the 'tree' frame's page.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function SelectedNodeKey()
+      SelectedNodeKey = ""
+      Set objDoc = document.frames("tree")
+      If Not objDoc Is Nothing Then
+        SelectedNodeKey = document.frames("tree").SelectedNodeKey
+      End If
+      Call TrapBrowserError("SelectedNodeKey|1")
+
+--- React POC  (would live in: engine/stores/app-store.ts (selectedNodeKey field) read by engine/renderers (tree)) 
+    // Read current tree selection from the store instead of a frame.
+    const selectedNodeKey = useAppStore(s => s.selectedNodeKey ?? "");
+    // The tree renderer writes it on select:
+    <TreeNode onSelect={key => useAppStore.setState({ selectedNodeKey: key })} />
+
+How it maps: The shell has no idea what node is selected — it asks the separate 'tree' frame by
+reaching across frames and reading its SelectedNodeKey property. With frames eliminated, the tree
+is a component in the same app that writes the selected key straight into shared state on click,
+and any consumer reads it back with a store selector. This is a design target: the tree renderer
+and a selectedNodeKey store field are planned, replacing the cross-frame property read entirely.
+
+
+==================================================================================================
+30. PathDescription   [DESIGN]
+   Function · lines 2495-2513 (body lost in photo gap after 2513) · Tree
+==================================================================================================
+Purpose: Builds a human-readable breadcrumb string by walking UP the tree branch from a given
+node, concatenating each ancestor node's text (e.g. "BUSINESSOWNERS  WI - Loc#1  Bld #1 - SHOE
+STORE").
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function PathDescription(ByVal pstrNodeKey, ByVal pintStartLevel, ByVal pintEndLevel)
+      ' returns text of tree nodes from strNodeKey up the branch to intEndLevel (default=1)
+      ' nodes above intStartLevel are skipped
+      Set objDoc = document.frames("tree")
+      '<<< photo gap: the loop that reads objTree node text is not captured >>>
+
+--- React POC  (would live in: engine/load/window-load.ts breadcrumb selector (see its comment at L132 "breadcrumbs read the store") + a nav-tree model (new)) 
+    // Breadcrumb derived from the nav model, not scraped from a <tree> frame:
+    function pathDescription(nodeKey: string, tree: NavNode[], endLevel = 1) {
+      const chain = ancestorsOf(nodeKey, tree);   // walk up the branch
+      return chain.filter(n => n.level >= endLevel)
+                  .map(n => n.text).reverse().join('  ');
+    }
+
+How it maps: Legacy reads text out of a separate <tree> frame DOM by climbing the node key's
+branch. In the SPA there are no frames: the left nav is one component backed by a store, so the
+breadcrumb is a pure selector over that in-memory tree model. The POC already flags this in
+window-load.ts (breadcrumbs read from the store, the old frame path is ELIMINATED), but the actual
+ancestor-walk selector is not written yet. Note the real body is missing from the source photos,
+so this is reconstructed from the header comment.
+
+
+==================================================================================================
+31. BlankModelessWindowSetFocus   [SCAFFOLDED]
+   Sub · lines 2614-2634 · Windows
+==================================================================================================
+Purpose: Given a window name, if it is a tracked "blank modeless" popup that is still open, brings
+it to the foreground, then removes it from the modeless-window tracking dictionary.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub BlankModelessWindowSetFocus(ByVal pstrWindowName)
+      If mdicBlankModelessWindows.Exists(CStr(pstrWindowName)) Then
+        If Not mdicChildWindows.Item(pstrWindowName).closed Then
+          mdicChildWindows.Item(pstrWindowName).focus
+        mdicBlankModelessWindows.Remove(CStr(pstrWindowName))
+      End If
+    End Sub
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // window-manager already focuses a live window on reuse; the explicit form:
+    function focusAndForget(key: string) {
+      const w = registry.get(key);
+      if (w && !w.closed) w.focus();
+      registry.delete(key);   // "forget" it (modeless-dialog bookkeeping)
+    }
+
+How it maps: The window-manager registry (a Map of key to Window) plus its focus-on-reuse logic
+already cover the "focus if open" half of this routine, so it is scaffolded. The "blank modeless"
+bucket itself is an IE showModelessDialog quirk (a placeholder popup) that has no equivalent in
+the SPA and is effectively eliminated; only the focus-then-drop behavior would need a thin helper.
+No dedicated modeless tracking exists in the POC today.
+
+
+==================================================================================================
+32. mblnPolicyOpen   [SCAFFOLDED]
+   Function · lines 2637-2674 · Windows
+==================================================================================================
+Purpose: Predicate: returns True if a policy window with the given key is currently open. Lazily
+creates the child-window dictionary, and prunes the entry if the tracked window has since been
+closed.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function mblnPolicyOpen(ByVal pstrKey)
+      If mdicChildWindows Is Nothing Then Set mdicChildWindows = CreateObject("Scripting.Dictionary")
+      If mdicChildWindows.Exists(CStr(pstrKey)) Then
+        Set objWindow = mdicChildWindows.Item(CStr(pstrKey))
+        If objWindow.closed Then mdicChildWindows.Remove(CStr(pstrKey))
+        Else mblnPolicyOpen = True
+    End Function
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // No standalone predicate: window-manager.open() IS the check.
+    const existing = registry.get(req.key);
+    if (existing && !existing.closed) { existing.focus(); return 'focused'; }
+    registry.delete(req.key);  // prune stale handle (== the .Remove branch)
+
+How it maps: This is the exact registry-lookup-plus-prune logic that the POC's window-manager
+already implements inside open() (lines 50-55: reuse a live handle, drop a closed one). The SPA
+doesn't expose a separate is-open predicate because "open if already open, else create" is handled
+in one place, so the routine's job is subsumed rather than ported verbatim. Marked scaffolded: the
+capability exists, but not as a callable mblnPolicyOpen(key) function.
+
+
+==================================================================================================
+33. IsExternalWindowOpen   [SCAFFOLDED]
+   Function · lines 2677-2738 · Windows
+==================================================================================================
+Purpose: Predicate: returns True if an external (non-policy) window with the given key is open.
+Same open/prune logic as mblnPolicyOpen, but chooses between the parent window's dictionary and
+the local dictionary depending on whether the current window is itself a policy window.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function IsExternalWindowOpen(ByVal pstrKey)
+      If Left(window.name,6) = "policy" Then    ' use PARENT's dictionary
+        ...mobjParentWindow.mdicExternalWindows.Exists / .Item / .closed / .Remove
+      Else                                       ' use LOCAL dictionary
+        ...mdicExternalWindows.Exists / .Item / .closed / .Remove
+      End If
+    End Function
+
+--- React POC  (engine/window-manager.ts) ------------------------------------------------------
+    // Single registry, no parent-vs-child branch:
+    function isOpen(key: string): boolean {
+      const w = registry.get(key);
+      if (w && !w.closed) return true;
+      registry.delete(key);  // prune closed handle
+      return false;
+    }
+
+How it maps: The core is the same Map lookup and stale-handle prune as mblnPolicyOpen, which the
+window-manager already does. The entire top half of the routine, the branch that reaches into
+mobjParentWindow.mdicExternalWindows because the current page is a child popup, is a frames/multi-
+window artifact that collapses in a single-page app with one shared registry, so that distinction
+is eliminated. Scaffolded: the registry lookup exists; a separate external-windows bucket and an
+isOpen export do not.
+
+
+==================================================================================================
+34. Tree_IsNodeValid   [DESIGN]
+   Function · lines 2741-2758 · Tree
+==================================================================================================
+Purpose: Returns True if a node with the given key exists in the left navigation tree. A thin
+cross-frame proxy that delegates to the tree frame's own Tree_IsNodeValid.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function Tree_IsNodeValid(ByVal pstrNodeKey)
+      Tree_IsNodeValid = False
+      Set objDoc = document.frames("tree")
+      If Not objDoc Is Nothing Then
+        Tree_IsNodeValid = objDoc.Tree_IsNodeValid(pstrNodeKey)
+    End Function
+
+--- React POC  (would live in: a nav-tree store (new) keyed by nodeKey; related config/routes.ts) 
+    // Map lookup over the nav model — no frame proxy:
+    const isNodeValid = (key: string) => nodeIndex.has(key);
+
+How it maps: Legacy is a wrapper that hops into the separate <tree> frame and calls the frame's
+own validity check. In the SPA the tree is in-process, so validity is a one-line Map/Set lookup
+against the loaded node index and the cross-frame indirection is eliminated. Marked design because
+the POC has no nav-tree store yet (no tree file exists under engine/ or stores/); this describes
+where and how it would live.
+
+
+==================================================================================================
+35. Tree_SelectNode   [DESIGN]
+   Function · lines 2761-2779 · Tree
+==================================================================================================
+Purpose: Selects (highlights and makes current) the tree node with the given key; returns True if
+the node was found. A thin cross-frame proxy delegating to the tree frame's Tree_SelectNode.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function Tree_SelectNode(ByVal pstrNodeKey)
+      Tree_SelectNode = False
+      Set objDoc = document.frames("tree")
+      If Not objDoc Is Nothing Then
+        Tree_SelectNode = objDoc.Tree_SelectNode(CStr(pstrNodeKey))
+    End Function
+
+--- React POC  (would live in: config/routes.ts (React Router navigate) + a nav-tree store (new)) 
+    // Selecting a node = navigate; the router owns "current node".
+    navigate(routeForNode(nodeKey));                 // React Router
+    useNavStore.setState({ selectedNodeKey: nodeKey });
+
+How it maps: Legacy pushes the selection into the tree frame imperatively. In the SPA, which node
+is current is URL/router state: navigating to the node's route selects it and the nav component
+re-highlights reactively, so the cross-frame call disappears. The shell-load.ts already treats the
+menu-tree-page sequence as route loading rather than imperative frame calls, but the selectable
+nav-tree component and its store are not built yet, so this is design.
+
+
+==================================================================================================
+36. SetExpiredNumber   [DESIGN]
+   Function · lines 2782-2815 · Util
+==================================================================================================
+Purpose: Pure string helper: replaces the third pipe-delimited field of a node key with the
+current expired-policy number. Node keys look like POL|POLLVL|0|... where field 3 is the expired
+number.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function SetExpiredNumber(ByVal pstrNodeKey)
+      intStart = InStr(1,s,"|") : intStart = InStr(intStart+1,s,"|")  ' 2nd pipe
+      intEnd   = InStr(intStart+1,s,"|")                             ' 3rd pipe
+      If intStart > 4 And intEnd > intStart Then
+        s = Left(s,intStart) & CStr(mstrExpiredNumber) & Right(s, Len(s)-intEnd+1)
+      SetExpiredNumber = s
+    End Function
+
+--- React POC  (would live in: engine/util/node-key.ts (new)) ----------------------------------
+    function setExpiredNumber(nodeKey: string, expired: string): string {
+      const p = nodeKey.split('|');   // ['POL','POLLVL','0',...]
+      if (p.length >= 3) p[2] = expired;   // replace the 3rd field
+      return p.join('|');
+    }
+
+How it maps: This is manual InStr/Left/Right index arithmetic to swap one field of a delimited
+string, which in modern JS is a trivial split/replace/join. It carries no browser or frame
+dependency, so it is a pure utility that ports directly. Marked design only because no node-key
+util module exists in the POC yet; the mstrExpiredNumber global would come from app-store instead
+of a module-level variable.
+
+
+==================================================================================================
+37. RefreshSearchPageLists   [DESIGN]
+   Sub · lines 2818-2873 (band seam / duplicated block at 2850) · Windows
+==================================================================================================
+Purpose: Refreshes the WIP (work-in-progress) queue list on the search page after an action
+changes its contents: locates the search window (self if named V3Galileo, else the parent window),
+reaches into its "start" frame, clears the policy search list and re-runs the WIP queue retrieve.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub RefreshSearchPageLists()
+      If Left(window.name,6)="policy" Then Set objWindow = mobjParentWindow
+      ElseIf window.name = "V3Galileo" Then Set objWindow = window Else Exit Sub
+      With objWindow.Frames("start")
+        .ClearPolicySearchList
+        .mblnRefreshWIP = True
+        .WIPQueueRetrieve (False)
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/api/client.ts (WIP refetch) + engine/renderers/DataGridRenderer.tsx (the WIP grid)) 
+    // One app, no cross-window hop: invalidate/refetch the WIP grid.
+    function refreshWipQueue() {
+      queryClient.invalidateQueries({ queryKey: ['wipQueue'] });
+      // DataGridRenderer re-renders with fresh server rows
+    }
+
+How it maps: The legacy work is almost entirely cross-window/cross-frame plumbing: figure out
+whether we are the search window or a child policy window, walk to the parent, then into its start
+frame, then poke a flag and call a retrieve. In a single-page app there is one search view and one
+data layer, so a refresh is just invalidating/refetching the WIP-queue query and letting
+DataGridRenderer re-render, and all the window/frame branching is eliminated. Marked design:
+DataGridRenderer and the api client exist, but a WIP-queue query and its invalidate hook are not
+wired up yet.
+
+
+==================================================================================================
+38. window_onbeforeunload   [DESIGN]
+   Sub · lines 2876-2997 · Shell/Lifecycle
+==================================================================================================
+Purpose: Fires as a window is about to close; warns the user (via the browser's returnValue
+prompt) if closing would strand open policy windows (home page) or discard unsaved data (policy
+page).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub window_onbeforeunload
+     On Error Resume Next
+     If StrComp(window.name,"v3Galileo",...)=0 Then ' home page
+       For each open child in mdicChildWindows: objWindow.LoadWindowReferences ...: blnOpenWindows=True
+       If blnOpenWindows And Not mblnLogout Then window.event.returnValue = "Home page should remain open..."
+     Else ' policy page
+       blnEEDataChanged = objDoc.mblnEEDataChanged
+       If (mblnDataChanged Or blnEEDataChanged) And Not blnIgnoreChanges And Not mblnLogout Then
+         window.event.returnValue = "...Data may be lost if you continue."
+       Call RefreshSearchPageLists()
+     End If
+    End Sub
+
+--- React POC  (would live in: engine/load/shell-load.ts (beforeunload/useBlocker guard) + stores/app-store.ts (dirty flag)) 
+    // stores/app-store.ts exposes the dirty flag
+    const dirty = useAppStore(s => s.dirty);
+    useEffect(() => {
+      const h = (e: BeforeUnloadEvent) => { if (dirty) e.preventDefault(); };
+      window.addEventListener('beforeunload', h);
+      return () => window.removeEventListener('beforeunload', h);
+    }, [dirty]);
+    // in-app navigation guard (React Router):
+    useBlocker(() => dirty && !ignoreChanges);
+
+How it maps: The unsaved-data branch maps cleanly to a single SPA pattern: read the dirty flag
+from app-store, register one `beforeunload` listener for hard reloads/tab-close and a React Router
+`useBlocker` for in-app route changes. The `ignorechanges='T'` page attribute becomes a flag on
+the page schema. The entire home-page branch (counting open child windows, re-passing window
+references) is eliminated because a single-page app has no separate policy windows to keep alive.
+
+
+==================================================================================================
+39. window_onunload   [SCAFFOLDED]
+   Sub · lines 3000-3095 · Windows
+==================================================================================================
+Purpose: Runs after a policy window actually closes: closes its non-policy child windows, fires
+the embedded EE page's Cancel/server round-trip, returns focus to the opener window, and nulls out
+module-level object references.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub window_onunload
+     On Error Resume Next
+     ' close this policy's child windows (but not other 'policy*' windows)
+     For each objWindow in mdicChildWindows: If Left(name,6)<>"policy" Then objWindow.close
+     ' if an EE page is present, fire CANCEL server call
+     Set objScript = .document.scripts("eebrowser")
+     .marrEEData(1)="CANCEL": Call .CallServer(.document.all("dtaCancel"),False)
+     ' set focus back to opener
+     If Not mobjParentWindow.closed Then mobjParentWindow.focus
+     Set mdicChildWindows = Nothing ' ...clean up refs
+    End Sub
+
+--- React POC  (engine/window-manager.ts (child-window close) + component unmount effects) -----
+    // engine/window-manager.ts (scaffolded registry)
+    function closeChildren(parentKey: string) {
+      for (const [key, w] of registry)
+        if (w.parentKey === parentKey && !key.startsWith('policy')) w.close();
+    }
+    // component-unmount cleanup replaces onunload:
+    useEffect(() => () => closeChildren(myKey), []);
+
+How it maps: The 'close my non-policy children' loop maps directly onto window-manager.ts's
+scaffolded window registry, keyed one entry per window, so it is partially covered. The rest is IE
+frameset behavior with no SPA analog: there is no `onunload` moment, the CANCEL-on-close server
+round-trip becomes ordinary unmount cleanup or an explicit cancel action, and 'focus the parent
+window' plus nulling MSXML references are gone. Honestly, only the child-close piece has a home
+today; the timing and cross-window focus mechanics are eliminated.
+
+
+==================================================================================================
+40. ProgressBarTime_SetValue   [ELIMINATED]
+   Sub · lines 3098-3111 · Indicators
+==================================================================================================
+Purpose: Developer/diagnostic helper: if a debug window is attached and timing is enabled, writes
+a 'Progress: <text>' line into it to profile how long steps take.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ProgressBarTime_SetValue(mstrText)
+     On Error Resume Next
+     If Not mvntDebugWindow Is Nothing Then
+       If mobjAQSMain.mvntDebugWindow.ShowTiming Then
+         mvntDebugWindow.ShowData(vbCrLf & "Progress:" & vbTab & mstrText & vbCrLf)
+     End If
+     Err.Clear
+    End Sub
+
+--- React POC  (eliminated (no debug/timing window); optional console.debug in engine/api/client.ts timing) 
+    // no debug-window island; at most a dev-only trace
+    if (import.meta.env.DEV) console.debug('Progress:', text);
+
+How it maps: This exists only to feed a separate pop-up debug window that profiled timings in the
+legacy app. React apps use the browser devtools Performance panel, React Profiler, or a simple
+`console.debug`, so the routine and its `mvntDebugWindow` object have no replacement to build. It
+is safe to drop entirely.
+
+
+==================================================================================================
+41. UpdateActionMenuItems   [ELIMINATED]
+   Sub · lines 3114-3131 · Controls
+==================================================================================================
+Purpose: Imperatively tells the toolbar 'menu' frame to rebuild the action dropdown whenever a
+line of business is opened or closed (skipped on the search page).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub UpdateActionMenuItems()
+     On Error Resume Next
+     If Not mblnSearchPage Then
+       Set objDoc = document.frames("menu")
+       If Not objDoc Is Nothing Then objDoc.UpdateActionMenuItems()
+     End If
+     Call TrapBrowserError("UpdateActionMenuItems|1")
+    End Sub
+
+--- React POC  (engine/renderers/ButtonsRenderer.tsx (toolbar/action menu component)) ----------
+    // menu is derived state; no imperative refresh call
+    function ActionMenu() {
+      const openLobs = useAppStore(s => s.openLobs);
+      const perms = useAuthStore(s => s.permissions);
+      return <Dropdown items={buildActionItems(openLobs, perms)} />;
+    }
+
+How it maps: The whole point of this Sub is to manually push a rebuild into a sibling toolbar
+frame after the LOB set changes. In React the action menu is a component that subscribes to the
+open-LOB and permissions state and re-renders automatically, so the imperative 'update' call
+disappears. What remains is building the menu component itself in ButtonsRenderer; the cross-frame
+refresh mechanism is eliminated.
+
+
+==================================================================================================
+42. ShowUserMessage   [DESIGN]
+   Function · lines 3134-3145 · Indicators
+==================================================================================================
+Purpose: Thin wrapper around the UserMessage class that shows a message/confirm box with a given
+type and button set and returns which button the user clicked.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function ShowUserMessage(ByVal strMessage, ByVal strType, ByVal intButtons)
+     On Error Resume Next
+     Set objMessageBox = New UserMessage
+     objMessageBox.show strMessage, strType, intButtons
+     ShowUserMessage = objMessageBox.RetValue
+     Set objMessageBox = Nothing
+    End Function
+
+--- React POC  (would live in: stores/browser-command-store.ts (modal queue) + a <MessageDialog/> component) 
+    // promise-based dialog hook
+    const confirm = useDialog();
+    const ret = await confirm({ message, type, buttons });
+    if (ret === 'OK') { /* ... */ }
+
+How it maps: This is a synchronous, blocking message box that returns the clicked button. The
+React equivalent is a promise-returning dialog service: a global dialog/message store plus a
+`<MessageDialog>` rendered once at the app root, awaited by callers. It fits naturally alongside
+the browser-command-store that already queues modals, but the dialog component and hook are not
+built yet, so this is a design target.
+
+
+==================================================================================================
+43. SetNextAction   [DESIGN]
+   Sub · lines 3148-3166 · Navigation
+==================================================================================================
+Purpose: Stashes the next navigation's parameters (action, nodekey, tab, xml detail) into module-
+level variables so ExecuteAction can fire it AFTER the current modal has finished closing.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetNextAction(ByVal pstrAction, ByVal pstrNodeKey, ByVal pintTab, ByVal pstrXMLDetail)
+     mstrNextAction_Action   = pstrAction
+     mstrNextAction_NodeKey  = pstrNodeKey
+     mstrNextAction_Tab      = pintTab
+     mstrNextAction_XMLDetail= pstrXMLDetail
+    End Sub
+
+--- React POC  (stores/browser-command-store.ts (pendingAction) + engine/commands/execute-action.ts) 
+    // stores/browser-command-store.ts
+    setPendingAction({ action, nodeKey, tab, xmlDetail });
+    // engine/commands/execute-action.ts, after modal close:
+    const next = useBrowserCommandStore.getState().pendingAction;
+    if (next) { clearPendingAction(); executeAction(next); }
+
+How it maps: This is a deferral mechanism: the four `mstrNextAction_*` globals become a single
+`pendingAction` object in the browser-command-store. Instead of the legacy trick of re-entering
+ExecuteAction once the modal closes, the store holds the pending action and execute-action drains
+it on the modal-close event. The store slot is a small, well-defined addition but is not wired
+yet, so it is design.
+
+
+==================================================================================================
+44. GetCyclingValues   [SCAFFOLDED]
+   Sub · lines 3169-3242 · Navigation
+==================================================================================================
+Purpose: Given an action/nodekey/tab, builds a querystring and calls XmlCycling.aspx to resolve
+where to go next: the target URL+querystring, which frame to load it in, and the modal
+height/width, returned via ByRef out-params.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub GetCyclingValues(pstrAction,pstrNodeKey,pintTab,pstrXMLDetail, ByRef pstrFrame,ByRef pstrURL,ByRef pstrModalSize)
+     strQueryString = "?nodekey="&Escape(SetExpiredNumber(pstrNodeKey))&"&action="&Escape(pstrAction)&...&"&returntype=XML"
+     Set objResponse = CreateObject("MSXML2.DOMDocument.6.0")
+     objResponse.load "XmlCycling.aspx" & strQueryString
+     Set objNode = objResponse.selectSingleNode("//result")
+     pstrFrame = Ucase(GetNodeText(objNode,"frame",""))
+     pstrURL = URLDecodeJS(GetNodeText(objNode,"url","")) & URLDecodeJS(GetNodeText(objNode,"querystring",""))
+     pstrModalSize = height & "," & width
+    End Sub
+
+--- React POC  (engine/api/client.ts (navigate())) ---------------------------------------------
+    // engine/api/client.ts
+    const r = await api.navigate({
+      nodeKey, action, userId, policyId, tab, xmlDetail, returnType: 'XML',
+    });
+    // r => { url, querystring, frame, height, width }
+    return {
+      frame: r.frame.toUpperCase(),
+      url: r.url + r.querystring,
+      modalSize: r.height || r.width ? `${r.height},${r.width}` : '',
+    };
+
+How it maps: XmlCycling.aspx is exactly what client.ts's `navigate()` call replaces: one backend
+round-trip that turns an action into a destination. The synchronous MSXML load, manual
+Escape/UnEscape juggling, and ByRef out-params collapse into an awaited call returning a typed `{
+url, frame, height, width }` object. `navigate()` exists in the POC, but the cycling-specific
+fields (SetExpiredNumber, frame upper-casing, modal-size assembly) are not fully mapped, so this
+is scaffolded.
+
+
+==================================================================================================
+45. ApplySecurityPolicy   [DESIGN]
+   Sub · lines 3252-3401 · Security
+==================================================================================================
+Purpose: Looks up a control's security record in the permissions XML (by lob/page/object
+matchcode) and applies its visible/disabled flags to that control, handling tab strips, div groups
+(looping child dta/lbl controls), and single controls, and marking security-disabled controls with
+a SecDis attribute.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ApplySecurityPolicy(strFieldMatchCode, objCallingWindow)
+     strProgramType = GetActionMenuNameException(.marrSessionInformation(3),1,"|") & GetStringField(...,4,"|")
+     strPageMatchCode = .mxmlDoc.selectSingleNode("//page[@matchcode]").../value
+     strSecurityPath = "//permissions/lob[@mc='"&strProgramType&"']/pag[@mc='"&strPageMatchCode&"']/obj[@mc='"&strFieldMatchCode&"']"
+     Set nodSecurity = mxmlSecurity.selectSingleNode(strSecurityPath)
+     strVisible = nodSecurity...("vis").value : strDisabled = ...("dis").value
+     If Left(fmc,3)="tab" Then ...tabstrip.visibility/disabled; clear required on hidden tab
+     ElseIf Left(fmc,3)="div" Then loop child controls, SetControlAttribute VISIBLE/DISABLED
+     Else SetControlAttribute on dta&fmc; if disabled set SecDis='T'
+    End Sub
+
+--- React POC  (engine/renderers/FieldRenderer.tsx + stores/auth-store.ts (+ dispatch.ts SET_VISIBLE/SET_DISABLED)) 
+    // stores/auth-store.ts holds the permissions island
+    const sec = selectSecurity(perms, {
+      lob: programType, pag: pageMatchCode, obj: field.matchcode,
+    });
+    // engine/renderers/FieldRenderer.tsx resolves per control at render:
+    const visible  = sec?.vis !== 'F' && field.visible;
+    const disabled = sec?.dis === 'T' || field.disabled;
+    const required = visible ? field.required : false; // hidden tab => not required
+    const secDisabled = sec?.dis === 'T';
+
+How it maps: The security XML is already the auth-store 'security island', so the lob/page/object
+path lookup becomes a `selectSecurity(perms, {lob,pag,obj})` selector. Instead of imperatively
+walking the DOM and calling SetControlAttribute, FieldRenderer merges the returned vis/dis into
+each control's props at render time; the 'clear required when a tab is hidden' rule and the SecDis
+marker become derived values. auth-store scaffolds the permissions data and dispatch.ts has the
+matching SET_VISIBLE/SET_DISABLED/SET_REQUIRED verbs, but the matchcode-path selector and per-
+control application are not built, so this is a design target.
+
+
+==================================================================================================
+46. ButtonOnClickHandler   [SCAFFOLDED]
+   Sub · lines 3404-3486 · Events/Buttons
+==================================================================================================
+Purpose: Generic OnClick handler for page action buttons: finds the control a button is bound to,
+harvests its value into the outbound data array, and triggers a server round-trip.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ButtonOnClickHandler (ByRef objCallingWindow)
+      Set objControl = .event.srcElement
+      ' find a <control> whose matchcode = button name AND has @relatedcontrol
+      Set objNode = .mxmlDoc.selectSingleNode("//control[@matchcode=..."&objControl.name&..."and @relatedcontrol]")
+      If Not objNode Is Nothing Then
+        Set objRelatedControl = .document.all("dta"&...relatedcontrol...)
+        Select Case UCase(objRelatedControl.tagName)
+          Case "XMLLIST": objRelatedControl.action = objControl.action : Call ListButtonOnClick(...)
+          Case Else:      Call SetArrayData(objRelatedControl, objCallingWindow)
+      Else ' no related control -> maybe a @relatedfunction
+        Execute(".marrEEData(2) = ."&...relatedfunction...&"()")
+      If blnCallServer Then .marrEEData(1)=objControl.name : .marrEEData(5)="1" ' then .CallServer
+
+--- React POC  (engine/renderers/ButtonsRenderer.tsx (click wiring) + engine/commands/execute-action.ts (round-trip)) 
+    // ButtonsRenderer.tsx (real POC)
+    onClick={() => {
+      if (!session) return;
+      void executeAction(
+        { session, matchcode: a.matchcode, action: a.action, value: undefined },
+        nav,
+      );
+    }}
+    // executeAction() gathers formData from the page store,
+    // calls api.pageLayout(), then dispatchCommands(result.commands).
+
+How it maps: The click-to-server pipeline exists: ButtonsRenderer routes every button through
+executeAction, which builds the form payload and calls the Page Layout API — the modern equivalent
+of filling marrEEData and calling CallServer. What is NOT yet built is this routine's data-binding
+branch logic: the XML lookup that ties a button to a @relatedcontrol, the XMLLIST special case
+(ListButtonOnClick), the SetArrayData harvest, and the @relatedfunction Execute() eval. In the POC
+the whole page's control values are always sent, so per-button related-control harvesting is
+currently unnecessary but the XMLLIST/relatedfunction cases have no home yet.
+
+
+==================================================================================================
+47. CalendarButtonOnClick   [ELIMINATED]
+   Sub · lines 3489-3533 · Events/Buttons
+==================================================================================================
+Purpose: OnClick handler for a calendar button next to a date field: opens an IE modal month-view
+dialog, then writes any changed date back into the associated date control and re-validates.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub CalendarButtonOnClick(ByRef objCallingWindow)
+      Set objDateControl = .document.all("dta" & .event.srcElement.name)
+      If Not objDateControl.isDisabled Then
+        ' move current value into module-level mvntRtnValue, open modal calendar dialog...
+        If CStr(.mvntRtnValue) <> CStr(GetControlValue(objDateControl)) Then
+          Call SetControlValue(objDateControl, "", .mvntRtnValue, "L", objCallingWindow)
+          Call CheckRequiredIndicators("", objCallingWindow)
+        End If
+
+--- React POC  (engine/renderers/FieldRenderer.tsx (date case)) --------------------------------
+    // FieldRenderer.tsx date case (real POC) — no button, no modal:
+    case 'date':
+      return (
+        <TextField {...common} type="date"
+          value={control.value ?? ''}
+          InputLabelProps={{ shrink: true }}
+          onChange={(e) => setValue(control.matchcode, e.target.value)}
+          onBlur={(e) => fire(e.target.value)} />
+      );
+
+How it maps: The mechanism this Sub implements — a separate calendar button that pops an IE
+showModalDialog window and round-trips the value through the module-level mvntRtnValue global — is
+a classic IE-ism that disappears. A native/MUI date picker shows its calendar inline, so there is
+no button, no modal, and no cross-frame value shuttle. The one behaviour worth preserving, writing
+the picked value back and re-running required validation, becomes an ordinary onChange/onBlur that
+updates the page store (fire() -> executeAction); the re-validation half depends on the
+CheckRequiredIndicators port below, which is still design-only.
+
+
+==================================================================================================
+48. CheckRequiredIndicators   [DESIGN]
+   Function · lines 3536-3638 · Indicators
+==================================================================================================
+Purpose: Form-completeness gate: returns TRUE only if every visible required=1 control has a
+value, and enables/disables the OK and Next buttons accordingly (plus special check-status edits
+for new-business/quote/transfer).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function CheckRequiredIndicators(strControlList, objCallingWindow)
+      blnSuccess = CheckSpecifiedIndicator(strControlList, "required", "1", objCallingWindow)
+      If blnSuccess Then
+        Call UserOption("checkstatus","T",strUsrOptCheckStatus)
+        Call SessionXML_GetItem("transactionid", strTransactionid)
+        ' if new-business/quote/transfer, keep OK disabled until a status check ran
+        ...SetControlAttribute(.document.all("dtaOK"), ...,"DISABLED", "F"/"T"...)
+        Call SetControlAttribute(.document.all("dtaNEXT"), "","DISABLED","F", objCallingWindow)
+      Else
+        Call SetControlAttribute(.document.all("dtaOK"),  "","DISABLED","T", objCallingWindow)
+        Call SetControlAttribute(.document.all("dtaNEXT"), "","DISABLED","T", objCallingWindow)
+      CheckRequiredIndicators = blnSuccess
+
+--- React POC  (would live in: stores/page-store.ts (a selectRequiredComplete selector) + engine/renderers/ButtonsRenderer.tsx (disabled binding)) 
+    // design target — derived selector in page-store, no imperative button poking
+    export const selectRequiredComplete = (s: PageState) =>
+      Object.values(s.controls)
+        .filter(c => c.required && c.visible !== false)
+        .every(c => hasValue(c));
+    // OK/NEXT buttons read it:  disabled={!usePageStore(selectRequiredComplete)}
+    // check-status edits (transactionid/policyAction/UserOption) move server-side,
+    // arriving as SET_DISABLED commands on dtaOK via dispatchCommands.
+
+How it maps: No client-side completeness gate exists in the POC yet. Today the store renders
+required declaratively and button enable/disable is whatever SET_DISABLED/SET_REQUIRED commands
+the server sends (see window-load.ts and page-store applyCommands), so the aggregate check and the
+OK/Next toggling this function performs are unbuilt. The target is a reactive selector over the
+page store that recomputes on every keystroke and drives the buttons disabled prop — replacing the
+imperative SetControlAttribute(dtaOK/dtaNEXT) calls. The check-status business rules
+(transactionid, dtaPolicyAction Update/Delete/Copy/Transfer, UserOption checkstatus) are server
+concerns and should return as commands rather than live in the browser.
+
+
+==================================================================================================
+49. CheckSpecifiedIndicator   [DESIGN]
+   Function · lines 3641-3821 · Indicators
+==================================================================================================
+Purpose: Generic per-control validation engine: walks every element on the page, and for each
+visible control whose given attribute equals a given value, checks (by control type) whether it
+actually holds a value; returns TRUE/FALSE plus a comma-joined list of failing field labels.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function CheckSpecifiedIndicator(strControlList, strIndicator, strIndicatorValue, objCallingWindow)
+      Set objControls = .document.all
+      For intIndex = 0 To objControls.length - 1
+        If objControls(i).getAttribute(strIndicator) = strIndicatorValue Then
+         If GetControlAttribute(...,"VISIBLE")="T" Then
+          Select Case UCase(tagname)
+            Case "SELECT": empty if selectedIndex=-1 / options.length=0
+            Case "OBJECT": date control not IsDate, or Tree not mblnTreeItemSelected
+            Case "INPUT","TEXTAREA","COMBO",...: iscalendar->CheckDate else Len(Trim(value))=0
+            Case "XMLLIST","IMDBXMLLIST": RowCount < 1
+            Case "IBUTTON": Not ClickedOnce
+          If blnUpdateList Then strControlList = strControlList & ", " & lbl<name>.innertext
+      Next
+      CheckSpecifiedIndicator = blnSuccess
+
+--- React POC  (would live in: engine/validation/check-indicator.ts (consumed by the page-store selector above)) 
+    // design target — engine/validation/check-indicator.ts
+    type Rule = (c: ControlDef) => boolean; // true = has a value
+    const hasValue: Record<ControlType, Rule> = {
+      select: c => c.value != null && c.value !== '',
+      date:   c => isValidDate(c.value),
+      text:   c => String(c.value ?? '').trim().length > 0,
+      datagrid: c => (c.rowCount ?? 0) >= 1,   // XMLLIST/IMDBXMLLIST
+      /* ... */
+    };
+    export function checkIndicator(controls, attr, val) {
+      const failing = Object.values(controls)
+        .filter(c => c.visible !== false && (c as any)[attr] === val && !hasValue[c.type](c));
+      return { ok: failing.length === 0, labels: failing.map(c => c.label) };
+    }
+
+How it maps: This is the reusable core that CheckRequiredIndicators (and lookup-page search
+validation) delegate to, and it is not built in the POC. In React the imperative document.all walk
+over live DOM tags is replaced by iterating the typed control map in the page store, with one
+predicate per control type instead of a giant tagname Select Case. The IE-specific probes vanish
+or simplify: SELECT selectedIndex/options, OBJECT CLSID date/Tree-control checks, XMLLIST
+RowCount, and IBUTTON ClickedOnce become plain value checks on ControlDef, since the renderers
+already model those as data. It returns the same two outputs — a boolean and the human-readable
+list of empty required-field labels — that the completeness gate needs.
+
+
+==================================================================================================
+50. ExecuteBrowserCommands   [SCAFFOLDED]
+   Sub · lines 3825-5005 · ServerCommands
+==================================================================================================
+Purpose: The client-side interpreter for the server's reply. After every server round-trip the
+server returns a list of 'browser commands' (verb / noun / addinf / resfil); this one loop
+executes ALL of them in order - showing/hiding/enabling/requiring controls, loading combo boxes,
+popping messages, questions and modals, navigating, refreshing lists, and updating the nav tree.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ExecuteBrowserCommands(ByRef objControl, ByRef objCallingWindow)
+      With objCallingWindow
+        If Not .mxmlBrowserCtl Is Nothing ... Then
+          Set objCalls = .mxmlBrowserCtl.selectNodes("//call")
+          For intRtnCount = 0 To objCalls.length - 1
+            strVerb=..GetNamedItem("verb")..  ' also noun, addinf, resfil
+            If .mblnDoBrowserCommands Then
+              If strResFil="" Or strResFil=intResponseFilter Then
+                Select Case UCase(strVerb)
+                  Case "ADD_LISTITEM" / "CLEAR_COMBO" / "LOAD_COMBO" ...
+                  Case "DISPLAY_ERROR"/"DISPLAY_MESSAGE"/"DISPLAY_QUESTION" ...
+                  Case "NAVIGATE"/"NAVIGATE_CYCLING"/"OPEN_MODAL"/"CALL_SERVER" ...
+                  Case "SET_DISABLED"/"SET_VISIBILITY"/"SET_REQUIRED"/"SET_TEXT" ...
+                  Case "BUILD_TREE"/"UPDATE_TREENODETEXT"/"REFRESH_LIST" ...
+                End Select
+          Next
+    End Sub
+
+--- React POC  (engine/commands/dispatch.ts) ---------------------------------------------------
+    // engine/commands/dispatch.ts  (SCAFFOLDED)
+    export function dispatchBrowserCommands(
+      calls: BrowserCall[],          // parsed <call> {verb,noun,addinf,resfil}
+      ctx: CommandContext,           // page-store, window-mgr, api, router
+    ) {
+      let responseFilter = "";       // set by DISPLAY_QUESTION
+      for (const c of calls) {
+        if (c.resfil && c.resfil !== responseFilter) continue;
+        switch (c.verb) {
+          case "SET_VISIBILITY": ctx.page.setVisible(c.noun, c.addinf==="1"); break;
+          case "SET_DISABLED":   ctx.page.setDisabled(c.noun, c.addinf==="1"); break;
+          case "SET_REQUIRED":   ctx.page.setRequired(c.noun, c.addinf==="1"); break;
+          case "SET_TEXT":       ctx.page.setValue(c.noun, c.addinf); break;
+          case "LOAD_COMBO":     ctx.page.loadOptions(c.noun, ctx.listItems); break;
+          case "DISPLAY_QUESTION": responseFilter = await ctx.ui.confirm(c.addinf); break;
+          case "NAVIGATE_CYCLING": return ctx.router.executeAction(...); // ends loop
+          case "OPEN_MODAL":     ctx.windows.openModal(...); break;
+          // ...~40 verbs total
+        }
+      }
+    }
+
+How it maps: This is the heart of the legacy client: the server never returns HTML, it returns a
+queue of imperative commands and this loop applies them to the live IE DOM (control combos,
+labels, tree frame, modals). In React it becomes a pure dispatcher/reducer over a TYPED command
+array that writes to Zustand stores (page-store for controls, browser-command-store for the
+modal/window queue, window-manager for windows) instead of poking document.all/frames directly.
+The 'resfil' response-filter - where a DISPLAY_QUESTION's answer gates which later commands run -
+is preserved by threading a filter value through the loop; the many *_PARENT variants (which reach
+into window.frames('main')) collapse because React has one component tree, not nested framesets.
+Status is scaffolded: dispatch.ts exists and handles the SET_* control verbs, but the navigation
+(NAVIGATE_CYCLING/CALL_SERVER re-entrancy via mblnDoBrowserCommands), modal, combo-loading, tree,
+and REFRESH_LIST verbs are not fully built, and IE-only mechanics (showModalDialog, MSXML
+DOMDocument, cross-frame reach) are being eliminated rather than ported.
+
+
+==================================================================================================
+51. FillCallArray   [ELIMINATED]
+   Sub · lines 5008-5093 · ServerCommands
+==================================================================================================
+Purpose: Reads the page's embedded XML data island for the server-side classes/subroutines to run
+before or after a matchcode or page event, and stacks them into the marrServerCalls array that the
+client later ships to the server.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub FillCallArray(ByVal strMatchcode, ByVal strPrePostType, ByRef objCallingWindow)
+      If strMatchcode = "" Then strMatchcode = "page"   'page-level vs matchcode-level
+      Select Case strPrePostType: Case "0": ="pre" : Case "1": ="post" ...
+      strQuery = "//control[@matchcode=""" & strMatchcode & """]/calls[@type="""&strPrePostType&"""]/call"
+      Set objNodes = .mxmlDoc.selectnodes(strQuery)
+      Call .ReDimBrowserArray(objNodes.length,2,"marrServerCalls")
+      For intCount = 1 To objNodes.length
+        .marrServerCalls(intCount,1) = attrs("project") & "." & attrs("class")
+        .marrServerCalls(intCount,2) = attrs("subroutine")
+      Next
+    End Sub
+
+--- React POC  (eliminated — closest: engine/commands/execute-action.ts (posts formData; server owns pre/post) + config/routes.ts PageConfig hooks) 
+    // No client-side list of server sub-calls. execute-action posts the whole
+    // form; the backend runs its own pre/post processing:
+    await api.pageLayout(session, { matchcode, action, value, formData });
+    // Page-level Entry/Edit/Save/Cancel/Next hooks map to typed config:
+    // PageConfig.onLoad / PageConfig.onBeforeUnload (config/routes.ts).
+
+How it maps: In the legacy page, an MSXML "data island" listed which server classes/subroutines to
+run before or after a matchcode or page event (Pre/Post, Entry/Edit/Save/Cancel/Next); this Sub
+parsed those <call> nodes into marrServerCalls so the client could tell the server what to
+execute. In the React SPA the client no longer dictates server routines: executeAction posts the
+whole form to the Page Layout API and the backend owns its own pre/post orchestration. Page
+lifecycle events map instead to typed PageConfig.onLoad/onBeforeUnload hooks. The client-side XML-
+island call list is therefore eliminated.
+
+
+==================================================================================================
+52. FillComboList   [SHIPPED]
+   Sub · lines 5100-5169 · Controls
+==================================================================================================
+Purpose: Populates an AQS Combo/KPCombo dropdown by reading <item> nodes out of the XML island and
+imperatively adding each text/value pair to the control, plus an optional leading "NONE"
+(showzero) entry.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub FillComboList(ByRef objControl, ByRef objCallingWindow)
+      If UCase(objControl.tagname)="COMBO" or "KPCOMBO" Then
+        Set objListItems = mxmlDoc.selectnodes("//control[@matchcode="""&objControl.name&"""]//item")
+        objControl.clear                       'delete current items
+        strShowZeroText = ShowZeroText(objControl)
+        If Len(strShowZeroText)>0 Then objControl.add strShowZeroText,""
+        For intItemCount = 0 To objListItems.length-1
+          strValue = attrs.getNamedItem("value").nodevalue
+          objControl.add objListItems(intItemCount).text, strValue
+        Next
+        objControl.setWidth()                  'size the list once
+      End If
+    End Sub
+
+--- React POC  (engine/renderers/FieldRenderer.tsx (combo case) + stores/page-store.ts (LOAD_COMBO)) 
+    // FieldRenderer.tsx (combo) — options are just data on ControlDef:
+    <Autocomplete options={control.options ?? []}
+      getOptionLabel={(o) => o.label}
+      value={(control.options??[]).find(o => o.value===control.value) ?? null}
+      onChange={(_e,opt)=>{ setValue(control.matchcode, opt?.value ?? ''); fire(opt?.value); }}/>
+    // page-store.ts applyCommands — server can refresh the list at runtime:
+    case 'LOAD_COMBO':
+      controls[cmd.target] = { ...target, options: cmd.options ?? [] };
+
+How it maps: This fills a combo box by reading <item> nodes and calling objControl.add(text,value)
+for each, prefixing an optional showzero ("NONE") entry and sizing the list once. In React the
+list is plain data: ControlDef.options feeds an MUI Autocomplete in FieldRenderer, and the server
+can refresh it at runtime via the LOAD_COMBO command, which page-store.applyCommands applies. The
+imperative DOM .add/.clear/.setWidth calls are gone, but the capability — building and refreshing
+a combo's list — is genuinely working in the POC today.
+
+
+==================================================================================================
+53. FillSelectList   [SCAFFOLDED]
+   Sub · lines 5172-5303 · Controls
+==================================================================================================
+Purpose: Fills a multi-select <select> from <item> nodes, and on coverage screens filters out
+options already present in a related "selected" list based on multiselect/covcode limits (an
+available-vs-selected dual list).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub FillSelectList(objControl, objNodes, strRelatedList, objCallingWindow)
+      Set objListItems = objNodes.selectnodes("//control[@matchcode=...]//item")
+      For intItemCount = 0 To objListItems.length-1
+        blnAddOption = True
+        If Len(strRelatedList)>0 Then          'coverage available-vs-selected logic
+          strMultiSelect = attrs("multiselect").nodeValue  '"NO"->1, numeric->N
+          Set objTestNodes = xdiPageData.selectnodes("...covcode=...")
+          If objTestNodes.length => intMaxAllowed Then blnAddOption = False
+        End If
+        If blnAddOption Then
+          Set objOption = document.createElement("OPTION")
+          objOption.text = objListItems(i).text : objOption.value = attrs("value")
+          If attrs("selected").nodevalue="T" Then objOption.selected = True
+          objControl.add(objOption)
+        End If
+      Next
+    End Sub
+
+--- React POC  (engine/renderers/FieldRenderer.tsx (select case shipped); coverage dual-list would live in engine/renderers/ (new DualListRenderer)) 
+    // SHIPPED — FieldRenderer.tsx (select) renders options from data:
+    <TextField select value={control.value ?? ''} ...>
+      {(control.options ?? []).map(o =>
+        <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
+    </TextField>
+    // DESIGN — the coverage dual-list (multiselect max / covcode match against a
+    // related 'selected' list, preselected-then-reset flags) is not built. It would
+    // be a DualListRenderer filtering options before render.
+
+How it maps: Beyond plain option population, this routine implements coverage screens: for a
+related list it computes a max-allowed count from the multiselect attribute, matches by covcode
+against the live xdiPageData, and suppresses options already selected elsewhere, also
+honoring/resetting a 'selected' flag. FieldRenderer's select case already renders single-select
+options from ControlDef.options, so basic population is covered. The distinctive available-vs-
+selected dual-list logic is not built and would live in a dedicated renderer; that part is design-
+only, so the honest status is scaffolded.
+
+
+==================================================================================================
+54. FocusFirstControl   [DESIGN]
+   Sub · lines 5307-5347 · Controls
+==================================================================================================
+Purpose: On page load, scans the XML island for the control flagged firstcontrol (trying values
+'', '1', '2' in order) and hands it to SelectControlFocus to receive focus; if none is flagged, no
+focus is set.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub FocusFirstControl(ByRef objCallingWindow)
+      With objCallingWindow
+        Set objNodes = .mxmlDoc.selectsinglenode("//control[@firstcontrol = '']")
+        If SelectControlFocus(objNodes, objCallingWindow) = "T" Then Exit Sub
+        Set objNodes = .mxmlDoc.selectsinglenode("//control[@firstcontrol = '1']")
+        If SelectControlFocus(objNodes, objCallingWindow) = "T" Then Exit Sub
+        Set objNodes = .mxmlDoc.selectsinglenode("//control[@firstcontrol = '2']")
+        If SelectControlFocus(objNodes, objCallingWindow) = "T" Then Exit Sub
+      End With  ' no firstcontrol found -> no focus set
+    End Sub
+
+--- React POC  (would live in: engine/renderers/FormRenderer.tsx (autoFocus first enabled control)) 
+    // design — FormRenderer picks the first visible, enabled control and
+    // autoFocuses it (no DOM/XML scan needed):
+    const first = order.map(k => controls[k])
+      .find(c => c.visible !== false && !c.disabled);
+    // pass autoFocus to that control's FieldRenderer, or a ref + el.focus().
+
+How it maps: This walks the XML island for a control flagged firstcontrol (in priority order '',
+'1', '2') and delegates to SelectControlFocus, leaving focus untouched if none is marked. React
+needs no DOM/XML scan: the FormRenderer can select the first visible, enabled control from the
+page-store order and set autoFocus (or call a ref's .focus()). This is not built in the POC yet,
+so it is a design note pointing at FormRenderer. (Note: this Sub was absent from the task's
+routine list but is a genuine top-level Sub in the assigned range.)
+
+
+==================================================================================================
+55. SelectControlFocus   [DESIGN]
+   Function · lines 5350-5418 · Controls
+==================================================================================================
+Purpose: Given a candidate control node, verifies it is not disabled, resolves the real DOM
+element, records its starting value and previous matchcode for change tracking, then sets focus;
+returns "T" on success else "".
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function SelectControlFocus(ByRef objNodes, ByRef objCallingWindow)
+      SelectControlFocus = ""
+      If not objNodes is nothing then
+        strMatchCode = objNodes.attributes.getNamedItem("matchcode").value
+        If attrs.getNamedItem("disabled").value = "F" then
+          SelectControlFocus = "T"
+          Set objControl = .document.all("dta" & objNode.nodevalue)   'resolve DOM el
+          .mvntInitialValue = GetControlValue(objControl)             'baseline
+          .mstrPreviousMatchcode = objControl.name
+          Call SetControlFocus(objControl.name, objCallingWindow)
+          mblnFocusChanged = False : mstrFocusChangedTo = ""
+        End If
+      End If
+      .mblnRespondTabClick = True
+    End Function
+
+--- React POC  (would live in: engine/renderers/FormRenderer.tsx (ref/autoFocus) + stores/app-store.ts (dirty baseline)) 
+    // design — set focus + capture the dirty-tracking baseline:
+    inputRef.current?.focus();                         // was document.all("dta"+mc)
+    useAppStore.getState().setBaseline(control.matchcode, control.value); // mvntInitialValue
+    // React refs replace document.all(...); the tabstrip 'respond' flag is not needed.
+
+How it maps: This checks the control isn't disabled, resolves the actual element via
+document.all("dta"+matchcode), captures its starting value (mvntInitialValue) and previous
+matchcode for change detection, sets focus, and resets the focus-changed flags. In React, focus is
+a ref/autoFocus concern and document.all(...) disappears; the capture-initial-value step maps to
+seeding the dirty-tracking baseline in app-store. Neither the focus wiring nor the baseline
+capture is built in the POC, so this is design.
+
+
+==================================================================================================
+56. GetControlAttribute   [ELIMINATED]
+   Function · lines 5422-5557 · Controls
+==================================================================================================
+Purpose: A single generic getter for a control's VISIBLE or DISABLED state, branching on every
+control flavor and normalizing the underlying DOM/ActiveX property to "T"/"F".
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function GetControlAttribute(ByRef objControl, ByVal strAttribute)
+      GetControlAttribute = ""
+      Select Case UCase(.tagname)
+        Case "OBJECT": Select Case UCase(.classid)   'Protoview date/numeric, tree CLSIDs
+          Case "VISIBLE": if .style.visibility="VISIBLE" ->"T" / "HIDDEN" ->"F"
+          Case "DISABLED": If Not .enabled -> "T" else "F"
+        Case "RADIOBUTTON","COMBO","KPCOMBO","IBUTTON","ICHECKBOX": ...(.enabled)
+        Case "XMLLIST","INPUT","SELECT","TEXTAREA","DIV","TD": ...(.disabled)
+      End Select
+    End Function
+
+--- React POC  (eliminated — closest: stores/page-store.ts (ControlDef.visible/disabled) read by engine/renderers/FieldRenderer.tsx) 
+    // Controls are plain data, not heterogeneous DOM/ActiveX objects.
+    // FieldRenderer.tsx reads state straight off the ControlDef:
+    if (control.visible === false) return null;   // was GetControlAttribute("VISIBLE")
+    <TextField disabled={control.disabled} .../>  // was GetControlAttribute("DISABLED")
+
+How it maps: This getter existed only because visibility/disabled had to be read differently for
+each control kind — ActiveX OBJECT CLSIDs (Protoview date/numeric, Sheridan/IE8 tree), behavior
+controls (RADIOBUTTON/COMBO), and plain HTML (INPUT/SELECT/DIV) — via .style.visibility, .enabled,
+or .disabled, then normalized to "T"/"F". The whole problem vanishes in React because controls are
+plain ControlDef data: FieldRenderer reads control.visible/control.disabled directly
+(FieldRenderer.tsx line 33, plus disabled/readOnly props). Eliminated.
+
+
+==================================================================================================
+57. GetControlValue   [ELIMINATED]
+   Function · lines 5560-5695 · Controls
+==================================================================================================
+Purpose: The generic getter for a control's current value, switching on control type (Protoview
+date/numeric, tree sentinel, DIV innerText, checkbox YES/NO, XMLLIST action,
+combo/select/input/textarea) to return the right "L"/text value.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function GetControlValue(ByRef objControl)
+      Select Case UCase(objControl.tagname)
+        Case "OBJECT": vntValue = .datestring / .text / "tree"   'per CLSID
+        Case "DIV": vntValue = .innerText
+        Case "ICHECKBOX"/"INPUT type=CHECKBOX": If .checked -> "YES" else "NO"
+        Case "XMLLIST": vntValue = .action
+        Case "COMBO","KPCOMBO": vntValue = .text
+        Case "INPUT": Select Case UCase(.type) 'TEXT/PASSWORD/... -> .value
+        Case "SELECT": vntValue = .options(.selectedIndex).text
+        Case "TEXTAREA": vntValue = .value
+      End Select
+      GetControlValue = vntValue
+    End Function
+
+--- React POC  (eliminated — closest: stores/page-store.ts (ControlDef.value) + engine/commands/execute-action.ts (formData)) 
+    // One source of truth: ControlDef.value in page-store (setValue keeps it live).
+    // execute-action.ts builds the server payload straight from it:
+    const formData = Object.fromEntries(
+      Object.values(controls).map(c => [c.matchcode, c.value]));
+    // No per-tagname extraction (datestring / innerText / selectedIndex / .checked).
+
+How it maps: This is the value-side twin of GetControlAttribute: because every control type stored
+its value differently (Protoview datestring, tree sentinel "tree", DIV innerText,
+checkbox->YES/NO, SELECT selected-option text, INPUT by input-type), a big switch was needed to
+read one value. In the SPA there is a single source of truth: ControlDef.value in the page-store,
+kept live by setValue, and executeAction assembles the server payload directly from it (execute-
+action.ts lines 27-29). No per-tagname extraction is required, so this is eliminated.
+
+
+==================================================================================================
+58. GetSecurityValues   [DESIGN]
+   Sub · lines 5697-5709 · Security
+==================================================================================================
+Purpose: Given a control's identity (category/page/object match codes), look up whether that
+control should be visible and whether it should be disabled, defaulting to allowed (visible,
+enabled).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub GetSecurityValues(strCat, strPage, strObj, ByRef blnSecDisabled, ByRef blnSecVisible)
+      blnSecDisabled = false : blnSecVisible = true   '// default: visible + enabled
+      strSecurityPath = "//permissions/lob[@mc='" & strCat & "']/pag[@mc='" & strPage _
+                      & "']/obj[@mc='" & strObj & "']"
+      Call SecurityValues_Read(strSecurityPath, blnSecDisabled, blnSecVisible)
+    End Sub
+
+--- React POC  (would live in: stores/auth-store.ts (extends the existing permissions island)) -
+    // stores/auth-store.ts — add a per-object selector (allow-by-default variant)
+    getObjectSecurity(lob, page, obj) {
+      const n = get().security?.[lob]?.[page]?.[obj];
+      return { visible: n?.vis ?? true, disabled: n?.dis ?? false };
+    }
+
+How it maps: This is one of three thin wrappers that differ only in their default answer; this one
+is the permissive default (show + enable unless security says otherwise). In VBScript it builds an
+XPath string against the in-memory security XML island (mxmlSecurity) and hands off to
+SecurityValues_Read. In React the security island already arrives as JSON in authStore at login,
+so the equivalent is a pure selector that walks lob->page->object and returns {visible, disabled}.
+The POC's authStore today only exposes a flat can(permission) helper, so this per-control resolver
+is not built yet.
+
+
+==================================================================================================
+59. GetSecurityValuesWithExistCheck   [DESIGN]
+   Sub · lines 5713-5725 · Security
+==================================================================================================
+Purpose: Same per-control security lookup as GetSecurityValues, but deny-by-default: if no
+matching security node exists, the control stays hidden and disabled.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub GetSecurityValuesWithExistCheck(strCat, strPage, strObj, ByRef blnSecDisabled, ByRef blnSecVisible)
+      blnSecDisabled = true : blnSecVisible = false   '// default: hidden + disabled
+      strSecurityPath = "//permissions/lob[@mc='...']/pag[@mc='...']/obj[@mc='...']"
+      Call SecurityValues_Read(strSecurityPath, blnSecDisabled, blnSecVisible)
+    End Sub
+
+--- React POC  (would live in: stores/auth-store.ts) -------------------------------------------
+    // stores/auth-store.ts — same selector, deny-by-default
+    getObjectSecurity(lob, page, obj, { defaultDeny: true }) {
+      const n = get().security?.[lob]?.[page]?.[obj];
+      return { visible: n?.vis ?? false, disabled: n?.dis ?? true };
+    }
+
+How it maps: Byte-for-byte identical to GetSecurityValues except the two default flags start
+flipped, so an absent node means the control is locked down rather than shown. The 'ExistCheck'
+name reflects that the presence of the node is itself the grant. In React this collapses into the
+same authStore selector taking a defaultDeny flag; the actual resolver against the security tree
+is not implemented in the POC yet.
+
+
+==================================================================================================
+60. GetSecurityValues_DefaultDisabled   [DESIGN]
+   Sub · lines 5728-5740 · Security
+==================================================================================================
+Purpose: Third variant of the per-control security lookup, also deny-by-default (starts invisible
+and disabled) before consulting the security island.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub GetSecurityValues_DefaultDisabled(strCat, strPage, strObj, ByRef blnSecDisabled, ByRef blnSecVisible)
+      blnSecDisabled = True : blnSecVisible = False   '// default: invisible + disabled
+      strSecurityPath = "//permissions/lob[@mc='...']/pag[@mc='...']/obj[@mc='...']"
+      Call SecurityValues_Read(strSecurityPath, blnSecDisabled, blnSecVisible)
+    End Sub
+
+--- React POC  (would live in: stores/auth-store.ts) -------------------------------------------
+    // Folds into the same authStore selector as WithExistCheck:
+    getObjectSecurity(lob, page, obj, { defaultDeny: true })
+
+How it maps: Its body is a semantic duplicate of GetSecurityValuesWithExistCheck (same True/False
+defaults, same XPath, same SecurityValues_Read call) — legacy code kept two differently-named
+entry points for the same deny-by-default behavior. The React target is a single selector
+parameterized by its default, so the three VBScript wrappers become one function with a mode
+argument. Still design-only in the POC.
+
+
+==================================================================================================
+61. SecurityValues_Read   [DESIGN]
+   Sub · lines 5743-5759 · Security
+==================================================================================================
+Purpose: The shared worker: run the XPath against the security XML, and if a matching node exists,
+overwrite the visible/disabled flags from its 'vis' and 'dis' attributes ("T" = true).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Set nodSecurity = mxmlSecurity.selectSingleNode(strSecurityPath)
+    If Not nodSecurity Is Nothing Then
+      strVisible  = nodSecurity.attributes.getNamedItem("vis").value
+      strDisabled = nodSecurity.attributes.getNamedItem("dis").value
+      blnSecVisible  = (strVisible  = "T")
+      blnSecDisabled = (strDisabled = "T")
+    End If
+
+--- React POC  (would live in: stores/auth-store.ts) -------------------------------------------
+    // The single resolver the three wrappers delegate to (authStore):
+    function readSecurity(node, fallback) {
+      if (!node) return fallback;              // node absent -> keep caller default
+      return { visible: node.vis === 'T', disabled: node.dis === 'T' };
+    }
+
+How it maps: This is the only one of the four that touches the data; the wrappers just set
+defaults and build the path. Because it only overwrites the flags when the node is found, the
+caller's chosen default survives for controls the security island doesn't mention — that is the
+whole reason the three wrappers exist. In React this is a small pure helper reading the JSON
+security tree instead of MSXML selectSingleNode; the string "T"/"F" convention would be normalized
+to booleans at login. Not built in the POC.
+
+
+==================================================================================================
+62. GetXMLData   [SCAFFOLDED]
+   Sub · lines 5763-6304 · Controls
+==================================================================================================
+Purpose: The page's main hydration routine: walk every <control> node in the embedded XML data
+island and push its data (text/list index), options, and visible/disabled/required/readonly
+attributes onto the matching HTML control; also load tree nodes and queued browser commands.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub GetXMLData(pstrFilter, ByRef objCallingWindow)
+      Set objNodes = .mxmlDoc.selectnodes("//control" & strFilter)
+      For each control node:
+        objControl = document.all("dta" & matchcode)
+        If SELECT -> FillSelectList; If COMBO/KPCOMBO -> LimitToList/CutPaste; If XMLLIST -> objControl.xmlData
+        SetControlValue(text/listindex 'L'/'X'); SetControlAttribute DISABLED/VISIBLE/REQUIRED/READONLY
+        (ActiveX date-control rewrite; IBUTTON 'value'; RATE button cross-frame enable)
+        SetRequiredIndicator; ApplySecurityPolicy(matchcode)
+      Next
+      ' tree nodes -> frames("tree").Build_Tree ; //calls[@type=browsercommand] -> ExecuteBrowserCommands
+    End Sub
+
+--- React POC  (engine/load/window-load.ts + stores/page-store.ts (loadPage / applyCommands), rendered by engine/renderers/FieldRenderer.tsx) 
+    // window-load.ts hydrates page-store from the PageBuild JSON, then dispatches commands:
+    const merged = mergeControlsWithPageBuild(pageConfig, pageBuild);
+    usePageStore.getState().loadPage(pageBuild, merged);      // text/options/vis/dis/required
+    if (pageBuild.commands?.length) dispatchCommands(pageBuild.commands);
+    // FieldRenderer then draws each control declaratively (combo->Autocomplete, etc.)
+
+How it maps: This ~540-line loop is the heart of legacy page loading, and it splits cleanly in
+React: the backend now returns control definitions as JSON (PageBuild), page-store.loadPage seeds
+each control's value/visible/disabled/required, dispatchCommands applies any SET_* commands, and
+the renderers draw them — replacing hundreds of lines of imperative document.all() +
+SetControlAttribute calls. The core path exists in the POC but is only scaffolded: combo/select
+filling, XMLLIST data, and required flags are handled, while big chunks here are deliberately
+ELIMINATED (the IE ActiveX date-control rewrite, the RATE IBUTTON that reaches across
+window.parent.frames to the MENU frame, and the tree-frame Build_Tree injection). The per-control
+ApplySecurityPolicy call is the consumer of the security selectors above and is likewise not wired
+yet.
+
+
+==================================================================================================
+63. SetRequiredIndicator   [SHIPPED]
+   Sub · lines 6307-6361 · Indicators
+==================================================================================================
+Purpose: Put a red '* ' marker in front of a required field's label, bold it, and gray the label
+if the control is disabled — by rewriting the label element's innerHTML and style.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Set objLabel = .document.all("lbl" & objControl.name)
+    Select Case objControl.getAttribute("Required") & ""
+      Case "1": strLabelPrefix = "<span class='clsRequiredMarker'>* </span>" : strColor = mhexRequiredLabelColor : strWeight = "bold"
+      Case Else: strLabelPrefix = "" : strColor = "#000000" : strWeight = "normal"
+    End Select
+    If GetControlAttribute(objControl,"disabled") = "T" Then strColor = mhexDisabledLabelColor
+    objLabel.innerHTML = strLabelPrefix & objLabel.innertext
+    objLabel.style.color = strColor : objLabel.style.fontWeight = strWeight
+
+--- React POC  (engine/renderers/FieldRenderer.tsx) --------------------------------------------
+    // FieldRenderer.tsx — MUI renders the asterisk from the `required` prop; no DOM poke
+    const common = { label: control.label, required: control.required, disabled: control.disabled };
+    <TextField {...common} ... />   // required -> automatic '*' ; disabled -> grayed label
+
+How it maps: In the legacy app this ran as a separate imperative pass after data load, finding
+each 'lbl'+name element and mutating its innerHTML/color to add the asterisk. In React it is
+purely declarative: FieldRenderer forwards control.required and control.disabled to the MUI
+control, which draws the required asterisk and grays disabled labels itself, so the whole label-
+rewriting routine collapses to two props. window-load.ts explicitly notes this ('required
+indicators arrive as required on each control and render declaratively — no separate init pass'),
+so the behavior is shipped even though the imperative routine is gone.
+
+
+==================================================================================================
+64. NoteButtonOnClick   [DESIGN]
+   Sub · lines 6365-6468 · Events/Buttons
+==================================================================================================
+Purpose: Click handler for every 'Note'/attachment button. It collects the row-ids and labels of
+the one-or-many data controls the button covers, then asks the server to fetch/open their notes.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub NoteButtonOnClick(ByVal strID, ByRef objCallingWindow)
+      Set objEventObject = .document.all(strID)
+      strRelatedNoteControls = objEventObject.getAttribute("relatedNoteControls")
+      arrRelatedNoteControls = Split(strRelatedNoteControls, "|")
+      For Each strRelatedNoteControl In arrRelatedNoteControls
+         ' rowIds  <- .document.all("dta"&ctrl).attachmentPolicyRowId
+         ' labels  <- .document.all("lbl"&ctrl).InnerText  (else noteLabel attr)
+      Next
+      .marrEEData(1)=objEventObject.name   ' matchcode
+      .marrEEData(3)=.marrSessionInformation(3) ' nodekey
+      .marrEEData(4)=rowIds : .marrEEData(5)=1  ' post-process
+      .marrEEData(6)=controls : .marrEEData(7)=labels
+      Call .CallServer(objEventObject, False)
+    End Sub
+
+--- React POC  (would live in: engine/renderers/ButtonsRenderer.tsx (onClick) -> engine/commands/execute-action.ts; server round-trip via engine/api/client.ts pageLayout()) 
+    function onNoteButtonClick(btn: ControlModel) {
+      const related = (btn.attrs.relatedNoteControls ?? '').split('|').filter(Boolean);
+      const rowIds  = related.map(c => page.get(`dta${c}`)?.attrs.attachmentPolicyRowId).join('|');
+      const labels  = related.map(c => page.label(c) ?? page.get(`dta${c}`)?.attrs.noteLabel).join('|');
+      return executeAction({ matchcode: btn.name, nodeKey: session.nodeKey,
+        rowIds, controls: related.join('|'), labels, postProcess: 1 }); // -> api.pageLayout()
+    }
+
+How it maps: In the legacy page, `document.all(strID)` is just 'find the element by id', and
+`marrEEData` is a small fixed global array that acts as the request body posted to the server by
+`CallServer`. This handler reads a pipe-delimited list of sibling controls off the button's
+`relatedNoteControls` attribute, walks each one to pull its attachment row-id and its on-screen
+label, packs all of that into the array, and posts. In React the same idea is one
+`executeAction({...})` call that builds a typed payload from the page store and hits
+`api.pageLayout()`; there is no shared mutable array. Marked design because the Notes/attachments
+feature and its payload assembly are not built yet, though the underlying server-call path lands
+in the scaffolded execute-action.ts.
+
+
+==================================================================================================
+65. InfoButtonOnClick   [DESIGN]
+   Sub · lines 6472-6549 · Events/Buttons
+==================================================================================================
+Purpose: Click handler for every 'information' (lookup/help) button. Each info button is tied to
+exactly one control; it fires that control's server-side processing with a configurable call type,
+optionally re-posting to force a post-process afterward.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub InfoButtonOnClick(ByVal strID, ByRef objCallingWindow)
+      Set objEventObject = .document.all(strID)
+      strCallType = objEventObject.getAttribute("calltype")    ' default 1
+      strLookupControl = objEventObject.getAttribute("lookupfor")
+      If lookupfor empty Then objControl = button Else objControl = .document.all("dta"&lookupfor)
+      .marrEEData(1)=objControl.name : (2)=objControl.value
+      .marrEEData(3)=.marrSessionInformation(3) : (5)=strCallType
+      Call .CallServer(objControl, False)
+      If strCallType <> "1" Then      ' second pass to post-process
+         .marrEEData(1)=objControl.name : .marrEEData(5)=1
+         Call SetArrayData(objControl, objCallingWindow)
+         Call .CallServer(objControl, False)
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/renderers/ButtonsRenderer.tsx (onClick) -> engine/commands/execute-action.ts; server round-trip via engine/api/client.ts pageLayout()) 
+    function onInfoButtonClick(btn: ControlModel) {
+      const callType = btn.attrs.calltype || '1';
+      const target = btn.attrs.lookupfor ? page.get(`dta${btn.attrs.lookupfor}`)! : btn;
+      executeAction({ matchcode: target.name, value: target.value,
+        nodeKey: session.nodeKey, callType });
+      if (callType !== '1')        // force a follow-up post-process
+        executeAction({ matchcode: target.name, value: target.value,
+          nodeKey: session.nodeKey, postProcess: 1 });
+    }
+
+How it maps: The button carries two data attributes: `calltype` (what kind of server op to run,
+defaulting to a post-process) and `lookupfor` (which control it acts on; blank means the button
+itself). The routine resolves the target control, posts once, and if the call type was something
+other than a plain post-process it posts a second time to still commit the control's value. The
+React target is the same two-attribute resolution followed by one or two `executeAction` calls.
+Design status: lookup/help-button behavior and the calltype branching are not implemented; only
+the generic server dispatch it would reuse (execute-action.ts) exists in scaffold form.
+
+
+==================================================================================================
+66. ListButtonClick   [DESIGN]
+   Sub · lines 6553-6590 · Events/Buttons
+==================================================================================================
+Purpose: Thin adapter for toolbar buttons attached to an XMLLIST (data grid). It copies the
+button's declared action onto the associated grid and then hands off to the real list-action
+processor.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ListButtonClick(ByVal strID, ByVal objCallingWindow)
+      With objCallingWindow
+        Set objButton  = .document.all(strID)
+        Set objControl = .document.all("dta" & objButton.listname) ' the grid
+        objControl.action = LCase(objButton.action)               ' add/edit/delete
+        Call ListButtonOnClick(objControl.id, objCallingWindow)    ' delegate
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/renderers/DataGridRenderer.tsx (toolbar onClick) -> the grid-action handler (see ListButtonOnClick row)) 
+    function onGridToolbarButton(btn: GridButtonModel) {
+      const grid = page.get(`dta${btn.listname}`) as GridModel;
+      grid.pendingAction = btn.action.toLowerCase();   // add | edit | delete | next
+      return handleGridAction(grid.id);                // delegate to processor
+    }
+
+How it maps: A grid can have its own Add/Edit/Delete toolbar; each button knows which grid it
+belongs to (`listname`) and what verb it represents (`action`). This routine does almost nothing
+itself: it stamps the verb onto the grid element and calls `ListButtonOnClick`, so all real logic
+lives in one place. In React that is a click handler on the DataGridRenderer toolbar that sets a
+`pendingAction` on the grid model and calls the shared grid-action handler. Design status: the
+grid toolbar and its action wiring are not built.
+
+
+==================================================================================================
+67. XMLListonItemSelected   [DESIGN]
+   Sub · lines 6594-6605 · Events/Buttons
+==================================================================================================
+Purpose: Row-selection handler for an XMLLIST (data grid): when the user selects an item, it syncs
+that control's current data into the shared server-call array.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub XMLListonItemSelected(ByVal strID, ByVal objCallingWindow)
+      With objCallingWindow
+        Set objControl = .document.all(strID)
+        Call SetArrayData(objControl, objCallingWindow) ' push selection into marrEEData
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/renderers/DataGridRenderer.tsx (onRowSelect) -> stores/page-store.ts) 
+    function onGridRowSelect(gridId: string, rowId: string) {
+      const grid = page.get(gridId) as GridModel;
+      grid.selectedRowId = rowId;
+      syncControlData(grid);   // stage selection for the next server call
+    }
+
+How it maps: `SetArrayData` is the legacy helper that reads a control's current value(s) into the
+`marrEEData` request array so the next server post carries the right context; this handler just
+runs it whenever a grid row is picked. It is a pure state-staging step with no server round-trip
+of its own. In React the equivalent is a grid `onRowSelect` that records the selected row in the
+page store so subsequent `executeAction` calls include it. Design status: grid selection state is
+not wired into the store yet.
+
+
+==================================================================================================
+68. ListButtonOnClick   [DESIGN]
+   Sub · lines 6609-6708 · Events/Buttons
+==================================================================================================
+Purpose: The real processor for a data-grid action (add/edit/delete/next): confirms deletes, runs
+any related function, marks the page dirty, posts to the server, restores focus after a delete,
+and loops if the server replies 'NEXT'.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub ListButtonOnClick(ByVal strID, ByVal objCallingWindow)
+      strAction = LCase(GetControlValue(objControl))     ' add/edit/delete/...
+      .marrEEData(1)=objControl.name : .marrEEData(5)=strAction
+      If InStr(strAction,"delete")>0 Then
+         If .ShowUserMessage(strMessage,"WARNING",2)=0 Then blnCallServer=False
+      End If
+      If blnCallServer Then
+         ' run @relatedfunction, SetArrayData, set datachanged=T in session XML
+         mblnDataChanged=True : .mblnEEDataChanged=True
+         Call .CallServer(objControl, True)
+         If strAction="delete" Then <move focus to Cancel/Ok/Next>
+         If GetStringField(mstrReturnValue,1,",")="NEXT" Then
+            Call ListButtonOnClick(strID, objCallingWindow)  ' recurse
+         End If
+      End If
+    End Sub
+
+--- React POC  (would live in: engine/commands/execute-action.ts (+ dispatch.ts); confirm via stores/browser-command-store.ts; dirty flag in stores/app-store.ts; server via engine/api/client.ts) 
+    async function handleGridAction(gridId: string) {
+      const grid = page.get(gridId) as GridModel;
+      const action = grid.pendingAction;
+      if (action.includes('delete')) {
+        const ok = await confirmDialog(grid.attrs.DeleteMessage ?? DEFAULT_DELETE_MSG);
+        if (!ok) return;                       // user cancelled
+      }
+      runRelatedFunction(grid);
+      appStore.markDirty();                     // mblnDataChanged = true
+      const res = await executeAction({ matchcode: grid.name, action });
+      if (action === 'delete') focusFirstNavButton();
+      if (firstField(res.returnValue) === 'NEXT') return handleGridAction(gridId); // loop
+    }
+
+How it maps: This is the substantive grid handler. It reads the verb, and for deletes pops a
+confirmation dialog (`ShowUserMessage`) that can be overridden by a `DeleteMessage` attribute,
+bailing out if the user declines. On confirm it optionally executes a per-control 'related
+function' (legacy does this by string-evaluating VBScript at runtime, which React replaces with a
+named function map), flips the dirty flags, stamps `datachanged=T` into the session XML, posts,
+and after a delete moves focus to a visible nav button so required-field indicators re-run; a
+server reply beginning with 'NEXT' makes it call itself again to walk the list. The React target
+composes an async confirm (browser-command-store modal), a dirty-flag write (app-store), and a
+server call (execute-action.ts) with the same recursion. Design status: the confirm-and-post grid
+flow reuses scaffolded execute-action.ts/dispatch.ts, but this specific add/edit/delete/NEXT-loop
+behavior is not built.
+
+
+==================================================================================================
+69. NavButtonOnClick   [SCAFFOLDED]
+   Sub · lines 6711-6875 · Events/Buttons
+==================================================================================================
+Purpose: OnClick handler for all page navigation buttons (Save/OK, Next, Cancel, Back). It
+validates required fields before saving, guards against losing unsaved edits before cancelling,
+then posts the page to the server.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub NavButtonOnClick(ByRef objCallingWindow)
+      Set objControl = .event.srcElement
+      Select Case UCase(objControl.id)
+       Case "DTAOK","DTANEXT","DTAOKSPECIAL"
+         If Not CheckRequiredIndicators(strFieldList,objCallingWindow) Then
+            .ShowUserMessage("...required data has not been entered: "&strFieldList,...)
+            .mblnNavButtonClicked=True : Exit Sub          ' don't call server
+         End If
+         ' resolve @relatedcontrol / @relatedfunction, SetArrayData, set datachanged
+       Case "DTACANCEL","DTABACK"
+         If dirty And no @ignorechanges Then
+            If .ShowUserMessage("All Edited Information...Will Be Lost...IS THAT OK?",...)=0 Then Exit Sub
+            Else reset dirty flags (unless modal)
+         End If
+      End Select
+      .marrEEData(1)=objControl.name : .marrEEData(5)="1"
+      Call .CallServer(objControl, blnChangesRating)
+    End Sub
+
+--- React POC  (engine/commands/execute-action.ts (scaffolded) for the post; validation + dirty-guard would add to stores/page-store.ts + stores/app-store.ts + a react-router navigation guard; confirm via stores/browser-command-store.ts) 
+    function onNavButton(btnId: string) {
+      const btn = page.get(btnId)!;
+      if (['dtaOk','dtaNext','dtaOkSpecial'].includes(btnId)) {
+        const missing = checkRequired(page);           // required-field validation
+        if (missing.length) { showWarning(`Required: ${missing.join(', ')}`); return; }
+        stageRelated(btn);                              // @relatedcontrol/@relatedfunction
+      } else if (['dtaCancel','dtaBack'].includes(btnId)) {
+        if (appStore.dirty && !page.ignoreChanges &&
+            !confirm(LOSE_CHANGES_MSG)) return;          // unsaved-changes guard
+        if (!page.isModal) appStore.clearDirty();
+      }
+      return executeAction({ matchcode: btn.name, postProcess: 1 }); // -> api.navigate/pageLayout
+    }
+
+How it maps: This is the core Save/Cancel/Next/Back handler and the busiest routine in the
+section. On Save/Next it runs `CheckRequiredIndicators`, and if any required field is empty it
+lists them in a warning and aborts without posting; otherwise it stages any related control or
+related function value. On Cancel/Back it warns 'all edited information will be lost' when the
+page is dirty (unless the page opts out via `ignorechanges`), and only resets the dirty flags if
+the user confirms. In React this becomes a submit handler that runs field validation against the
+page store, uses a React Router navigation guard plus a confirm modal for the unsaved-changes
+case, and then calls `executeAction`. Marked scaffolded because execute-action.ts already covers
+the dispatch-and-post shell this routine ends in, but the required-field validation and the
+unsaved-changes guard are still design-level and not yet built.
+
+
+==================================================================================================
+70. OnFocusHandler   [DESIGN]
+   Sub · lines 6878-7274 · Events/Buttons
+==================================================================================================
+Purpose: Central focus-change engine: when any data control or the Save/Cancel/Next button
+receives focus, it decides whether the control that just LOST focus needs a validation/save round-
+trip to the server (post-process) and whether the newly-focused control needs a setup round-trip
+(pre-process), then repaints the focus highlight.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub OnFocusHandler(ByVal strID, ByRef objCallingWindow)
+      With objCallingWindow
+        Set objCurrentControl  = .document.all(strID)
+        Set objPreviousControl = .document.all("dta" & .mstrPreviousMatchcode)
+        ' combo LimitToList guard -> ShowUserMessage + focus back
+        If .mvntInitialValue <> vntCurrentValue And .mblnCallServer Then
+            Call SetArrayData(objPreviousControl, ...)   ' stage changed value
+            mblnDataChanged = True
+            Call .CallServer(objPreviousControl, True)    ' POST-PROCESS
+        End If
+        ' ...then PreProcess(objCurrentControl) + CheckRequiredIndicators
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/renderers/FieldRenderer.tsx (onBlur/onFocus) -> engine/commands/execute-action.ts (CallServer post/pre-process)) 
+    // engine/renderers/FieldRenderer.tsx
+    function handleBlur(prev: Control, next: Control) {
+      if (prev.value !== prev.initialValue && callServer) {
+        if (hasInvalidChars(prev.value)) return showMessage('ERROR', prev.label);
+        appStore.setDirty(true);
+        executeAction({ ctrl: prev, phase: 'post' }); // -> api.pageLayout
+      }
+    }
+    function handleFocus(next: Control) {
+      preProcess(next);                 // combo/select setup call
+      checkRequiredIndicators(pageStore); // enable/disable OK+Next
+    }
+
+How it maps: This is the busiest routine in the band and the heart of the legacy edit loop: focus
+changes are what trigger server validation, because there is no per-field submit. In React the
+same intent splits into an onBlur handler (post-process the field that lost focus) and an onFocus
+handler (pre-process the field gaining focus), both routed through execute-action.ts, with the
+'visual focus indicator' becoming ordinary CSS rather than SetControlValue repaints. The combo
+LimitToList guard and Unicode-character rejection become inline validation before the call. Status
+is design: execute-action.ts is scaffolded, but this focus-driven post/pre-process orchestration
+and its many edge cases (date-control re-seeding, OK/Cancel/Next focus juggling) are not built
+yet.
+
+
+==================================================================================================
+71. OnKeyPressHandler   [DESIGN]
+   Sub · lines 7277-7349 · Indicators
+==================================================================================================
+Purpose: Runs on every keystroke in a data control: if the control just crossed the empty/non-
+empty boundary it recomputes the required-field indicators (which enable/disable the OK and Next
+buttons), runs any control-specific extra key handler, then stages the value and calls the server.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub OnKeyPressHandler(ByVal strID, ByRef objCallingWindow)
+      With objCallingWindow
+        blnOK = (.document.all("dtaOK").enabled = True)
+        Set objCurrentControl = .document.all(strID)
+        If Not IsNull(objCurrentControl.getAttribute("iscalendar")) Then
+            Call CheckRequiredIndicators("", objCallingWindow)
+        ElseIf Len(GetControlValue(objCurrentControl)) > 0 XOR blnOK Then
+            Call CheckRequiredIndicators("", objCallingWindow)  ' state flipped
+        End If
+        strAdditionalHandler = objCurrentControl.getAttribute("additionalkeyhandler")
+        If Len(strAdditionalHandler) > 0 Then Execute "." & strAdditionalHandler
+        Call .CallServer(objCurrentControl, False)
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/renderers/FieldRenderer.tsx (onChange) + page-store.ts (checkRequiredIndicators recompute)) 
+    // engine/renderers/FieldRenderer.tsx onChange
+    function handleChange(ctrl: Control, value: string) {
+      const wasEmpty = ctrl.value.length === 0;
+      pageStore.setValue(ctrl.id, value);
+      if (ctrl.isCalendar || (value.length > 0) !== okEnabled)
+        checkRequiredIndicators(pageStore); // recompute OK/Next enablement
+      if (ctrl.additionalKeyHandler) runDeclaredHandler(ctrl);
+    }
+
+How it maps: The XOR guard is an optimization: only recompute indicators when the empty/non-empty
+state actually flipped relative to the OK button, avoiding redundant work on every keystroke. In
+React this is a standard onChange handler that writes to page-store and calls a
+checkRequiredIndicators selector; the button enablement becomes derived state rather than
+imperative attribute flips. The 'additionalkeyhandler' attribute (a per-control hook name
+Execute'd at runtime) maps to a named-handler lookup. Status is design: no keystroke-to-indicator
+recompute or per-field CallServer exists in the POC yet.
+
+
+==================================================================================================
+72. OnKeyUpHandler   [DESIGN]
+   Sub · lines 7352-7414 · Indicators
+==================================================================================================
+Purpose: The key-up twin of OnKeyPressHandler: recomputes required-field indicators when the
+control crosses the empty/non-empty boundary and runs the control's optional extra key handler,
+but unlike the keypress version it does NOT call the server.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub OnKeyUpHandler(ByVal strID, ByRef objCallingWindow)
+      With objCallingWindow
+        blnOK = (.document.all("dtaOK").enabled = True)
+        Set objCurrentControl = .document.all(strID)
+        If Not IsNull(objCurrentControl.getAttribute("iscalendar")) Then
+            Call CheckRequiredIndicators("", objCallingWindow)
+        ElseIf Len(GetControlValue(objCurrentControl)) > 0 XOR blnOK Then
+            Call CheckRequiredIndicators("", objCallingWindow)
+        End If
+        strAdditionalHandler = objCurrentControl.getAttribute("additionalkeyhandler")
+        If Len(strAdditionalHandler) > 0 Then Execute "." & strAdditionalHandler
+      End With   ' NOTE: no CallServer here
+    End Sub
+
+--- React POC  (would live in: engine/renderers/FieldRenderer.tsx (onKeyUp) + page-store.ts (checkRequiredIndicators)) 
+    // engine/renderers/FieldRenderer.tsx onKeyUp
+    function handleKeyUp(ctrl: Control) {
+      if (ctrl.isCalendar || (ctrl.value.length > 0) !== okEnabled)
+        checkRequiredIndicators(pageStore);
+      if (ctrl.additionalKeyHandler) runDeclaredHandler(ctrl);
+      // no server round-trip on key-up
+    }
+
+How it maps: It is nearly identical to OnKeyPressHandler; the legacy code duplicates the body
+across two IE key events because keypress fires before the character lands and keyup fires after,
+so both are wired to keep the OK/Next indicators responsive. The one meaningful difference is that
+key-up deliberately skips CallServer. In React a single controlled onChange usually subsumes both
+events, so this collapses into the same handler logic as the keypress case with the server call
+omitted. Status is design: the required-indicator recompute it depends on is not built in the POC.
+
+
+==================================================================================================
+73. OnTabClickHandler   [DESIGN]
+   Sub · lines 7417-7429 · Events/Buttons
+==================================================================================================
+Purpose: Fires when the user clicks a tab in the TABSTRIP control; it delegates to BuildTab so
+that tab content which is built lazily/dynamically gets populated on demand.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub OnTabClickHandler(ByRef objCallingWindow)
+        On Error Resume Next
+        Call BuildTab(objCallingWindow)
+        Call TrapBrowserError("EEBrowser|OnTabClickHandler|1")
+    End Sub
+
+--- React POC  (would live in: engine/renderers/FormRenderer.tsx (tab strip) -> engine/commands/execute-action.ts (BuildTab)) 
+    // engine/renderers/FormRenderer.tsx (tab strip)
+    function onTabSelect(tabKey: string) {
+      setActiveTab(tabKey);
+      if (!builtTabs.has(tabKey))       // lazy build, once per tab
+        executeAction({ action: 'BuildTab', tab: tabKey });
+    }
+
+How it maps: A thin dispatcher: its whole job is to forward the click to BuildTab, which does the
+real work of lazily rendering tab content. In React this becomes an onTabSelect handler on the tab
+component that sets the active tab and, if that tab hasn't been built yet, kicks a BuildTab action
+through execute-action.ts. The lazy 'build content only when the tab is first shown' pattern maps
+naturally to conditional rendering plus a one-time load guard. Status is design: the tab strip and
+BuildTab flow are not yet built in the POC.
+
+
+==================================================================================================
+74. PreProcess   [DESIGN]
+   Sub · lines 7432-7522 · ServerCommands
+==================================================================================================
+Purpose: Given the control that just gained focus (handed over from OnFocusHandler), it makes a
+pre-process server call for combo/select controls that declare pre-calls, fills empty combo lists
+from page XML data, seeds the control's initial value for later change-detection, and records it
+as the new 'previous' control.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub PreProcess(ByRef objControl, ByRef objCallingWindow)
+      With objCallingWindow
+        .marrEEData(1) = objControl.name : .marrEEData(5) = 0  ' 0 = pre
+        If .mblnCallServer Then
+          If UCase(objControl.tagname) = "COMBO" Or ..."KPCOMBO" Then
+            Set objNode = .mxmlDoc.selectSingleNode("//control[@matchcode='"&..&"']/calls[@type='pre']")
+            If Not objNode Is Nothing Then Call .CallServer(objControl, False)
+            ElseIf objControl.listcount = 0 Then Call FillComboList(objControl, ...)
+          End If
+          If UCase(objControl.tagname) = "SELECT" Then Call .CallServer(objControl, True)
+        End If
+        If .mstrPreviousMatchcode <> objControl.name Then Call SetInitialValueData(objControl, ...)
+        .mstrPreviousMatchcode = objControl.name
+      End With
+    End Sub
+
+--- React POC  (would live in: engine/commands/execute-action.ts (pre-process branch) + engine/renderers combo option loading (config/routes.ts mergeControlsWithPageBuild)) 
+    // engine/commands/execute-action.ts (pre-process branch)
+    async function preProcess(ctrl: Control) {
+      pageStore.stage(ctrl.id, { phase: 'pre' });
+      if (ctrl.type === 'combo') {
+        if (ctrl.calls?.pre) await executeAction({ ctrl, phase: 'pre' });
+        else if (ctrl.options.length === 0) fillComboList(ctrl); // from page-build
+      } else if (ctrl.type === 'select') {
+        await executeAction({ ctrl, phase: 'pre' });
+      }
+      pageStore.setInitialValue(ctrl.id, ctrl.value); // change-detection baseline
+    }
+
+How it maps: PreProcess is the pre-side counterpart to the post-side logic in OnFocusHandler, and
+the key data step is SetInitialValueData: it captures the field's baseline value so a later blur
+can tell whether the user actually edited it. Its 'fill an empty combo list from page XML when no
+pre-call is declared' branch maps to hydrating select options from the page-build JSON via
+mergeControlsWithPageBuild, while declared pre-calls become an execute-action round-trip. The
+XPath probe into the MSXML data island (//control[.../calls[@type='pre']]) is eliminated in favor
+of a plain lookup on the merged control schema. Status is design: the pre-process branch of
+execute-action.ts is not yet built.
+
+
+==================================================================================================
+75. RunXMLBrowserProcedures   [DESIGN]
+   Sub · lines 7525-7603 · ServerCommands
+==================================================================================================
+Purpose: Looks up all <call> subroutines of a given type (e.g. browser_windowonload, or a compound
+tab|matchcode=tabins) declared in the page's XML data island and Execute's each named subroutine
+in document order, letting the server-authored page drive which browser-side procedures run.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub RunXMLBrowserProcedures(ByRef strCallType, ByRef objCallingWindow)
+      If InStr(strCallType, "|") > 0 Then   ' compound: type|attr=val
+         ... build strQuery = "//calls[(@type='..') and (@attr='..')]/call"
+      Else
+         strQuery = "//calls[@type='" & strCallType & "']/call"
+      End If
+      Set objNodes = objCallingWindow.mxmlDoc.selectnodes(strQuery)
+      For intCount = 0 To objNodes.length - 1
+         Set objRoutineToCall = objNodes(intCount).attributes.getNamedItem("subroutine")
+         If Not objRoutineToCall Is Nothing Then
+            Execute "objCallingWindow." & objRoutineToCall.nodevalue  ' run it
+         End If
+      Next
+    End Sub
+
+--- React POC  (would live in: engine/commands/dispatch.ts (run page-declared calls[] from page-build JSON)) 
+    // engine/commands/dispatch.ts
+    function runPageProcedures(type: string, page: PageBuild) {
+      // calls[] come from page-build JSON, not an XML island
+      const calls = selectCalls(page, type); // supports 'tab|matchcode=tabins'
+      for (const c of calls) {
+        const fn = declaredHandlers[c.subroutine];
+        if (fn) fn(page); // run in document order
+      }
+    }
+
+How it maps: This is the mechanism by which a server-authored page injects browser-side behavior:
+the page ships a list of <calls type='...'> entries and this routine executes the named
+subroutines by string name via VBScript Execute. In React the XML data island and MSXML XPath are
+eliminated; the same 'calls' list arrives as JSON in the page-build response and is dispatched
+through a registry of named handlers in dispatch.ts, preserving document order and the compound
+type|attr=val filter. Replacing Execute-by-name with a lookup table also removes an arbitrary-
+code-execution surface. Status is design: dispatch.ts is scaffolded for verb commands, but this
+page-declared procedure runner and its handler registry are not built.
+
+
+==================================================================================================
+76. SetArrayData   [DESIGN]
+   Sub · lines 7606-7882 · ServerCommands
+==================================================================================================
+Purpose: Reads the CURRENT value out of one on-screen control and packs it into fixed slots of a
+shared array (marrEEData) so the value can be sent to the server. It is the outgoing-payload
+serializer for a single field.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetArrayData(ByRef objControl, ByRef objCallingWindow)
+      With objCallingWindow
+        Select Case UCase(objControl.tagname)
+          Case "ICHECKBOX"
+            .marrEEData(2) = GetControlValue(objControl)
+            .marrEEData(3) = IIf(.marrEEData(2)="YES",1,0)
+          Case "XMLLIST"
+            .marrEEData(3) = objControl.selectednodekey
+            .marrEEData(4) = objControl.selectednodesxml
+          Case "COMBO","KPCOMBO"
+            .marrEEData(7) = objControl.listindex + intOffset
+            .marrEEData(4) = objControl.value
+          Case "INPUT" ... "SELECT" ... "DIV" ... "XML"
+        End Select
+      End With
+
+--- React POC  (would live in: engine/api/client.ts (request builder) reading stores/page-store.ts field state) 
+    // engine/api/client.ts — build outgoing field payload
+    function serializeField(f: FieldState): FieldPayload {
+      switch (f.type) {
+        case 'date':     return { text:f.month, x:f.day, y:f.year, iso:f.iso };
+        case 'checkbox': return { text:f.value, x:f.value==='YES'?1:0 };
+        case 'combo':    return { text:f.label, x:f.value||f.index, value:f.value };
+        case 'xmllist':  return { text:f.text, x:f.nodeKey, xml:f.selectedXml };
+        default:         return { text:f.value };
+      }
+    }
+
+How it maps: In the legacy app every control's value is copied into numbered slots of one reused
+array (slot 2 = text, 3 = index/key, 4 = value, 6 = date, 7 = combo index) right before a server
+call — a positional convention nobody can read without the comments. In React the equivalent is a
+small serializer that turns each field's typed state into a named request object; the positional
+marrEEData array itself is eliminated (React uses named fields), but the per-control-type value
+extraction it does still has to exist somewhere. Nothing in the POC builds this field serializer
+yet, so it is design: the target home is the api client's request builder pulling from page-store.
+
+
+==================================================================================================
+77. SetInitialValueData   [DESIGN]
+   Sub · lines 7886-7981 · ServerCommands
+==================================================================================================
+Purpose: Captures a control's ORIGINAL (pristine) value into two baseline slots (marrEEData 9 and
+10) so a later step can compare current-vs-initial to detect whether the user changed anything. It
+is the change/dirty-tracking snapshot for a single field.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetInitialValueData(ByRef objControl, ByRef objCallingWindow)
+      With objCallingWindow
+        .marrEEData(9)  = GetControlValue(objControl)   ' L var (text)
+        .marrEEData(10) = vbNullString                  ' X var (index)
+        Select Case UCase(objControl.tagname)
+          Case "ICHECKBOX": .marrEEData(10)=IIf(.marrEEData(9)="YES",1,0)
+          Case "RADIOBUTTON": .marrEEData(10)=objControl.selectedindex
+          Case "COMBO","KPCOMBO": .marrEEData(10)=objControl.value/listindex
+          Case "SELECT": .marrEEData(10)=objControl.options(idx).value
+        End Select
+      End With
+    End Sub
+
+--- React POC  (would live in: stores/page-store.ts (pristine snapshot) + stores/app-store.ts (dirty flag)) 
+    // stores/page-store.ts — snapshot pristine values on load
+    const pristine = useRef(snapshotFields(page));
+    // stores/app-store.ts — derive dirty flag
+    const isDirty = !deepEqual(snapshotFields(page), pristine.current);
+
+How it maps: This is the near-twin of SetArrayData but it writes to a different pair of slots
+(9/10) that hold the value as it was when the page loaded, so the server-side postprocess can tell
+what the user edited. In React this is exactly a form's defaultValues / pristine snapshot compared
+against live state to compute an isDirty flag — the app-store already owns a dirty flag per the
+POC architecture. It is design because no snapshot-and-compare logic is wired up yet; the plan is
+to snapshot fields in page-store on load and derive dirty in app-store, with the positional 9/10
+slots eliminated in favor of named state.
+
+
+==================================================================================================
+78. SetControlAttribute   [SCAFFOLDED]
+   Sub · lines 7984-8482 · Controls
+==================================================================================================
+Purpose: The single, central routine for changing a control's state on screen — making it
+visible/hidden, enabled/disabled, required, read-only, or setting maxlength — with all the per-
+control-type quirks, disabled/required background coloring, and ripple to the field's calendar
+button and label.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetControlAttribute(objControl, strMatchCode, strAttribute, vntValue, objCallingWindow)
+      ' normalize "T"/"Y" -> True, "F"/"N" -> False
+      If blnBooleanAttribute Then
+        Select Case UCase(.tagname)   ' OBJECT/Tree/Date, RADIOBUTTON, IBUTTON,
+          Case "INPUT","SELECT","TEXTAREA"   ' XMLLIST, COMBO, ICHECKBOX, DIV...
+            Select Case strAttribute
+              Case "VISIBLE":  .style.visibility = "visible"/"hidden"
+              Case "DISABLED": .disabled = vntValue : set backgroundcolor
+      Else   ' non-boolean
+        Case "REQUIRED":  .SetAttribute "required", vntValue
+        Case "MAXLENGTH": .SetAttribute "maxlength", vntValue
+      ' ripple: cal<name> button + lbl<name> label color, update XML node
+
+--- React POC  (engine/commands/dispatch.ts (verbs) + engine/renderers/FieldRenderer.tsx (styling)) 
+    // engine/commands/dispatch.ts
+    switch (cmd.verb) {
+      case 'SET_VISIBLE':   page.setControl(id, { visible: toBool(cmd.value) }); break;
+      case 'SET_DISABLED':  page.setControl(id, { disabled: toBool(cmd.value) }); break;
+      case 'SET_REQUIRED':  page.setControl(id, { required: toBool(cmd.value) }); break;
+      case 'SET_READONLY':  page.setControl(id, { readOnly: toBool(cmd.value) }); break;
+      case 'SET_MAXLENGTH': page.setControl(id, { maxLength: Number(cmd.value) }); break;
+    }
+    // FieldRenderer reads visible/disabled/required and styles itself
+
+How it maps: This is the workhorse the whole UI uses to flip control state, and it maps directly
+onto the POC's command dispatcher: the giant per-control-type/per-attribute switch collapses
+because React sets one field's state object and each renderer decides how to present
+visible/disabled/required (colors, hidden labels) declaratively rather than poking .style on every
+ActiveX and HTML variant. dispatch.ts already exists and handles
+SET_VISIBLE/SET_DISABLED/SET_REQUIRED against the page store, which is why this is scaffolded not
+design. What is NOT yet built: the side effects — disabled/required background colors, the
+calendar-button (cal<name>) and label (lbl<name>) ripple, and updating the not-yet-rendered
+control's schema node (the strMatchCode branch) — those still need to move into FieldRenderer
+styling and the control-schema merge.
+
+
+==================================================================================================
+79. SetControlFocus   [DESIGN]
+   Sub · lines 8485-8615 · Controls
+==================================================================================================
+Purpose: Move keyboard focus to any editable control anywhere in a page, identified only by its
+business 'matchcode', automatically switching to whichever tab the control lives on first.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetControlFocus(ByRef strMatchCode, ByRef objCallingWindow)
+      Set colDIVs = .document.getElementsByName("divTab")   'all tab pages
+      For intTab = 0 To colDIVs.length-1
+        Set objControl = colDIVs(intTab).all.item("dta" & strMatchCode)
+        If Not objControl Is Nothing Then
+          If Not .mblnModal Then .tabstrip.SelectedTab = intTab   'press the owning tab
+          If GetControlAttribute(objControl,"DISABLED")="F" ... Then
+            objControl.focus
+            If tagname="INPUT" And type="TEXT" Then objControl.select  'select all text
+            If tagname="COMBO" Then Call PreProcess(objControl,...)
+            Call SetInitialValueData(objControl,...)   'remember value for dirty check
+          End If
+          Exit For
+        End If
+      Next
+
+--- React POC  (would live in: engine/renderers/FieldRenderer + a focus util in engine/dom/focus.ts) 
+    // design target: a focus utility keyed by matchcode
+    function focusControl(matchcode: string) {
+      const el = document.querySelector<HTMLElement>(`[data-matchcode="${matchcode}"]`);
+      if (!el) return;
+      const tabId = el.closest('[data-tab-id]')?.getAttribute('data-tab-id');
+      if (tabId) pageStore.setActiveTab(tabId);        // switch tab first
+      if (!el.hasAttribute('disabled')) {
+        el.focus();
+        if (el instanceof HTMLInputElement) el.select();
+      }
+    }
+
+How it maps: In the legacy code every control on every tab is present in the DOM at once (tabs are
+just hidden DIVs), so focusing means looping tab-by-tab to find the element, un-hiding the right
+tab, then calling .focus() and .select(). In React the same intent is a small utility: find the
+element by a data-matchcode attribute, tell page-store to activate its tab, then call
+focus()/select(). The IE-specific bits (tabstrip ActiveX, ProtoView/COMBO pre-processing, manual
+dirty-value capture) either disappear or become store updates. Nothing like this exists in the POC
+yet, so this is a plan.
+
+
+==================================================================================================
+80. SetControlValue   [SCAFFOLDED]
+   Sub · lines 8618-8884 · Controls
+==================================================================================================
+Purpose: The single, generic entry point for writing a value into ANY control, branching on
+control type so each widget's peculiar 'value' property is set correctly, and mirroring the value
+back into the in-memory XML document.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetControlValue(objControl, strMatchCode, vntValue, strVarType, objCallingWindow)
+      Select Case UCase(objControl.tagname)
+        Case "OBJECT"   'ProtoView ActiveX date/numeric -> objControl.datestring / .Text
+        Case "ICHECKBOX"/"INPUT>CHECKBOX"  -> objControl.checked = (vntValue="YES")
+        Case "RADIOBUTTON" -> .value / .selectedindex
+        Case "COMBO","KPCOMBO","SELECT" -> listindex (shift -1 when ShowZero="F")
+        Case "INPUT>TEXT"  -> decimals masking, calendar 00/00/0000 -> ""
+        Case "DIV" -> innerHTML ;  Case "TEXTAREA" -> value
+      End Select
+      'mirror into XML DOM:
+      Set nodControl = .mxmlDoc.selectSingleNode("//control[@matchcode='"&strMatchCode&"']")
+      nodControl.attributes.getNamedItem("text").nodeValue = vntValue
+
+--- React POC  (engine/stores/page-store.ts (setControlValue) + engine/renderers/FieldRenderer.tsx) 
+    // mechanism: page-store holds control values; FieldRenderer renders them
+    pageStore.setControlValue(matchcode, value, varType); // 'L' text | 'X' index
+    // FieldRenderer switches on control.type, not on a DOM tagname:
+    //   checkbox -> checked={value === 'YES'}
+    //   select   -> value={showZero ? idx : idx - 1}
+    //   numeric  -> formatted with control.decimals
+    // no separate 'mirror to XML' step: the store IS the source of truth
+
+How it maps: This routine exists because legacy HTML/ActiveX controls each expose a different
+value property (.checked, .value, .listindex, .datestring, .innerHTML) and the DOM and the backing
+XML island must be kept in sync by hand. React inverts this: page-store is the one source of truth
+and controlled components read their value from it, so the giant tag switch collapses into type-
+aware rendering inside FieldRenderer, and the manual 'mirror into mxmlDoc' step vanishes because
+there is no second copy. page-store.ts and FieldRenderer exist in the POC (scaffolded) but the
+per-type coercion here (ProtoView ActiveX, decimals masking, ShowZero index shifting) is not yet
+built.
+
+
+==================================================================================================
+81. BuildTab   [DESIGN]
+   Sub · lines 8888-8977 · Controls
+==================================================================================================
+Purpose: Lazily builds the HTML for a tab the first time the user clicks it: if the selected tab
+is still empty, run an XSLT transform of the page's control XML into HTML, inject it, then
+populate the new controls with their data.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub BuildTab(ByRef objCallingWindow)
+      intIndex = CInt(.tabstrip.selectedTab)
+      If intIndex = 0 Then Exit Sub                      'tab 0 already built at load
+      If Len(.divTab(intIndex).innerHTML) > 0 Then Exit Sub  'already built once
+      Set mxmlStyle = FreeThreadedDOMDocument : mxmlStyle.load "...Controls_ISLLSYS_20010101.xsl"
+      Set xmlTemplate.stylesheet = mxmlStyle              'XSLT transform
+      xmlProcessor.input = xmlDoc : xmlProcessor.transform
+      .divTab(intIndex).innerHTML = xmlProcessor.output   'inject generated HTML
+      Call GetXMLData("[@tab='" & strMatchCode & "']", objCallingWindow)  'fill values
+
+--- React POC  (engine/renderers/FormRenderer.tsx (per-tab) + config/routes.ts merge) ----------
+    // design target: render each tab's FormRenderer lazily
+    {tabs.map(tab => (
+      <TabPanel key={tab.id} active={tab.id === activeTab}>
+        {tab.id === activeTab || tab.built
+          ? <FormRenderer schema={tab.controls} data={pageData} />
+          : null}
+      </TabPanel>
+    ))}
+    // XSLT (Controls_ISLLSYS_20010101.xsl) -> FormRenderer component tree
+
+How it maps: Legacy tabs are lazy for performance: only tab 0 is transformed at page load, and
+each other tab's XML is run through a shared XSL stylesheet into an HTML string the first time it
+is selected. In React, mounting a tab's FormRenderer on demand is the direct analog, and React's
+own reconciliation replaces the once-only 'innerHTML already has content, skip' guard. The MSXML
+XSLTemplate/processor machinery and the Controls_*.xsl stylesheet are eliminated: the transform
+becomes JSX in FormRenderer, and GetXMLData's value fill becomes reading from page-store.
+FormRenderer exists but per-tab lazy rendering along these lines is not built, so this is a plan.
+
+
+==================================================================================================
+82. UnEscapeTextValueForXML   [ELIMINATED]
+   Function · lines 8979-8983 · Util
+==================================================================================================
+Purpose: Reverses a home-grown escaping scheme, turning placeholder tokens back into the real
+characters they stand for (apostrophe, less-than, greater-than, ampersand).
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function UnEscapeTextValueForXML(ByVal strToEscape)
+      UnEscapeTextValueForXML = Replace(Replace(Replace(Replace( _
+        strToEscape,"#http39;","'"),"#http60;","<"),"#http62;",">"),"#http38;","&")
+    End Function
+
+--- React POC  (n/a (eliminated); if ever needed: engine/util/legacy-encoding.ts) --------------
+    // eliminated: JSON transport carries literal characters, no token scheme.
+    // If a legacy-encoded string ever appears, a one-liner util suffices:
+    const unescapeLegacyXml = (s: string) =>
+      s.replace(/#http39;/g, "'").replace(/#http60;/g, '<')
+       .replace(/#http62;/g, '>').replace(/#http38;/g, '&');
+
+How it maps: This is a workaround for the old pipeline stuffing user text into XML data-islands,
+where raw ', <, >, & would break the XML, so they were swapped for the '#httpNN;' tokens (a
+corrupted variant of numeric HTML entities like &#39;) and reversed here on the way out. The React
+app talks to the backend in JSON, which carries these characters literally and needs no such
+tokenization, so the routine is eliminated. It is only worth keeping a tiny equivalent util if
+legacy-encoded data still flows through some unmodernized endpoint.
+
+
+==================================================================================================
+83. ShowZeroText   [DESIGN]
+   Function · lines 8986-9022 · Controls
+==================================================================================================
+Purpose: Decides the placeholder text shown as a combo box's first/empty entry, based on the
+control's 'showzero' attribute: 'NONE', blank, or custom text.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function ShowZeroText(ByVal pobjControl)
+      strText = UCase(pobjControl.getAttribute("showzero") & "")
+      Select Case strText
+        Case "T": ShowZeroText = "NONE"
+        Case "F": ShowZeroText = ""
+        Case Else
+          If Left(strText,7)="NOUCASE" Then ShowZeroText = Mid(getAttribute("showzero"),9) _
+          Else ShowZeroText = strText   'custom placeholder
+      End Select
+    End Function
+
+--- React POC  (would live in: engine/renderers/FieldRenderer.tsx (combo/select rendering)) ----
+    // design target: derive the empty-option label from schema
+    function showZeroText(control: ControlSchema): string {
+      const raw = (control.showzero ?? '').toString();
+      const t = raw.toUpperCase();
+      if (t === 'T') return 'NONE';
+      if (t === 'F') return '';
+      return t.startsWith('NOUCASE') ? raw.slice(8) : t; // NOUCASE = keep original case
+    }
+    // FieldRenderer: <option value="">{showZeroText(control)}</option>
+
+How it maps: Combos in this system may or may not offer an empty selection, and when they do the
+label varies: 'NONE', truly blank, or a caller-supplied string, with a 'NOUCASE' prefix meaning
+'use my text as-is instead of upper-casing it'. In React this is a pure helper that reads the same
+flag off the control's schema and returns the label for the empty <option> that FieldRenderer
+renders. The showzero shift also ties into SetControlValue's index handling (an extra placeholder
+row offsets list indices by one). It is not implemented in the POC yet, so this is a plan.
+
+
+==================================================================================================
+84. SetIconImages   [DESIGN]
+   Sub · lines 9026-9036 · Tree
+==================================================================================================
+Purpose: Updates the icon shown in the left-hand navigation tree by reaching into the TREENAV
+frame and calling its SetIconImage method.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Sub SetIconImages(pstrIcon)
+      Set objDoc = document.frames("TREENAV")
+      Call objDoc.SetIconImage(pstrIcon)   'cross-frame call into the tree frame
+      Set objDoc = Nothing
+    End Sub
+
+--- React POC  (engine/stores/app-store.ts (tree icon state) + engine/renderers TreeNav) -------
+    // design target: no frames -- set icon state in a store the tree reads
+    appStore.setTreeIcon(iconKey);
+    // TreeNav component: <TreeNode icon={treeIcon} ... />
+
+How it maps: The legacy shell is a frameset, and the navigation tree lives in a separate TREENAV
+frame, so changing its icon means grabbing that frame's document and invoking a method it exposes
+-- a classic cross-frame call. The SPA has no frames: the tree is just a component, so the icon
+becomes a piece of state in app-store that the tree renders from, and the entire frame-reach
+plumbing is eliminated. The user-facing behavior (showing the right tree icon) is real and needs
+preserving, but nothing implements it in the POC yet, so this is a plan rather than converted
+code.
+
+
+==================================================================================================
+85. ClearXMLDetail   [DESIGN]
+   Function · lines 9040-9087 · Session/Config
+==================================================================================================
+Purpose: Removes one or more named items from the session's XML 'detail' blob, then normalizes the
+resulting string (single-quote the double quotes, strip CR/LF); returns True on success.
+
+--- Legacy VBScript ------------------------------------------------------------------------------
+    Function ClearXMLDetail(ByVal arrXMLDetail)
+      Set xmlSessionXML = DOMDocument.6.0
+      If xmlSessionXML.loadXML(mstrXMLDetail)=False Then Exit Function
+      For x = 0 To Ubound(arrXMLDetail)
+        Set nodItem = xmlSessionXML.selectSingleNode("//item[@name='" & arrXMLDetail(x) & "']")
+        If Not nodItem Is Nothing Then xmlSessionXML.documentElement.removeChild nodItem
+      Next
+      mstrXMLDetail = xmlSessionXML.xml
+      mstrXMLDetail = Replace(mstrXMLDetail, Chr(34), "'")   'quotes
+      mstrXMLDetail = Replace(mstrXMLDetail, Chr(10), "") : Replace(...,Chr(13),"")  'CR/LF
+      ClearXMLDetail = True
+    End Function
+
+--- React POC  (engine/stores/app-store.ts (session detail) or auth-store.ts) ------------------
+    // design target: session detail is an object in the store; delete keys
+    function clearSessionDetail(names: string[]) {
+      appStore.setSessionDetail(prev => {
+        const next = { ...prev };
+        for (const n of names) delete next[n];
+        return next;
+      });
+    }
+
+How it maps: mstrXMLDetail is a session-scoped XML string (note the TrapASPError call -- this runs
+server/ASP-side) holding named detail items; clearing some means DOM-parsing the string, deleting
+matching <item name='...'> nodes, and re-serializing, with the quote/CR-LF scrubbing needed only
+because the result is re-embedded into other markup. In React, session detail is a plain object in
+app-store, so 'clear these items' is just deleting keys, and all the parse/serialize/escape
+ceremony is eliminated. This is not built in the POC; it is a plan for where the equivalent state
+and mutation would live.
+
