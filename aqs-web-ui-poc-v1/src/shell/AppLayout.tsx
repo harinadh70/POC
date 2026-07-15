@@ -4,18 +4,35 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
-import { Outlet, useNavigate, Navigate } from 'react-router-dom';
+import { Outlet, useNavigate, Navigate, useLoaderData } from 'react-router-dom';
 import { useAuthStore } from '@/stores/auth-store';
+import { shellLoad, useShellLoad, type ShellLoadResult } from '@/engine/load/shell-load';
 
 /**
- * AppLayout — the shell (SDD §2.2): AppBar header + brand + user + logout,
- * with the routed page rendered in the Outlet. Guards auth.
+ * Shell route loader (Main_ISLLSYS_20010101.vbs window_onload, Phase A). Runs
+ * once before the shell renders — the frameset-bootstrap half of the legacy
+ * window_onload. Reads the session from authStore (like lobPageLoader does).
+ */
+export function shellLoader(): ShellLoadResult {
+  return shellLoad(useAuthStore.getState().session);
+}
+
+/**
+ * AppLayout — the shell (SDD §2.2) and the React home of the legacy frameset
+ * host Main_ISLLSYS_20010101.vbs: AppBar header + brand + user + logout, with
+ * the routed page rendered in the Outlet. Guards auth.
  */
 export function AppLayout() {
   const isAuth = useAuthStore((s) => s.isAuthenticated);
   const session = useAuthStore((s) => s.session);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+  const shell = useLoaderData() as ShellLoadResult;
+
+  // Main_ISLLSYS window_onload, Phase B — the frameset-bootstrap effect (seed
+  // globals, clear ratingdatachanged, timing). Called before the auth early
+  // return so hook order stays stable.
+  useShellLoad(shell);
 
   if (!isAuth) return <Navigate to="/login" replace />;
 

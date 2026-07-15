@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/shell/AppLayout';
+import { AppLayout, shellLoader } from '@/shell/AppLayout';
 import { RouteError } from '@/shell/ErrorBoundary';
 import { Login } from '@/pages/Login';
 import { Dashboard } from '@/pages/Dashboard';
@@ -14,6 +14,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
+    loader: shellLoader,
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },

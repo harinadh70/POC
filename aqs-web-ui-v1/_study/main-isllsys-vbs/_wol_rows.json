@@ -1,0 +1,1410 @@
+[
+  {
+    "vbsLines": "216",
+    "vbsCode": "Sub window_onload",
+    "vbsExplanation": "Declares a VBScript subroutine (a named procedure that returns no value) called window_onload. The browser calls it automatically when the top-level frameset HTML finishes loading, because the page's <body>/<frameset> onload event is wired to this name. This is the single entry point that boots the entire shell.",
+    "reactCode": "shellLoad(session) [shell-load.ts:87] + useShellLoad(result) [shell-load.ts:137]",
+    "reactExplanation": "The whole routine becomes a matched pair. shellLoad() is a route \"loader\" — a function React Router runs BEFORE the shell renders to derive data up front. useShellLoad() is a React \"effect\" — a function that runs AFTER the first render to act on the rendered shell. Together they replace the one imperative onload sub.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "217-222",
+    "vbsCode": "'****************************************************************************** / 'PURPOSE: / '   Initaial set up of the frames. Starts the serial load of the frames / ' according to what is required. Search page, policy, admin, etc. / ' / '******************************************************************************",
+    "vbsExplanation": "A comment banner (in VBScript any line beginning with an apostrophe is a comment). It states the routine's job: set up the frames and kick off a serial (one-at-a-time) load of them depending on context — a search page, an open policy, or an admin/utility screen.",
+    "reactCode": "Module docstring in shell-load.ts:5-30 (the PURPOSE text is quoted verbatim at lines 15-20)",
+    "reactExplanation": "The intent is preserved, not discarded: this exact PURPOSE sentence is carried into the shell-load.ts file-header comment so the migration is traceable. A docstring is a documentation comment at the top of a source file. The banner therefore \"converts\" into living documentation for the new module.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "223",
+    "vbsCode": "On Error Resume Next",
+    "vbsExplanation": "A VBScript directive meaning \"if any statement below throws a runtime error, silently ignore it and continue on the next line.\" It is a blanket error-swallow that keeps the shell booting even when a piece of setup fails.",
+    "reactCode": "if (!session) early-return guard in shellLoad [shell-load.ts:93-95], documented as the loader's try/catch boundary [shell-load.ts:88-90]",
+    "reactExplanation": "Instead of blindly swallowing every error, the loader degrades gracefully at the one place it matters: a missing session returns a safe default \"search\" shell rather than crashing, and the layout's auth guard then redirects to /login. This replaces an unbounded ignore-everything with a scoped, intentional fallback.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "224",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "An empty line used purely for visual spacing between the error directive and the variable declarations. It has no runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace-only formatting has no code equivalent; the React file organizes phases with section-banner comments instead. Nothing to carry over.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "225-233",
+    "vbsCode": "    Dim arrWindows / Dim intCount / Dim objWindow / Dim arrKeys / 'variables to store Non Policy dictionary items / Dim arrNonPolWindows / Dim intNonPolCount / Dim objWindowNonPol / Dim arrNonPolKeys",
+    "vbsExplanation": "VBScript's Dim keyword forward-declares local variables. These are scratch variables for looping over the collection of open windows: a set for policy windows (arrWindows/intCount/objWindow/arrKeys) and, per the inline comment at line 229, a parallel set for non-policy windows (arrNonPol*). They exist only to drive the replacement-search re-parenting logic further down the routine (VBS 252-320).",
+    "reactCode": "engine/window-manager.ts (the window registry); shell-load.ts:109-111 notes the re-parenting lives there",
+    "reactExplanation": "TypeScript does not need forward Dim declarations — variables are declared inline with const/let where they are used. More importantly, the window-iteration logic these locals serve is not part of shell-load.ts at all; it moved to engine/window-manager.ts, which owns the registry of open windows. So both the declarations and their purpose leave this file.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "234",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line separating the Dim block from the first executable statement. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace with no equivalent in the converted code.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "235",
+    "vbsCode": "    AddWindowToCollection window",
+    "vbsExplanation": "Calls a global subroutine, passing the current `window` object, to register this window into a shared collection/dictionary of all open windows. The point is that at logout the app can enumerate that collection and close every window it spawned.",
+    "reactCode": "engine/window-manager.ts self-registration; documented at shell-load.ts:143-145",
+    "reactExplanation": "Registering a window so logout can close them all is a window-registry concern, so it is owned by engine/window-manager.ts, not the load routine. shell-load.ts explicitly calls this out (\"register this window so a logout can close every window ... handled by engine/window-manager.ts\") and instead just seeds shared globals here.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "236",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line before the resize block. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "237",
+    "vbsCode": "    '// resize window if resolution less than 1024 x 768",
+    "vbsExplanation": "A comment (note the '// is just decorative — VBScript comments start at the apostrophe) labeling the block that follows: force a window resize when the screen is smaller than 1024x768.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "This comment annotates code that is itself eliminated (see the next row), so there is nothing for it to describe in React. Layout is handled responsively rather than by pixel checks.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "238-241",
+    "vbsCode": "    If screen.width < 1024 And screen.height < 768 Then / window.moveTo 0,0 / window.resizeTo screen.availWidth,screen.availHeight / End If",
+    "vbsExplanation": "A conditional: if the physical screen is smaller than 1024x768, move the browser window to the top-left corner and resize it to fill the available screen area. This hard-codes the shell to a fixed-resolution assumption from the frameset era.",
+    "reactCode": "— ELIMINATED (shell-load.ts:97-98)",
+    "reactExplanation": "The SPA uses a responsive MUI (Material UI component library) layout that adapts to any viewport via CSS, so there is no window to move or resize. shell-load.ts documents this deletion inline: \"[VBS 237-241] Resize window if screen < 1024×768 — ELIMINATED. Fixed-size frameset windows are replaced by a responsive MUI layout.\"",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "242",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line after the resize block. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "243",
+    "vbsCode": "    ' Create object to hold selected system variables",
+    "vbsExplanation": "A comment describing the next line's intent: build an object that will hold app-wide system/session variables the rest of the shell reads.",
+    "reactCode": "appStore commentary in shell-load.ts:100-101 and 147-148",
+    "reactExplanation": "This description survives because the concept survives: the \"object to hold selected system variables\" becomes the Zustand appStore (a shared, app-wide state object). shell-load.ts documents exactly this mapping in the comments that head its store-seeding code.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "244",
+    "vbsCode": "    Set GlobalVars = New globalVarsClass",
+    "vbsExplanation": "Creates a new instance of globalVarsClass (a class defined elsewhere in the same VBS file) and assigns it to the module-level GlobalVars reference. This object is the home for app-wide session state (e.g. the marrSessionInformation array) that every page reads from and writes to.",
+    "reactCode": "useAppStore + app.setVariable(...) in useShellLoad [shell-load.ts:141, 149-151]",
+    "reactExplanation": "The shared-state object is the Zustand appStore (Zustand is a small state-management library; a \"store\" is one shared object any component can read). Because seeding must happen after render, it lives in the effect phase: useShellLoad grabs the store (line 141) and seeds shellMode, nodeKey, and action via setVariable (lines 149-151). The loader comment at 100-101 flags that GlobalVars maps to appStore, seeded here.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "245",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line before the self-reference assignment. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "246",
+    "vbsCode": "    'Set a reference to this window.",
+    "vbsExplanation": "A comment labeling the next line, which stores a pointer to the current top-level window so other frames can reach back to it.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "It annotates the mobjAQSMain self-reference, which is itself eliminated (next row) because there are no separate frames needing a pointer back to the shell. With nothing to describe, the comment drops.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "247",
+    "vbsCode": "    Set mobjAQSMain = window",
+    "vbsExplanation": "Stores the current top window object in the module-level variable mobjAQSMain. In the frameset design each child frame used this reference to call back into the main shell window (cross-frame scripting).",
+    "reactCode": "— ELIMINATED (shell-load.ts:103-104)",
+    "reactExplanation": "A single-page React app is one component tree with no frames, so there is no separate window to reach back through — components share state through Zustand stores instead. shell-load.ts documents the deletion: \"[VBS 247] Set mobjAQSMain = window — self-reference for cross-frame code. ELIMINATED: one component tree, no frames to reach back through.\"",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "248",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line before the parent-window assignment. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "249",
+    "vbsCode": "    'Set a reference to the parent window. This allows navigation back.",
+    "vbsExplanation": "A comment explaining the next line: capture the window that opened this one, so the shell can navigate back to its parent when it was launched as a child (e.g. a spawned policy window).",
+    "reactCode": "isChildWindow comment in shell-load.ts:106 (feeding line 107)",
+    "reactExplanation": "The concept is preserved: knowing whether this shell was spawned by a parent becomes the isChildWindow flag. shell-load.ts keeps the \"[VBS 250] window.opener\" note directly above the code that computes it, so the comment converts into the same documentation there.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "250",
+    "vbsCode": "    Set mobjParentWindow = window.opener",
+    "vbsExplanation": "Captures window.opener — the browser-provided reference to the window that opened this one, or null if the shell was opened directly — into mobjParentWindow. Later code uses this to route navigation back to the spawning window.",
+    "reactCode": "const isChildWindow = typeof window !== 'undefined' && window.opener != null; [shell-load.ts:107], returned in ShellLoadResult [shell-load.ts:47-48]",
+    "reactExplanation": "Rather than keep the parent window object, the loader distills it to a boolean: isChildWindow is true when window.opener exists. That flag is returned as part of ShellLoadResult (declared at lines 47-48) so the shell can adjust behavior for spawned child windows without holding a cross-window reference.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "251",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Trailing blank line closing out this section of the routine before the code continues. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Formatting-only whitespace; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "252",
+    "vbsCode": "    ' >>>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
+    "vbsExplanation": "A decorative comment banner (in VBScript any line starting with an apostrophe is a comment and is ignored at runtime). It visually marks the START of a self-contained sub-section inside the big Sub window_onload so a maintainer scrolling the 400-line routine can find where this feature begins.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Pure formatting with no runtime behavior, so it has no code equivalent. In the React port the entire feature this banner opens was lifted out of the load routine, so shell-load.ts replaces the whole block with a single 3-line explanatory comment (shell-load.ts lines 109-111) pointing to engine/window-manager.ts.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "253",
+    "vbsCode": "    '                                                REPLACEMENT SEARCH PAGE",
+    "vbsExplanation": "A comment giving this sub-section its name. 'Replacement search page' is the legacy scenario where the user has closed the search window while a policy window is still open, then clicks Home; the shell must spin up a NEW search window and re-attach the still-open policy/child windows to it.",
+    "reactCode": "engine/window-manager.ts — createWindowManager() registry (Map<string, Window>)",
+    "reactExplanation": "This names the feature that, in React, no longer lives in the load path at all. The window registry in window-manager.ts (a Map from a stable key to a live window handle) makes 'which windows are open and who owns them' a lookup, so there is no separate 'replacement search page' re-wiring step to name here.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "254",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "An empty line used purely as vertical spacing between the section banner and the explanatory comment that follows. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace has no behavioral meaning to carry over. React/Prettier formats the equivalent file to its own conventions, so legacy blank lines simply disappear.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "255-258",
+    "vbsCode": "    '  If the QueryString(\"replacement\") is any value,\n    '    mblnReplacementHomePage is True\n    ' This occurs when the user closes the searchpage while a policy is open.\n    ' Then clicks the Home button.",
+    "vbsExplanation": "A four-line comment documenting the trigger condition. Earlier in window_onload the shell read the URL query string; if it contained a 'replacement' parameter, the module-level Boolean flag mblnReplacementHomePage was set True. These lines explain the human scenario (search window closed, policy still open, Home clicked) that produces that URL.",
+    "reactCode": "engine/window-manager.ts — reuse-vs-open decision inside open() (registry.get(req.key) → 'focused')",
+    "reactExplanation": "The whole 'replacement' concept is obsolete in the SPA. Instead of a URL flag that says 'rebuild and re-parent windows', window-manager.ts keys every window by a stable key and, when asked to open one that already exists, just focuses the existing handle (OpenResult 'focused'). There is nothing to reconstruct, so the trigger condition is not ported.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "259",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line between the explanatory comment and the start of the executable If block. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace-only; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "260",
+    "vbsCode": "    If mblnReplacementHomePage Then",
+    "vbsExplanation": "The single guard that wraps this ENTIRE 57-line section (its matching End If is line 317). Only when the replacement flag is True does any of the re-parenting run; on a normal home/search load the whole block is skipped.",
+    "reactCode": "engine/window-manager.ts — implicit; no equivalent guard in shell-load.ts (see shell-load.ts:109-111)",
+    "reactExplanation": "shell-load.ts (the React conversion of this window_onload) has NO branch for this at all — lines 109-111 are just a comment saying the re-parenting 'is owned by engine/window-manager.ts, not the load routine.' Because the registry always reflects the current live windows, there is no state to rebuild and therefore no guard to enter.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "261-262",
+    "vbsCode": "        'Get the child window references from the policy window that is\n        'opening this replacement search window.",
+    "vbsExplanation": "Comment explaining the next two lines: this new search window was popped open BY a policy window (referenced via mobjParentWindow), and we need to pull that policy window's collection of open child windows so they can be transferred to us.",
+    "reactCode": "engine/window-manager.ts — createWindowManager() registry",
+    "reactExplanation": "In React there is no 'my parent's child windows' collection to copy. All windows, regardless of which one opened them, are tracked centrally in the single registry Map inside window-manager.ts, so no window ever needs to hand its children to another window.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "263",
+    "vbsCode": "        arrKeys = mobjParentWindow.mdicChildWindows.Keys",
+    "vbsExplanation": "mdicChildWindows is a VBScript Dictionary (a hash map of name→window object) held on the parent policy window; mobjParentWindow points at that policy window. .Keys returns an array of all its entry names (e.g. 'policy123'). This snapshots the parent's child-window names into a local array for iteration.",
+    "reactCode": "engine/window-manager.ts — Array.from(registry.keys()) equivalent (registry is Map<string, Window>)",
+    "reactExplanation": "The legacy Dictionary maps directly to the JavaScript Map named registry in window-manager.ts. But because that registry is a single shared structure, the port never copies keys OUT of one window's dictionary — the concept of a per-window child dictionary is gone, so this exact line is not reproduced.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "264",
+    "vbsCode": "        arrWindows = mobjParentWindow.mdicChildWindows.Items",
+    "vbsExplanation": "The companion to line 263: .Items returns an array of the actual window objects (the values) in the parent's child-window Dictionary, positionally aligned with arrKeys. Together they let the loop below walk key/value pairs.",
+    "reactCode": "engine/window-manager.ts — registry.values() equivalent",
+    "reactExplanation": "Equivalent to reading a Map's values in JavaScript, which the registry in window-manager.ts holds. As with the keys, no per-window value array is copied in the SPA because there is only one registry, so this line has no direct port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "265",
+    "vbsCode": "        For intCount = 0 To mobjParentWindow.mdicChildWindows.Count - 1",
+    "vbsExplanation": "Starts a classic index-based loop over every entry (0 to Count-1) in the parent policy window's child-window Dictionary, so each child can be examined and possibly re-registered under the new search window.",
+    "reactCode": "engine/window-manager.ts — for…of over registry entries (no per-window copy loop)",
+    "reactExplanation": "A counted loop over a collection maps to a JavaScript for…of. But the registry design means the app never iterates 'my parent's children to move them to me', so this migration loop simply does not exist in the port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "266-267",
+    "vbsCode": "            'Only add references to policy windows,\n            'not other child window, ie, batchedits, overrides...",
+    "vbsExplanation": "Comment clarifying the filter on the next line: of everything in the parent's child dictionary, copy over ONLY entries whose key names a policy window; skip auxiliary popups like batch-edit or override windows (those are handled by the separate non-policy pass further down).",
+    "reactCode": "engine/window-manager.ts — key namespacing via windowKey(session, pageId)",
+    "reactExplanation": "The legacy prefix test ('is this a policy window?') is replaced by structured, namespaced keys built by windowKey() in window-manager.ts (e.g. `${policyId}:${pageId}`). Classification is baked into the key format instead of decided by a runtime string check during re-parenting.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "268",
+    "vbsCode": "            If StrComp(Left(arrKeys(intCount),6),\"policy\",vbTextCompare) = 0 Then",
+    "vbsExplanation": "The policy filter. Left(key,6) takes the first six characters of the dictionary key; StrComp(...,\"policy\",vbTextCompare) does a case-insensitive compare, returning 0 when equal. So this fires only for keys that begin with 'policy', i.e. policy windows.",
+    "reactCode": "engine/window-manager.ts — encoded in windowKey() key scheme; no prefix compare in shell-load.ts",
+    "reactExplanation": "A six-character prefix compare is a fragile stringly-typed classifier. In window-manager.ts the identity of a window is a deliberately structured key from windowKey(), so 'is this a policy window' is answered by the key namespace, not by slicing and comparing the first six characters at load time.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "269",
+    "vbsCode": "                Call LoadWindowReferences (arrKeys(intCount), arrWindows(intCount))",
+    "vbsExplanation": "The actual work: calls a helper that inserts this policy window (key + window object) into the NEW search window's own mdicChildWindows dictionary — i.e. re-parents the child so the new search window now tracks it.",
+    "reactCode": "engine/window-manager.ts — registry.set(key, handle) inside open()",
+    "reactExplanation": "Registering a window under a key is exactly what registry.set(req.key, handle) does in window-manager.ts's open(). The difference: it happens ONCE when a window is opened, into the single shared registry — never re-copied from one owner window to another, so this migration call is unneeded.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "270",
+    "vbsCode": "            End If",
+    "vbsExplanation": "Closes the policy-key If from line 268.",
+    "reactCode": "— (no branch to close)",
+    "reactExplanation": "Since the prefix-compare branch itself is not ported (classification lives in the key scheme), there is no corresponding block delimiter in the React code.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "271",
+    "vbsCode": "        Next",
+    "vbsExplanation": "Ends the For loop begun on line 265; advances to the next entry in the parent's child-window dictionary.",
+    "reactCode": "— (no loop to close)",
+    "reactExplanation": "The migration loop it closes does not exist in the port, so there is no loop terminator.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "272",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer separating the first loop (copy references in) from the second loop (update parent pointers). No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace-only; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "273-274",
+    "vbsCode": "        'Now update the parent window property of all the child windows\n        'so they know about this new search window.",
+    "vbsExplanation": "Comment introducing the second phase: having copied the policy child windows into THIS window's dictionary, we must also reach back into each of those still-open child windows and repoint its mobjParentWindow so it treats this new search window as its parent.",
+    "reactCode": "engine/window-manager.ts — no back-pointer maintained",
+    "reactExplanation": "The SPA never stores a 'my parent window' pointer inside each child, so there is nothing to update. The registry in window-manager.ts is a flat key→handle map with no parent/child graph, which is precisely what eliminates this whole second phase.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "275",
+    "vbsCode": "        If Not mdicChildWindows Is Nothing Then",
+    "vbsExplanation": "Guards the second loop: only proceed if THIS window's own child-window dictionary (mdicChildWindows) has actually been created (is not the uninitialized Nothing). Prevents a null-reference error when there are no children.",
+    "reactCode": "engine/window-manager.ts — Map is always initialized (const registry = new Map())",
+    "reactExplanation": "The registry Map in window-manager.ts is created unconditionally at manager construction, so it is never 'Nothing'. The defensive null check has no counterpart because the collection can never be uninitialized.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "276",
+    "vbsCode": "            arrWindows = mdicChildWindows.Items",
+    "vbsExplanation": "Snapshots THIS window's child window objects (values) into a local array — note it now reads mdicChildWindows (the current window's own dictionary), not the parent's — ahead of iterating them to fix parent pointers.",
+    "reactCode": "engine/window-manager.ts — registry.values()",
+    "reactExplanation": "Reading a collection's values maps to Map.values() on the registry, but with no back-pointers to fix, this snapshot serves no purpose in the port and is not reproduced.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "277",
+    "vbsCode": "            arrKeys = mdicChildWindows.Keys",
+    "vbsExplanation": "Snapshots THIS window's child-window keys into a parallel array, needed so line 285 can remove an entry by key if a child turns out to be closed.",
+    "reactCode": "engine/window-manager.ts — registry.keys()",
+    "reactExplanation": "Equivalent to Map.keys() on the registry. Not ported because the loop it feeds (re-parenting + stale-entry removal) is subsumed by the registry's own reuse logic.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "278",
+    "vbsCode": "            For intCount = 0 To mdicChildWindows.Count - 1",
+    "vbsExplanation": "Loops over every entry in THIS window's child-window dictionary to visit each still-tracked child window.",
+    "reactCode": "engine/window-manager.ts — for…of over registry (not needed for re-parenting)",
+    "reactExplanation": "A counted loop over the collection; in the SPA the registry is only iterated for closeAll() at logout, never to repoint parents, so this specific traversal is absent.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "279",
+    "vbsCode": "                Set objWindow = arrWindows(intCount)",
+    "vbsExplanation": "Assigns the current child window object into a working variable objWindow (the Set keyword is required in VBScript when assigning object references) so the following lines can query and mutate it.",
+    "reactCode": "engine/window-manager.ts — loop variable of for…of (const w of registry.values())",
+    "reactExplanation": "Binding the current element to a variable is implicit in a JavaScript for…of loop (e.g. `for (const w of registry.values())` as in closeAll). No explicit Set-style reference assignment is needed.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "280",
+    "vbsCode": "                If Not objWindow.closed Then",
+    "vbsExplanation": "Tests the browser's built-in window.closed property. If the child window is still open, we keep it and update its parent pointer; if closed, we drop it. This is manual liveness/garbage collection of stale window handles.",
+    "reactCode": "engine/window-manager.ts — if (existing && !existing.closed) inside open()",
+    "reactExplanation": "window-manager.ts checks the identical .closed property, but lazily: open() does `if (existing && !existing.closed) { existing.focus(); return 'focused'; }` and otherwise `registry.delete(req.key)`. Liveness is checked on demand at reuse time instead of in an upfront sweep.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "281-282",
+    "vbsCode": "                    'Policy windows still open,\n                    'pass the references of this window as the new parent.",
+    "vbsExplanation": "Comment for line 283: the child policy window is confirmed open, so make this new search window its parent by assigning our window reference into the child's mobjParentWindow property.",
+    "reactCode": "engine/window-manager.ts — no parent hand-off (flat registry)",
+    "reactExplanation": "There is no 'pass this window as the new parent' step because no child holds a parent reference. The registry replaces the parent/child pointer web with a single owner (the manager), so there is nothing to reassign.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "283",
+    "vbsCode": "                    Set objWindow.mobjParentWindow = window",
+    "vbsExplanation": "The core re-parenting statement: sets the still-open child window's mobjParentWindow property to `window` (the current/new search window). After this the child considers the new search window its parent for future cross-window calls.",
+    "reactCode": "engine/window-manager.ts — eliminated; registry key ownership (registry.set) replaces parent pointers",
+    "reactExplanation": "This is the exact line the whole port design removes. Cross-window coordination in the SPA goes through the shared registry and sessionStorage handoff (setHandoff), not a mutable mobjParentWindow pointer on each child, so re-parenting is a no-op that never needs to run.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "284",
+    "vbsCode": "                Else",
+    "vbsExplanation": "The else branch of line 280: reached when the child window is closed rather than open.",
+    "reactCode": "engine/window-manager.ts — registry.delete(req.key) (the stale-handle drop)",
+    "reactExplanation": "The 'window is closed' case corresponds to window-manager.ts dropping a stale handle: `registry.delete(req.key); // drop any stale (closed) handle`. It just happens at reuse time rather than during a re-parent sweep.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "285",
+    "vbsCode": "                    mdicChildWindows.Remove arrKeys(intCount)",
+    "vbsExplanation": "Because the child window is closed, remove its now-dead entry from THIS window's child dictionary by key, so the collection does not accumulate stale references.",
+    "reactCode": "engine/window-manager.ts — registry.delete(req.key)",
+    "reactExplanation": "Directly equivalent to Map.delete on the registry. window-manager.ts does exactly this (`registry.delete(req.key)`) to purge closed windows, and closeAll() clears them wholesale on logout.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "286",
+    "vbsCode": "                                                                                    'remove old reference",
+    "vbsExplanation": "A far-right trailing comment annotating line 285, restating that the Remove call is discarding the stale (closed) window reference.",
+    "reactCode": "engine/window-manager.ts — see comment at registry.delete (\"drop any stale (closed) handle\")",
+    "reactExplanation": "The intent survives as the inline comment beside registry.delete in window-manager.ts. The comment itself carries no logic to port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "287",
+    "vbsCode": "                End If",
+    "vbsExplanation": "Closes the open-vs-closed If from line 280.",
+    "reactCode": "— (no branch to close)",
+    "reactExplanation": "The corresponding logic in window-manager.ts is a short focus-or-delete expression inside open(), so there is no separate block terminator here.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "288",
+    "vbsCode": "            Next",
+    "vbsExplanation": "Ends the second For loop (from line 278); moves to the next child window.",
+    "reactCode": "— (no loop to close)",
+    "reactExplanation": "The re-parent loop does not exist in the port, so there is no loop terminator.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "289",
+    "vbsCode": "            Set objWindow = Nothing",
+    "vbsExplanation": "Explicitly releases the objWindow object reference by setting it to Nothing. In classic VBScript/COM this was manual cleanup to help release the underlying object and avoid lingering references.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "JavaScript is garbage-collected: once a loop variable goes out of scope it is reclaimed automatically. Manual reference-nulling has no place in the React code, so this line is dropped entirely.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "290",
+    "vbsCode": "        End If",
+    "vbsExplanation": "Closes the 'Is Nothing' guard from line 275, ending the policy-child re-parenting phase.",
+    "reactCode": "— (no guard to close)",
+    "reactExplanation": "Since the never-null registry made the guard unnecessary, there is no matching block close.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "291",
+    "vbsCode": "    arrNonPolKeys = mobjParentWindow.mdicNonPolicyChildWindows.Keys",
+    "vbsExplanation": "Begins the NON-policy pass. mdicNonPolicyChildWindows is a SECOND dictionary on the parent window tracking auxiliary popups (batch edits, overrides, etc.). This grabs their keys, mirroring line 263 but for the non-policy collection.",
+    "reactCode": "engine/window-manager.ts — single unified registry (no separate non-policy Map)",
+    "reactExplanation": "Legacy code kept two parallel dictionaries (policy vs non-policy). window-manager.ts collapses both into ONE registry Map keyed by windowKey(); the distinction, if needed, lives in the key namespace, so there is no separate non-policy keys array.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "292",
+    "vbsCode": "    arrNonPolWindows = mobjParentWindow.mdicNonPolicyChildWindows.Items",
+    "vbsExplanation": "Snapshots the parent's non-policy child window OBJECTS into a local array, positionally aligned with arrNonPolKeys, for the loop that follows.",
+    "reactCode": "engine/window-manager.ts — registry.values() (unified)",
+    "reactExplanation": "Same as the policy case: values come from the one shared registry, and no per-owner copy is performed, so this line is not ported.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "293",
+    "vbsCode": "    For intNonPolCount = 0 To mobjParentWindow.mdicNonPolicyChildWindows.Count - 1",
+    "vbsExplanation": "Loops over every entry in the parent's non-policy child dictionary so each auxiliary window can be copied to the new search window.",
+    "reactCode": "engine/window-manager.ts — for…of over registry (not needed)",
+    "reactExplanation": "A counted loop over the collection; unneeded because the registry is centralized and never migrated between windows.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "294",
+    "vbsCode": "        'Only add references to non policy windows",
+    "vbsExplanation": "Comment for the filter on line 295: from the non-policy dictionary, copy only entries that do NOT start with 'policy' (a defensive check, since a policy-prefixed key would belong to the other collection).",
+    "reactCode": "engine/window-manager.ts — windowKey() namespacing",
+    "reactExplanation": "Classification is again handled by the structured key from windowKey() rather than a runtime prefix test, so this filtering intent is designed-in, not coded per-load.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "295",
+    "vbsCode": "        If StrComp(Left(arrNonPolKeys(intNonPolCount),6),\"policy\",vbTextCompare) <> 0 Then",
+    "vbsExplanation": "The inverse of line 268: case-insensitively compares the first six characters of the key to 'policy' and proceeds only when they are NOT equal (StrComp <> 0), i.e. for genuine non-policy windows.",
+    "reactCode": "engine/window-manager.ts — key scheme; no prefix compare in shell-load.ts",
+    "reactExplanation": "Same as the policy prefix test: replaced by namespaced keys. No six-character slice-and-compare exists in the React port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "296",
+    "vbsCode": "            Call LoadNonPolicyWindowReferences (arrNonPolKeys(intNonPolCount), arrNonPolWindows(intNonPolCount))",
+    "vbsExplanation": "Inserts this non-policy window (key + object) into the new search window's own mdicNonPolicyChildWindows dictionary — the non-policy analogue of LoadWindowReferences on line 269.",
+    "reactCode": "engine/window-manager.ts — registry.set(key, handle)",
+    "reactExplanation": "Registering a window under a key is registry.set() in window-manager.ts's open(), done once at open time into the single registry. There is no separate non-policy registration path and no migration call.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "297",
+    "vbsCode": "        End If",
+    "vbsExplanation": "Closes the non-policy prefix If from line 295.",
+    "reactCode": "— (no branch to close)",
+    "reactExplanation": "The prefix branch is not ported, so there is no delimiter.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "298",
+    "vbsCode": "    Next",
+    "vbsExplanation": "Ends the non-policy copy loop from line 293.",
+    "reactCode": "— (no loop to close)",
+    "reactExplanation": "The loop it closes does not exist in the port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "299",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer between the non-policy copy loop and the non-policy parent-pointer loop. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace-only; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "300-301",
+    "vbsCode": "    'Now update the parent window property of all the non policy child windows\n    'so they know about this new search window.",
+    "vbsExplanation": "Comment introducing the final phase: repoint each still-open NON-policy child window's mobjParentWindow at this new search window (the non-policy mirror of lines 273-274).",
+    "reactCode": "engine/window-manager.ts — no back-pointer maintained",
+    "reactExplanation": "As with the policy pass, no child holds a parent reference in the SPA, so there is no parent property to update and this phase is designed out.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "302",
+    "vbsCode": "    If Not mdicNonPolicyChildWindows Is Nothing Then",
+    "vbsExplanation": "Guards the final loop: only run it if THIS window's own non-policy child dictionary has been instantiated (is not Nothing), preventing a null-reference error.",
+    "reactCode": "engine/window-manager.ts — Map always initialized (new Map())",
+    "reactExplanation": "The registry Map is always constructed, never null, so the defensive check has no counterpart.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "303",
+    "vbsCode": "        arrNonPolWindows = mdicNonPolicyChildWindows.Items",
+    "vbsExplanation": "Snapshots THIS window's own non-policy child window objects into a local array ahead of the parent-pointer update loop.",
+    "reactCode": "engine/window-manager.ts — registry.values()",
+    "reactExplanation": "Equivalent to Map.values() on the unified registry; not reproduced since the loop it feeds is unneeded.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "304",
+    "vbsCode": "        arrNonPolKeys = mdicNonPolicyChildWindows.Keys",
+    "vbsExplanation": "Snapshots THIS window's non-policy child keys, needed so line 312 can remove a closed window's entry by key.",
+    "reactCode": "engine/window-manager.ts — registry.keys()",
+    "reactExplanation": "Equivalent to Map.keys() on the registry; not ported for the same reason.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "305",
+    "vbsCode": "        For intNonPolCount = 0 To mdicNonPolicyChildWindows.Count - 1",
+    "vbsExplanation": "Loops over every entry in THIS window's non-policy child dictionary to visit each auxiliary child window.",
+    "reactCode": "engine/window-manager.ts — for…of over registry (only used by closeAll)",
+    "reactExplanation": "A counted loop over the collection; the only registry iteration retained in window-manager.ts is inside closeAll() at logout, not for re-parenting.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "306",
+    "vbsCode": "            Set objWindowNonPol = arrNonPolWindows(intNonPolCount)",
+    "vbsExplanation": "Assigns the current non-policy child window object into the working variable objWindowNonPol (Set is required for object references) for inspection and mutation.",
+    "reactCode": "engine/window-manager.ts — for…of loop binding (const w of registry.values())",
+    "reactExplanation": "The current element is bound implicitly by a JavaScript for…of loop; no explicit Set assignment needed.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "307",
+    "vbsCode": "            If Not objWindowNonPol.closed Then",
+    "vbsExplanation": "Checks the browser's window.closed on this non-policy child: if still open, re-parent it; if closed, remove its stale entry.",
+    "reactCode": "engine/window-manager.ts — if (existing && !existing.closed) in open()",
+    "reactExplanation": "Same .closed liveness test as the policy pass; window-manager.ts performs it lazily during reuse (focus the live handle, delete the stale one) rather than in an eager sweep.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "308-309",
+    "vbsCode": "                'Non Policy windows still open,\n                'pass the references of this window as the new parent.",
+    "vbsExplanation": "Comment for line 310: the non-policy child is confirmed open, so set this new search window as its parent.",
+    "reactCode": "engine/window-manager.ts — no parent hand-off",
+    "reactExplanation": "No child stores a parent reference in the SPA, so there is no 'pass this window as the new parent' step to perform.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "310",
+    "vbsCode": "                Set objWindowNonPol.mobjParentWindow = window",
+    "vbsExplanation": "The non-policy re-parenting statement: sets the open auxiliary window's mobjParentWindow to `window` (the new search window), the mirror of line 283.",
+    "reactCode": "engine/window-manager.ts — eliminated; registry ownership replaces parent pointers",
+    "reactExplanation": "Identical elimination to line 283: cross-window coordination goes through the shared registry and sessionStorage handoff, not a per-child parent pointer, so this reassignment never runs in the port.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "311",
+    "vbsCode": "            Else",
+    "vbsExplanation": "The else branch of line 307: the non-policy child window is closed.",
+    "reactCode": "engine/window-manager.ts — registry.delete(req.key)",
+    "reactExplanation": "The closed-window case maps to dropping the stale handle from the registry, done at reuse time in window-manager.ts.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "312",
+    "vbsCode": "                mdicNonPolicyChildWindows.Remove arrNonPolKeys(intNonPolCount)  'remove old reference",
+    "vbsExplanation": "Removes the closed non-policy window's dead entry from THIS window's dictionary by key (the trailing comment restates the purpose). Mirror of line 285 for the non-policy collection.",
+    "reactCode": "engine/window-manager.ts — registry.delete(req.key)",
+    "reactExplanation": "Directly equivalent to Map.delete on the unified registry; window-manager.ts purges stale handles this way, and closeAll() clears everything at logout.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "313",
+    "vbsCode": "            End If",
+    "vbsExplanation": "Closes the open-vs-closed If from line 307.",
+    "reactCode": "— (no branch to close)",
+    "reactExplanation": "The corresponding logic is a compact focus-or-delete expression in window-manager.ts, with no separate block terminator.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "314",
+    "vbsCode": "        Next",
+    "vbsExplanation": "Ends the final non-policy parent-pointer loop from line 305.",
+    "reactCode": "— (no loop to close)",
+    "reactExplanation": "The loop does not exist in the port, so there is no terminator.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "315",
+    "vbsCode": "        Set objWindowNonPol = Nothing",
+    "vbsExplanation": "Explicitly releases the objWindowNonPol object reference (manual COM-era cleanup), the mirror of line 289.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "JavaScript garbage collection reclaims the out-of-scope loop variable automatically; manual nulling is dropped.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "316",
+    "vbsCode": "    End If",
+    "vbsExplanation": "Closes the non-policy 'Is Nothing' guard from line 302, ending the non-policy re-parenting phase.",
+    "reactCode": "— (no guard to close)",
+    "reactExplanation": "The never-null registry made the guard unnecessary, so there is no matching close.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "317",
+    "vbsCode": "    End If",
+    "vbsExplanation": "Closes the outermost If mblnReplacementHomePage from line 260 — the guard around the entire replacement-search section. Everything between 260 and 317 runs only in the replacement scenario.",
+    "reactCode": "engine/window-manager.ts — whole block absent from shell-load.ts (see shell-load.ts:109-111)",
+    "reactExplanation": "The entire guarded block collapses into shell-load.ts's three-line note (lines 109-111) that the re-parenting is owned by window-manager.ts. There is no branch in the loader, hence no End If.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "318",
+    "vbsCode": "                                                            REPLACEMENT SEARCH PAGE",
+    "vbsExplanation": "A closing label echoing the section name. Note it lacks a leading apostrophe here in the stitched text, but it sits between the End If and the end banner as a human marker of where the section ends; it carries no executable meaning.",
+    "reactCode": "engine/window-manager.ts — feature name (createWindowManager registry)",
+    "reactExplanation": "Like the opening title on line 253, this simply names the feature that now lives in window-manager.ts's registry. It labels a block that has no React counterpart in the load path.",
+    "category": "moved-elsewhere"
+  },
+  {
+    "vbsLines": "319",
+    "vbsCode": "    '",
+    "vbsExplanation": "An empty comment line (just an apostrophe), used as a visual separator before the closing banner. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "An empty comment carries no logic and has no equivalent.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "320",
+    "vbsCode": "    '<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "The decorative comment banner marking the END of the replacement-search sub-section, paired with the begin banner on line 252.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Pure formatting with no runtime behavior; the section it delimits was moved to window-manager.ts, so the closing banner has nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "321",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Trailing blank line after the end banner, separating this section from the next part of window_onload. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace-only; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "322-324",
+    "vbsCode": "    ' >>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>>\n    '\n                                                            Exception Handling",
+    "vbsExplanation": "A decorative comment banner (in VBScript a line starting with an apostrophe is a comment) that opens a labelled block. The centered 'Exception Handling' text is a title announcing that the next few lines clean up after a runtime error that could have been raised just above this band while grabbing window.opener. Banners like this were how the legacy team visually chunked one enormous routine.",
+    "reactCode": "— (decorative banner; the section it heads is shellLoad())",
+    "reactExplanation": "Comment banners have no code equivalent: modern code is broken into small named functions rather than one long routine sliced up by header comments. The exception-handling intent survives as the loader's try/catch boundary, documented inside shellLoad at lines 88-90 ('On Error Resume Next — the loader's try/catch boundary'). A 'loader' is a function React Router runs before the screen draws.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "325-328",
+    "vbsCode": "    If Err.number <> 0 Then\n        Err.clear\n        Set mobjParentWindow = Nothing\n    End If",
+    "vbsExplanation": "Because this routine runs under 'On Error Resume Next', an error while reading window.opener does not stop execution but leaves the global Err object populated. This block checks whether an error was recorded (Err.number <> 0), wipes it with Err.clear, and defensively nulls the parent-window reference (Set ... = Nothing) so downstream code sees 'no parent' instead of a half-initialized object.",
+    "reactCode": "shell-load.ts:88-90 (loader try/catch boundary) + line 107: const isChildWindow = typeof window !== 'undefined' && window.opener != null;",
+    "reactExplanation": "In React the whole loader is one try/catch boundary, so there is no global error flag to inspect or clear. The parent-window probe collapses to a single null-safe expression at line 107: if window.opener is absent it simply yields false for isChildWindow — exactly the 'parent = Nothing' outcome — so the explicit clear-and-null dance disappears.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "329",
+    "vbsCode": "                                                            Exception Handling",
+    "vbsExplanation": "The closing half of the decorative label from line 324 — the same centered 'Exception Handling' text repeated to mark the end of the guarded block. Purely visual; it executes nothing.",
+    "reactCode": "— (decorative label)",
+    "reactExplanation": "No equivalent. Section-closing labels vanish because the logic now lives inside a short, self-named function (shellLoad) whose boundaries are its { } braces, not repeated comment text.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "330-331",
+    "vbsCode": "    '\n    '<<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "The matching end-of-section banner (an empty comment line plus the '[ end section ]' bar) that closes the Exception Handling block opened at line 322. Decoration only.",
+    "reactCode": "— (decorative banner)",
+    "reactExplanation": "No code equivalent — function scope replaces hand-drawn section delimiters.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "332",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "An empty line separating the two banner sections. No effect on execution.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "Whitespace carries no meaning and has no counterpart; spacing in shell-load.ts is set by the code formatter, not preserved from the original.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "333-335",
+    "vbsCode": "    ' >>>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>>\n    '\n                                                            Configure the frames and borders",
+    "vbsExplanation": "Opening banner for the second, larger part of this band. Its 'Configure the frames and borders' label announces the code that sizes the HTML frameset — the legacy shell was built from named <frame> rectangles (a menu strip, a tree column, a main pane), and this section sets their pixel splits according to what kind of page is loading.",
+    "reactCode": "shell-load.ts:60 resolveShellMode() + type ShellMode = 'policy' | 'search' | 'utility' (line 43)",
+    "reactExplanation": "The whole 'configure the frames' idea becomes one small pure function, resolveShellMode(), that returns a layout mode (an enum — a fixed set of named string values). The single-page app has no frames to size, so the decision that once picked frame pixel sizes now picks one of three shell layouts instead (see the doc-comment at shell-load.ts:38-41).",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "336",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "An empty spacer line inside the frame-configuration section. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart; blank lines are not carried across.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "337-338",
+    "vbsCode": "        mblnSearchPage = False\n        'Default",
+    "vbsExplanation": "Sets a module-level boolean flag to False as the starting value; the trailing 'Default comment says so. The 'mbln' prefix is a naming convention for a member boolean. mblnSearchPage records whether the shell is showing the record-search page, and it is flipped to True later in the search and utility branches.",
+    "reactCode": "Subsumed into shell-load.ts:60 resolveShellMode() return value (the ShellMode enum)",
+    "reactExplanation": "React keeps no separate 'am I the search page' boolean. That fact is derivable from the single ShellMode value — mode === 'search' (and the flag's later True cases are exactly mode !== 'policy'). One enum replaces the scattered boolean, so this default assignment folds into resolveShellMode returning 'policy' by default for a real policy id.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "339",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "340-344",
+    "vbsCode": "        ' Save the initial policy id.\n        ' It will be restored after any ExectuteAction.\n        ' This allows the policy id variable to be changed\n        ' temporarily for navigation (as when the start page\n        ' lanuches new policy windows)",
+    "vbsExplanation": "A multi-line comment (original typos included) explaining the very next line: the current policy id is stashed so it can be restored after an ExecuteAction call temporarily overwrites the global policy-id variable during navigation (for example when opening a new policy window). It documents a save/restore workaround around shared mutable global state.",
+    "reactCode": "— (explains line 345, which is eliminated; policyId lives immutably on session)",
+    "reactExplanation": "The rationale evaporates in React: the policy id lives on the immutable session object the loader receives (read at shell-load.ts:114 and 124), and derived values live in a store, so nothing overwrites it and there is nothing to save or restore. The comment's whole problem — a global that navigation mutates — does not exist.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "345",
+    "vbsCode": "        document.body.setAttribute  \"policyid\", mstrPolicyID",
+    "vbsExplanation": "Writes the current policy id onto the page's <body> element as a custom 'policyid' attribute — using the DOM (the live HTML document tree) as a stash spot so the original value can be read back after navigation changes the in-memory variable. It is a global-state save implemented by parking a string on a DOM node.",
+    "reactCode": "Eliminated; value already lives in session.policyId (read at shell-load.ts:114/124) and derived state is seeded to the appStore in useShellLoad (lines 149-151)",
+    "reactExplanation": "Stashing state on a DOM node is an anti-pattern React removes. session.policyId is the single source of truth (the loader reads it at line 114 to choose the mode and at line 124 for the nodeKey), and anything derived is written into the Zustand appStore — a shared in-memory state object — inside the effect. No DOM attribute is needed to remember the value.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "346-347",
+    "vbsCode": "(two blank lines)",
+    "vbsExplanation": "Two empty spacer lines. No effect on execution.",
+    "reactCode": "— (blank lines)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "348-350",
+    "vbsCode": "            'fraHorizontal.frameBorder = \"0\"\n            'fraVertical.frameBorder = \"0\"\n            'fraMain.frameBorder = \"0\"",
+    "vbsExplanation": "Three already-commented-out (dead) lines that would have hidden the borders of the named frames fraHorizontal, fraVertical, and fraMain. They are disabled legacy tinkering left in the source; even in the original they did nothing.",
+    "reactCode": "— (dead code; frames do not exist in the SPA)",
+    "reactExplanation": "Doubly gone: the lines were already disabled, and the single-page app has no frames or frame borders at all — the entire multi-frame document model is replaced by one React component tree. There is nothing to hide a border on.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "351",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank spacer line before the decision ladder. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "352",
+    "vbsCode": "    If CLng(mstrPolicyID) > 0 Then",
+    "vbsExplanation": "Opens the three-way decision on the policy id. CLng converts the string mstrPolicyID to a Long integer; a value greater than zero means a real, open policy is being shown, which needs the full menu-and-tree shell.",
+    "reactCode": "shell-load.ts:63 if (id > 0) return 'policy'; inside resolveShellMode, where id = Number.parseInt(policyId ?? '', 10) at line 61",
+    "reactExplanation": "Same test in modern syntax: Number.parseInt replaces CLng and id > 0 returns the 'policy' mode. resolveShellMode is a pure function (its output depends only on its input), so this branch is trivially testable in isolation — unlike the frame-mutating original.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "353",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line inside the policy branch. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "354",
+    "vbsCode": "            'show the menu and tree frames for policies",
+    "vbsExplanation": "Inline comment documenting the policy branch: an open policy displays both the top menu strip and the left navigation tree. It describes the frame layout the next lines build.",
+    "reactCode": "shell-load.ts:63 — the 'policy' mode (documented at shell-load.ts:38-39: 'a policy shows menu+tree frames')",
+    "reactExplanation": "The comment's intent is captured by the 'policy' return value, whose meaning ('render the menu bar plus tree') is spelled out in resolveShellMode's doc-comment (lines 37-41). The shell component reads that mode and renders the corresponding layout.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "355",
+    "vbsCode": "            fraHorizontal.rows = \"46,*\"",
+    "vbsExplanation": "Sets the horizontal frameset's row split to '46,*' — a fixed 46-pixel top row (the menu bar) and one flexible row ('*') taking the remaining height. This is the literal frame sizing that makes the menu visible for a policy.",
+    "reactCode": "Subsumed into the 'policy' layout selected at shell-load.ts:63",
+    "reactExplanation": "Pixel-precise frame splits are gone: the 'policy' mode tells the shell to render a menu bar whose height is CSS/MUI-driven and responsive, not a hard-coded 46px frame row. The doc-comment at lines 40-41 states the enum replaces 'frame pixel sizes'.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "356",
+    "vbsCode": "            'fraVertical.cols = \"177,*\"",
+    "vbsExplanation": "A commented-out (dead) line that would have set the vertical frameset's columns to a 177-pixel tree column plus the rest ('*'). Disabled in the original; it ran nothing.",
+    "reactCode": "— (dead code; no frames)",
+    "reactExplanation": "Already disabled and, like all frame sizing, meaningless in a frameless SPA. The tree's width is now a responsive layout concern, not a fixed column string.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "357",
+    "vbsCode": "            fraTreeColumn.rows = \"90,*\"",
+    "vbsExplanation": "Sizes the tree column's own inner frameset to '90,*' — a 90-pixel header area above the scrolling navigation tree. Part of building the policy layout.",
+    "reactCode": "Subsumed into the 'policy' layout (shell-load.ts:63)",
+    "reactExplanation": "Another inner-frame pixel split folded into the single 'policy' mode; the tree panel and its header become components sized by CSS, not a nested frameset row string.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "358",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line before the next branch. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "359",
+    "vbsCode": "    ElseIf CLng(mstrPolicyID) = 0 Then",
+    "vbsExplanation": "The second branch: a policy id of exactly zero means the record-search page (no policy open yet), which shows neither the menu nor the tree frame.",
+    "reactCode": "shell-load.ts:64 if (id === 0) return 'search';",
+    "reactExplanation": "Directly mirrored: id === 0 returns the 'search' mode. resolveShellMode's doc-comment (lines 38-39) records that a search page 'shows neither' menu nor tree.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "360",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line inside the search branch. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "361",
+    "vbsCode": "            mblnSearchPage = True",
+    "vbsExplanation": "Flips the search-page flag to True for the policy-id-zero case, marking that the shell is the search page (overriding the False default set at line 337).",
+    "reactCode": "Subsumed into resolveShellMode returning 'search' (shell-load.ts:64)",
+    "reactExplanation": "Rather than raise a separate boolean, the function simply returns 'search'; any code that once tested mblnSearchPage now tests mode === 'search'. The flag and its assignment collapse into the enum return value.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "362",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line before the final branch. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "363",
+    "vbsCode": "            Else",
+    "vbsExplanation": "The catch-all branch for any other policy id — negative sentinel values such as -3 (utilities/library). These are special non-policy entry points.",
+    "reactCode": "shell-load.ts:65 return 'utility'; (the fall-through after the NaN, >0, and ===0 checks)",
+    "reactExplanation": "The final return 'utility' is resolveShellMode's else: anything that is not a positive id (open policy) and not zero (search) is treated as a utility screen. Line 62 also routes an unparseable id here via the Number.isNaN guard.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "364",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line inside the utility branch. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "365",
+    "vbsCode": "                mblnSearchPage = True",
+    "vbsExplanation": "Sets the search-page flag True again in the utility branch. Notably utilities are lumped in with search for this one flag (both are 'not a normal policy'), even though their frame layout differs from the actual search page.",
+    "reactCode": "Subsumed into resolveShellMode — mode !== 'policy' (shell-load.ts:63-65)",
+    "reactExplanation": "The old code needed one boolean (mblnSearchPage) that was True for BOTH search and utility, losing the distinction between them. The enum keeps them distinct ('search' vs 'utility') while still letting code recover the old meaning as mode !== 'policy', so nothing is lost.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "366",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line before the utility-layout lines. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "367",
+    "vbsCode": "                '--show dropdown only for utilites",
+    "vbsExplanation": "Comment (original typo 'utilites') explaining the utility layout: instead of the full menu, utilities show only a small dropdown selector. It documents the next three lines.",
+    "reactCode": "shell-load.ts:65 — the 'utility' mode (documented at line 39: 'a utility shows only the dropdown')",
+    "reactExplanation": "The 'dropdown-only' intent is exactly what the 'utility' mode means, and resolveShellMode's doc-comment (line 39) states it. The shell renders the slim dropdown chrome for that mode.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "368",
+    "vbsCode": "                fraHorizontal.rows = \"23,*\"",
+    "vbsExplanation": "Utility layout sizing: a shorter 23-pixel top row (just the dropdown bar) plus the flexible remainder ('*') — half the height of the policy menu's 46px row.",
+    "reactCode": "Subsumed into the 'utility' layout (shell-load.ts:65)",
+    "reactExplanation": "The 23px-vs-46px distinction becomes a difference between the 'utility' and 'policy' layout components, both responsive; the raw pixel row string is not carried over.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "369",
+    "vbsCode": "                fraVertical.cols = \"0,*\"",
+    "vbsExplanation": "Collapses the tree column to zero pixels ('0,*') — utilities have no navigation tree, so the left frame is hidden by giving it no width.",
+    "reactCode": "Subsumed into the 'utility' layout (shell-load.ts:65)",
+    "reactExplanation": "Hiding a panel by sizing a frame column to 0 becomes simply not rendering the tree component in the 'utility' layout — a conditional in the shell, not a zero-width frame.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "370",
+    "vbsCode": "                mstrTransactionType = \"\"",
+    "vbsExplanation": "Clears the module-level transaction-type string for utility screens, since a utility is not a policy transaction. This resets a shared global so stale data from a prior screen does not leak in.",
+    "reactCode": "Same pattern as shell-load.ts:155 app.setVariable('ratingdatachanged', undefined) — a store reset in useShellLoad (e.g. app.setVariable('transactionType', ''))",
+    "reactExplanation": "Clearing a global variable becomes clearing a key in the Zustand appStore inside the effect phase (useShellLoad). shell-load.ts already does exactly this for a sibling flag at line 155 (ratingdatachanged set to undefined); a transaction-type reset uses the identical app.setVariable(...) call rather than assigning a shared module variable.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "371",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Blank line before the ladder closes. No effect.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "372",
+    "vbsCode": "        End If",
+    "vbsExplanation": "Closes the three-way If / ElseIf / Else policy-id ladder. After this line the shell layout (frame sizes and mblnSearchPage) has been fully decided.",
+    "reactCode": "shell-load.ts:66 — the closing } of resolveShellMode; the resolved mode is consumed at line 114: const mode = resolveShellMode(session.policyId);",
+    "reactExplanation": "The end of the ladder corresponds to resolveShellMode returning its single value, which the loader captures at line 114 into mode. Where the legacy code left several globals mutated, the React version yields one immutable result that the rest of shellLoad passes along.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "373-374",
+    "vbsCode": "    '                                                       Configure the frames and borders\n    '<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "Closing banner for the frame-configuration section: the repeated 'Configure the frames and borders' label plus the '[ end section ]' bar. Decoration only.",
+    "reactCode": "— (decorative banner)",
+    "reactExplanation": "No equivalent — the converted logic is bounded by the resolveShellMode function body, so no closing comment bar is needed.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "375",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "Trailing blank line ending the band. No effect on execution.",
+    "reactCode": "— (blank line)",
+    "reactExplanation": "No counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "376-377",
+    "vbsCode": "' >>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>>\n'                                                       Specifiy the action",
+    "vbsExplanation": "In VBScript an apostrophe starts a comment, so these two lines are non-executing banner text. They open a labelled block whose job is to decide the initial \"action\" — the verb the app boots into (INQUIRY, EDIT, LIB, etc.). Legacy VBScript used these ASCII arrow banners as visual section dividers because the language has no other way to group a block of statements.",
+    "reactCode": "JSDoc header above resolveInitialAction() — shell-load.ts lines 68-72, tagged [VBS 377–385].",
+    "reactExplanation": "In the React port the banner survives as a documentation comment (a JSDoc block — the /** … */ text above a function) that carries the same VBS line range so a reviewer can trace it. A \"function\" here is a named, reusable unit of code; resolveInitialAction is the one that owns this entire section.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "378",
+    "vbsCode": "Select Case CLng(mstrPolicyID)",
+    "vbsExplanation": "Select Case is VBScript's switch statement: it evaluates one expression once and jumps to the matching Case. CLng(...) converts mstrPolicyID (the current policy identifier, stored as text) into a Long integer so it can be compared numerically. So this opens a numeric switch on the policy id.",
+    "reactCode": "Number.parseInt(session.policyId ?? '', 10) === -3 — inside resolveInitialAction, shell-load.ts line 74.",
+    "reactExplanation": "The React version reads the same id from the typed session object and converts it with Number.parseInt (JavaScript's text→integer function; the 10 means base ten). Because only one case actually matters (-3), the shipped code collapses the whole switch into a single equality check instead of a full switch statement.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "379",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "An empty line inside the Select Case block, used only for vertical spacing between the switch header and its first Case. It has no runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Hand-placed source whitespace does not carry over. The React file is auto-formatted by its own tooling (Prettier), so cosmetic blank lines have no equivalent line to point at.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "380-381",
+    "vbsCode": "Case -3\n    mstrAction = \"LIB\"",
+    "vbsExplanation": "When the policy id equals -3 — the sentinel value the shell uses for the Library/Utilities entry point — the routine overwrites the module-level variable mstrAction with the string \"LIB\". mstrAction is read later by ExecuteAction to choose which page/verb to open, so this reroutes the boot into library mode. Any other policy id falls through with the action left unchanged.",
+    "reactCode": "if (Number.parseInt(session.policyId ?? '', 10) === -3) return 'LIB'; — resolveInitialAction, shell-load.ts line 74.",
+    "reactExplanation": "The React function returns the literal 'LIB' for the -3 case, mirroring the assignment exactly. Returning a value from a small pure function replaces mutating a shared variable, which is safer because no other code can accidentally overwrite it.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "382",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A spacing-only empty line between the single Case body and the End Select that closes the switch. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Cosmetic whitespace has no React equivalent; formatting inside resolveInitialAction is decided by the project's auto-formatter, not preserved line-for-line from the VBScript.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "383",
+    "vbsCode": "End Select",
+    "vbsExplanation": "Closes the Select Case block opened on line 378. Any policy id other than -3 reaches this point without having changed mstrAction, so those sessions keep whatever action they arrived with.",
+    "reactCode": "return session.action ?? 'INQUIRY'; — resolveInitialAction fallback, shell-load.ts line 75.",
+    "reactExplanation": "The \"no case matched\" fall-through becomes the function's final return: it hands back the action already on the session, defaulting to 'INQUIRY' when none is set (?? is JavaScript's \"use the right-hand value when the left is null/undefined\").",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "384-385",
+    "vbsCode": "'                                                       Specifiy the action\n'<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "The closing half of the banner pair from lines 376-377 — a repeated title line plus an arrow divider marking the end of the \"specify the action\" block. Comments only; no behavior.",
+    "reactCode": "Closing } of resolveInitialAction — shell-load.ts line 76.",
+    "reactExplanation": "React has no separate \"end section\" marker: a function is delimited by its single { … } body, so the closing brace of resolveInitialAction is the natural section boundary that this banner used to draw by hand.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "386",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank separator line between the action-specifying section and the next banner. Spacing only.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace between sections is not reproduced; in React the sections are separate functions/comment blocks, and spacing is handled by the formatter.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "387-388",
+    "vbsCode": "' >>>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>>\n'                                                       Load the security data island",
+    "vbsExplanation": "Banner opening the next block, whose job is to load the \"security data island\". A data island is an <xml> element embedded directly inside the HTML page; the server rendered the user's permissions into <xml id=\"xdiSecurity\"> so the client could read them without a separate network request.",
+    "reactCode": "Explanatory comment inside shellLoad — shell-load.ts lines 119-121.",
+    "reactExplanation": "This whole section is eliminated in React, and the comment at lines 119-121 records why: permissions now arrive as JSON at login and live in authStore (a shared client-side state container for authentication data), so there is nothing to parse on each boot.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "389",
+    "vbsCode": "Set mxmlSecurity = CreateObject(\"MSXML2.DOMDocument.6.0\")",
+    "vbsExplanation": "Creates a fresh MSXML DOM document — a COM object (a Windows/Internet-Explorer component) that parses and queries XML — and stores it in mxmlSecurity. The Set keyword is required in VBScript when assigning an object reference. This is the parser that will hold the security XML.",
+    "reactCode": "— (eliminated); permissions live in authStore (referenced shell-load.ts line 121).",
+    "reactExplanation": "There is no client-side XML parser in the SPA because permissions never arrive as XML. MSXML/COM is Internet-Explorer-only technology with no modern-browser equivalent; the data is plain JSON held in authStore.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "390",
+    "vbsCode": "mxmlSecurity.async = False",
+    "vbsExplanation": "Tells the MSXML parser to load synchronously — the following line will block until parsing finishes rather than continuing while the document loads in the background. This guaranteed the permissions were fully available before any code read them.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Eliminated with the parser. Synchronous-versus-asynchronous XML loading is a pure MSXML concern; the React app never blocks on parsing because permissions are already sitting in authStore before the shell renders.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "391",
+    "vbsCode": "mxmlSecurity.preserveWhiteSpace = False",
+    "vbsExplanation": "Configures the parser to discard insignificant whitespace (indentation and line breaks) between XML elements, keeping the parsed tree compact and predictable. A pure MSXML tuning flag.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Eliminated with the parser — there is no XML tree to tidy. JSON has no equivalent whitespace-handling switch, so this line has no counterpart.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "392",
+    "vbsCode": "mxmlSecurity.loadXML(document.all(\"xdiSecurity\").XMLDocument.xml)",
+    "vbsExplanation": "Reaches into the page via document.all(\"xdiSecurity\") (Internet Explorer's way to grab the element whose id is xdiSecurity), pulls its .XMLDocument.xml (the raw XML text of the embedded island), and feeds it to the parser. After this line mxmlSecurity holds the fully parsed permission tree.",
+    "reactCode": "— (eliminated); permissions read from authStore (shell-load.ts line 121).",
+    "reactExplanation": "Eliminated. There is no embedded island to read and no document.all (an IE-only DOM lookup); the same permission data was fetched as JSON at login and is read from authStore wherever it is needed.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "393",
+    "vbsCode": "Call TrapBrowserError(\"Main|window_onload|security\")",
+    "vbsExplanation": "Calls a shared helper that inspects VBScript's global Err object (populated because On Error Resume Next is active for this routine) and logs/handles any error, tagging it \"Main|window_onload|security\" so a failure can be traced back to this step. It is a manual, per-step error checkpoint.",
+    "reactCode": "— (eliminated with the section); loader error boundary is shellLoad's degrade path — shell-load.ts lines 88-95.",
+    "reactExplanation": "Eliminated along with the security load. Manual per-step traps are replaced by structured error handling: shellLoad degrades gracefully to the search shell on a missing session (lines 93-95), and React Router surfaces any thrown error to an error boundary automatically.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "394-395",
+    "vbsCode": "'                                                       Load the security data island\n'<<<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "Closing banner for the security-island block — a repeated title line plus an end divider. Comments only; no behavior.",
+    "reactCode": "End of the eliminated-section comment in shellLoad — shell-load.ts line 121.",
+    "reactExplanation": "No end marker is needed; the eliminated section is documented as a single comment block (lines 119-121) inside shellLoad, so there is no separate closing divider to reproduce.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "396",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank separator between the security-island section and the menu-frame section. Spacing only.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Inter-section whitespace has no React equivalent; the sections are distinct functions/comment blocks and the formatter controls spacing.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "397-398",
+    "vbsCode": "' >>>>>>>>>>>>>>>>>>[begin section]>>>>>>>>>>>>>>>>>>>>>>\n'                                                       Set the src for the menu frame",
+    "vbsExplanation": "Banner opening the block that kicks off frame loading. \"Set the src for the menu frame\" means pointing the top menu <frame>'s src attribute at a URL so the browser navigates that frame — the first link in the serial menu→tree→page load chain.",
+    "reactCode": "Explanatory comment inside useShellLoad — shell-load.ts lines 157-162.",
+    "reactExplanation": "This section is framework-handled in React: the comment at lines 157-162 records that React Router loads the shell route (menu/nav) and then the nested lob/:lob/:pageId route in order, so no code manually sets a frame source. A \"route loader\" is a function the router runs to fetch a route's data before showing it.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "399",
+    "vbsCode": "Call ExecuteAction(\"menu\", \"POL|POL|\" & mstrExpiredNumber & \"|\", -1, \"\")",
+    "vbsExplanation": "Invokes the central ExecuteAction dispatcher targeting the \"menu\" frame. The second argument is a NodeKey built by string concatenation (& joins strings): \"POL|POL|\" + the expired-policy number + \"|\", identifying which navigation node to open; -1 and \"\" are the frame/extra parameters. This is what actually starts the shell's content loading.",
+    "reactCode": "Framework-handled — router parent→child loader nesting (shellLoader → lobPageLoader), described at shell-load.ts lines 157-162; nodeKey built in shellLoad line 124.",
+    "reactExplanation": "Instead of one dispatcher imperatively driving frames, React Router runs the shell \"/\" loader and then the child page loader automatically when the URL matches, passing the equivalent nodeKey (resolved in shellLoad, line 124) down. The legacy \"load one frame at a time to avoid timing problems\" workaround is eliminated by construction.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "400",
+    "vbsCode": "Call TrapBrowserError(\"window_onload|menu1\")",
+    "vbsExplanation": "The same manual error-checkpoint helper as line 393, this time guarding the ExecuteAction(\"menu\") call and tagged \"window_onload|menu1\" so a failure at this step can be traced.",
+    "reactCode": "Framework-handled — React Router errorElement / loader error boundary.",
+    "reactExplanation": "A loader that throws is caught by React Router and shown through its error boundary, so there is no hand-written trap after each navigation step. The tracing role is covered by the performance marks and centralized error handling rather than a per-call checkpoint.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "401-402",
+    "vbsCode": "'                                                       Set the src for the menu frame\n'<<<<<<<<<<<<<<<<<<<< [ end section ]<<<<<<<<<<<<<<<<<<<<<<<<<<<<<",
+    "vbsExplanation": "Closing banner for the menu-frame block — repeated title line plus end divider. Comments only; no behavior.",
+    "reactCode": "End of the useShellLoad chain comment — shell-load.ts line 162.",
+    "reactExplanation": "No explicit end marker is required; the framework-handled load chain is documented in one comment block (lines 157-162) inside the useShellLoad effect.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "403",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank separator before the note describing the serial-load design. Spacing only.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Cosmetic whitespace is not carried over; spacing in the React effect is decided by the formatter.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "404",
+    "vbsCode": "' After the menu page loads, it calls the LoadNextPage routine",
+    "vbsExplanation": "A comment documenting the serial-load design: once the menu frame finishes loading it fires its own onload, which calls LoadNextPage, which loads the tree frame, which then loads the first content page — one frame at a time, deliberately, to avoid Internet Explorer timing races.",
+    "reactCode": "Framework-handled — parent→child loader nesting; note at shell-load.ts lines 157-162 and file header lines 27-29.",
+    "reactExplanation": "This hand-built chain is exactly what React Router's nested loaders replace: the parent shell loader resolves, then the child page loader runs, in guaranteed order, with no onload callbacks wiring one step to the next. The comment at 157-162 states the manual chain is therefore eliminated by construction.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "405",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank separator before the final cleanup step. Spacing only.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace has no React equivalent; the formatter controls spacing inside the useShellLoad effect.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "406",
+    "vbsCode": "'clear out ratingdatachanged",
+    "vbsExplanation": "A comment announcing the final cleanup step — resetting the ratingdatachanged flag, a session value that tracks whether rating data was edited, so a stale \"changed\" state from a previous transaction does not leak into this fresh shell load.",
+    "reactCode": "Comment above the clear call — shell-load.ts lines 153-154.",
+    "reactExplanation": "The intent survives as the JSDoc-style comment at lines 153-154, placed directly above the clearing call inside the useShellLoad effect, tagged [VBS 406–407].",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "407",
+    "vbsCode": "Call SessionXML_ClearItem(\"ratingdatachanged\")",
+    "vbsExplanation": "Calls a helper that removes the ratingdatachanged entry from the session XML store — the legacy app kept per-session state as an XML document inside the browser. This zeroes the dirty-rating flag at shell startup.",
+    "reactCode": "app.setVariable('ratingdatachanged', undefined); — useShellLoad effect, shell-load.ts line 155.",
+    "reactExplanation": "The session-XML store becomes the Zustand appStore (a shared, app-wide state object); clearing the item is setVariable(..., undefined) inside the post-render effect. A useEffect is React code that runs once after the component first renders, which is the same moment the legacy frameset finished bootstrapping.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "408",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank separator before the routine's closing comment. Spacing only.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Cosmetic whitespace is not reproduced; the formatter controls spacing at the end of the effect body.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "409",
+    "vbsCode": "' End of window_onload",
+    "vbsExplanation": "A comment marking the end of the routine's body, immediately before the End Sub that closes the subroutine.",
+    "reactCode": "Closing performance mark/measure — shell-load.ts lines 164-165.",
+    "reactExplanation": "The routine's completion is captured in React by performance.mark('shell-load:end') and performance.measure(...) at the tail of the useShellLoad effect, which together time the whole shell boot (the browser-native Performance API replacing the legacy timing hooks).",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "410",
+    "vbsCode": "End Sub",
+    "vbsExplanation": "Closes Sub window_onload — VBScript's marker for the end of a subroutine (a procedure that runs for its side effects and returns no value). After this, control returns to the browser.",
+    "reactCode": "End of the useShellLoad effect body (}, [mode, nodeKey, action]);) — shell-load.ts line 166; plus the shellLoad return at line 126.",
+    "reactExplanation": "The single legacy subroutine is split across two functions, so its close corresponds to two boundaries: shellLoad returning its result (line 126) before render, and the useShellLoad effect closing (line 166) after render.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "411",
+    "vbsCode": "'--------------------------------------------------------------------------------",
+    "vbsExplanation": "A full-width dashed comment line separating window_onload from the next routine in the file — purely a visual divider between procedures.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "File-level ASCII dividers have no equivalent; in React the module boundaries are the files and their exports themselves, and any spacing is handled by the auto-formatter.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "413",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A whitespace-only separator line just before the LoadNextPage subroutine begins. VBScript ignores blank lines entirely; it exists only to visually separate one routine from the next.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace has no runtime meaning. The TypeScript file's own formatting (blank lines between functions) already plays this role, so there is nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "414",
+    "vbsCode": "Sub LoadNextPage()",
+    "vbsExplanation": "Declares a VBScript subroutine (a named block of code that returns no value, like a void function). LoadNextPage is invoked at the END of the MENU frame's onload handler. The old frameset boots one frame at a time — menu first — and when the menu finishes loading it calls this routine to trigger the NEXT frame (the tree, or for a non-policy window the content page). Staggering the loads this way avoids the browser loading every frame at once.",
+    "reactCode": "framework-handles — React Router parent→child loader nesting (shellLoad → lobPageLoader); documented in shell-load.ts:157-162.",
+    "reactExplanation": "A 'loader' is a function React Router calls to fetch a route's data before that route renders. There is no separate menu frame that must finish before the next one starts: the router runs the shell route's loader (shellLoad) and then, in order, the nested route's loader (lobPageLoader) automatically. So this entire 'kick off the next frame' subroutine disappears — the router does the sequencing.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "415-420",
+    "vbsCode": "(section banner: PURPOSE — called at the end of the menu page onload to load the tree/next page, done to prevent timing problems from attempting to load all pages at once)",
+    "vbsExplanation": "A comment block (lines starting with a single quote are comments in VBScript). It documents WHY the routine exists: loading all frames simultaneously caused race/timing problems in the old Internet Explorer frameset, so each frame's onload deliberately chains to the next. This rationale is the exact thing the React port makes obsolete.",
+    "reactCode": "framework-handles — the 'load one frame at a time to avoid timing problems' workaround is eliminated by construction (shell-load.ts:160-162).",
+    "reactExplanation": "The timing problem only existed because independent frames loaded in parallel and stomped on shared globals. React Router runs parent-then-child loaders serially and deterministically, and shared state lives in one Zustand store (a single shared state object) instead of across frames — so the reason for the staggering no longer exists.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "421",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank line separating the comment banner from the executable body. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace with no behavior; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "422-423",
+    "vbsCode": " ' Utilities don't use exprired numbers\n If StrComp(Left(mstrNodeKey, 3), \"SYS\", 0) = 0 Then",
+    "vbsExplanation": "mstrNodeKey is a module-level string that identifies the target node in the navigation tree, formatted like \"POL|POL|<num>|\" for a policy or \"SYS|...\" for a system/utility screen. Left(mstrNodeKey,3) grabs the first three characters and StrComp(...,0) does a case-sensitive comparison that returns 0 when equal — so this tests 'is this a SYS (utilities) node?'. The comment explains the reason for the branch: utilities have no expired-transaction number, so they must NOT go through the policy path below that injects mstrExpiredNumber.",
+    "reactCode": "resolveShellMode(session.policyId) → 'utility' (shell-load.ts:60-66); the branch key is the nodeKey prefix carried in session.nodeKey (shell-load.ts:124).",
+    "reactExplanation": "The SYS-vs-policy fork is the same decision resolveShellMode makes from policyId: a non-positive/utility id yields mode 'utility' instead of 'policy'. resolveShellMode is a pure function (given a policyId string it returns an enum) that runs in the loader phase, so the shell already knows it is a utility screen before any load — there is no string-prefix test performed at load time.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "424",
+    "vbsCode": "  Call ExecuteAction(mstrAction, mstrNodeKey, 0, \"\")",
+    "vbsExplanation": "ExecuteAction is the app's universal 'navigate a frame to a page' routine, taking (action, nodeKey, target/frame-flag, querystring). For a SYS/utility node it fires immediately with the node's own key and the current action (mstrAction, e.g. \"INQUIRY\" or \"LIB\"), target 0 (the content frame), and an empty querystring. Because a utility is a single page, there is no tree step — the page loads directly.",
+    "reactCode": "framework-handles — the utility screen is loaded by its route loader (lobPageLoader) once resolveShellMode returns 'utility' and resolveInitialAction supplies the action (shell-load.ts:73-76, 116-117).",
+    "reactExplanation": "ExecuteAction's job — turn (action + nodeKey) into a page load — is exactly what a React Router loader does when the URL resolves to that utility route. The action string is pre-resolved by resolveInitialAction (Case -3 → \"LIB\", otherwise the session's action), and the router invokes the loader itself; there is no imperative ExecuteAction call.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "425",
+    "vbsCode": " Else",
+    "vbsExplanation": "Opens the non-utility (policy) branch of the If. Everything below handles a real policy window, where the tree must load before the first content page.",
+    "reactCode": "the 'policy' arm of resolveShellMode (id > 0 → 'policy', shell-load.ts:63).",
+    "reactExplanation": "This structural Else corresponds to resolveShellMode returning 'policy'. The policy path (menu + tree + page) is selected declaratively by the resolved ShellMode enum rather than by falling through an If/Else at load time.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "426",
+    "vbsCode": " Select Case UCase(Left(mstrNodeKey,7))",
+    "vbsExplanation": "Within the policy branch, take the first 7 characters of the nodeKey, upper-cased, to distinguish a top-level policy node (\"POL|POL\") from other policy sub-nodes. Select Case is VBScript's switch statement.",
+    "reactCode": "nodeKey-prefix routing; the POL prefix maps to the policy lob route. resolveShellMode already committed to 'policy'; the nested route lob/:lob/:pageId encodes the rest (shell-load.ts:114, 124).",
+    "reactExplanation": "The 7-character prefix switch is really a routing decision — 'which kind of policy view'. In React that is expressed by the URL/route params (:lob, :pageId), so the router, not a Select Case, dispatches to the correct loader. No runtime string-slicing switch remains.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "427",
+    "vbsCode": "   Case \"POL|POL\"",
+    "vbsExplanation": "Matches a top-level policy node — the one case that needs the special 'tree first, then page' ordering.",
+    "reactCode": "the parent shell route (\"/\") whose loader (shellLoad) runs before the child policy page loader — tree-first is parent-first loader order (shell-load.ts:157-160).",
+    "reactExplanation": "\"POL|POL\" is the case that says 'load the tree before the page'. That ordering is exactly React Router's parent-before-child loader execution, so this case selection is replaced by route nesting rather than a branch.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "428-429",
+    "vbsCode": "     ' This exception for policy windows loads the tree before loading the first page\n     Call ExecuteAction(\"TREE\", \"POL|POL|\" & mstrExpiredNumber & \"|\", -1, \"\")",
+    "vbsExplanation": "The comment states the exception: for policy windows the TREE frame must load first. The call navigates the tree frame — action \"TREE\", a nodeKey built by concatenating \"POL|POL|\" + mstrExpiredNumber (the policy's expired-transaction sequence number) + \"|\", target -1 (the tree frame), empty querystring. When this tree frame later finishes its OWN onload, it in turn calls LoadFirstPage — the next link in the serial chain.",
+    "reactCode": "framework-handles — the tree/parent data is loaded by the shell route loader shellLoad, which the router runs before the child page loader; nodeKey defaults to session.nodeKey ?? 'POL|POL|0|' (shell-load.ts:124, 157-160).",
+    "reactExplanation": "Loading the TREE first is the parent loader (shellLoad). The router guarantees the parent loader resolves before the child page loader runs, reproducing 'tree, then first page' without a manual ExecuteAction(\"TREE\") call and without the tree's onload having to call LoadFirstPage. The \"POL|POL|<expiredNumber>|\" nodeKey is the same value shellLoad reads from session.nodeKey.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "430-431",
+    "vbsCode": "   Case Else\n     Call ExecuteAction(mstrAction, \"POL|POL|\" & mstrExpiredNumber & \"|\", 0, \"\")",
+    "vbsExplanation": "For any other policy sub-node (not top-level \"POL|POL\"), skip the tree step and load the content page directly: the current action mstrAction, the same policy nodeKey, target 0 (the content frame), empty querystring.",
+    "reactCode": "framework-handles — the child page route loader (lobPageLoader) loads the content directly; action from resolveInitialAction, nodeKey from session (shell-load.ts:73-76, 124).",
+    "reactExplanation": "The 'no tree needed, load the page' case is just the child route's loader running with no extra parent work — the same lobPageLoader the router invokes. The action comes from resolveInitialAction and the nodeKey from the session, so no hand-built ExecuteAction call is needed.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "432",
+    "vbsCode": " End Select",
+    "vbsExplanation": "Closes the Select Case block opened on line 426. Purely syntactic.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "A structural block-closer with no runtime behavior; the switch it closes was itself replaced by routing, so there is nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "433",
+    "vbsCode": " End If",
+    "vbsExplanation": "Closes the If that began on line 423 (the SYS-vs-policy fork). Purely syntactic.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "A structural block-closer with no runtime behavior; the branch it closes became resolveShellMode, so nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "434",
+    "vbsCode": "End Sub",
+    "vbsExplanation": "Marks the end of the LoadNextPage subroutine.",
+    "reactCode": "framework-handles — the whole LoadNextPage sub is replaced by React Router's parent→child loader sequencing (shell-load.ts:157-162).",
+    "reactExplanation": "This closes the subroutine whose entire purpose (staggered menu→tree/page loading) is handled automatically by the router's ordered loader execution, so there is no equivalent function to end.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "435",
+    "vbsCode": "(section banner: '------ divider line)",
+    "vbsExplanation": "A comment made of dashes used as a visual divider between subroutines. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "A decorative comment separator with no behavior; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "436-437",
+    "vbsCode": "(blank lines)",
+    "vbsExplanation": "Two blank lines separating LoadNextPage from LoadFirstPage. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace with no behavior; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "438",
+    "vbsCode": "Sub LoadFirstPage",
+    "vbsExplanation": "Declares the second subroutine in the serial chain. LoadFirstPage is called at the END of the TREE frame's onload handler; it is the final link — after the tree has rendered, load the first CONTENT page the user should see.",
+    "reactCode": "framework-handles — the child route loader lobPageLoader, run after the shell loader by React Router (shell-load.ts:157-162).",
+    "reactExplanation": "'After the tree, load the first page' is precisely the child route loader running after the parent shell loader. The router sequences it automatically, so this subroutine — and the tree-onload call that triggers it — both disappear.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "439-443",
+    "vbsCode": "(section banner: called at the end of the tree page onload to load the first page shown to the user, done to prevent timing problems from loading all pages at once)",
+    "vbsExplanation": "A comment block documenting LoadFirstPage's role and the same rationale as before: load one page at a time to avoid the frameset timing problems that arose from loading everything simultaneously.",
+    "reactCode": "framework-handles — the serial 'one page at a time' workaround is eliminated by construction; ordered loaders replace it (shell-load.ts:160-162).",
+    "reactExplanation": "The timing problem the comment describes is an artifact of parallel frame loading over shared globals. React Router's deterministic parent-then-child loader order plus a single Zustand store removes the race entirely, so the staggering this comment justifies is unnecessary.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "444",
+    "vbsCode": "    On Error Resume Next",
+    "vbsExplanation": "VBScript's 'ignore runtime errors and continue with the next statement'. It shields the frame-load calls below so that a failure in one page load does not abort the whole bootstrap — a crude blanket error-suppression mechanism.",
+    "reactCode": "converted — the loader's try/catch boundary; shellLoad degrades instead of throwing (returns a safe 'search' shell when the session is missing) and router error boundaries catch loader throws (shell-load.ts:88-95).",
+    "reactExplanation": "The blanket error-swallow becomes a real boundary: shellLoad wraps its work so a missing or broken session degrades gracefully to a safe 'search' shell rather than crashing, and any loader that does throw is caught by React Router's errorElement (a component the router renders on failure). This is safer than 'Resume Next', which hid failures silently.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "445",
+    "vbsCode": "(blank line)",
+    "vbsExplanation": "A blank line inside the routine body. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace with no behavior; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "446",
+    "vbsCode": "    'load the first page based on current action",
+    "vbsExplanation": "A comment documenting the following line: which page is loaded depends on the current action string (mstrAction) — for example INQUIRY vs EDIT vs LIB.",
+    "reactCode": "converted — the action is resolved once by resolveInitialAction(session) and drives which page/loader runs (shell-load.ts:73-76, 117).",
+    "reactExplanation": "'Load based on current action' is captured by resolveInitialAction, a pure function returning the action string (Case -3 → \"LIB\", otherwise the session's action). The router then loads the matching page, so the comment's intent survives as that function.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "447",
+    "vbsCode": "    Call ExecuteAction(mstrAction, \"POL|POL|\" & mstrExpiredNumber & \"|\", 0, \"\")",
+    "vbsExplanation": "The actual first-page load: navigate the content frame (target 0) to the policy node \"POL|POL|<expiredNumber>|\" using the current action mstrAction, with an empty querystring. This is the page the user finally sees after the tree has rendered.",
+    "reactCode": "framework-handles — the child page route loader (lobPageLoader) loads the first content page; action from resolveInitialAction, nodeKey from session.nodeKey (shell-load.ts:73-76, 124, 157-160).",
+    "reactExplanation": "This is the same content-page load as LoadNextPage's Case Else, and it maps to the same thing: the nested route's loader firing after the shell loader. Because the action and nodeKey are pre-resolved in shellLoad, the router loads the first page with no explicit ExecuteAction call.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "448",
+    "vbsCode": "    Call TrapBrowserError(\"LoadFirstPage|1\")",
+    "vbsExplanation": "Paired with the On Error Resume Next above: TrapBrowserError inspects the Err object after the load and logs/handles any error, tagged \"LoadFirstPage|1\" to identify the call site. This is manual, per-call error-checkpoint plumbing.",
+    "reactCode": "framework-handles — loader errors propagate to React Router's errorElement/ErrorBoundary automatically (the loader try/catch boundary noted at shell-load.ts:88-90).",
+    "reactExplanation": "An error boundary is a component the router renders when a loader throws. Because the router catches loader failures centrally, the app no longer sprinkles manual TrapBrowserError checkpoints after each load — the checkpoint is automatic and centralized.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "449",
+    "vbsCode": "  If mstrPolicyID <> \"0\" Then",
+    "vbsExplanation": "mstrPolicyID is the current policy id as a string. '<> \"0\"' means a real policy is open (0 is the search page). This guards the umbrella-status call below so it only runs for actual policies.",
+    "reactCode": "converted — resolveShellMode(policyId) returns 'policy' only when id > 0 (and 'search' when id === 0); the same 'is a real policy open?' gate (shell-load.ts:60-65).",
+    "reactExplanation": "The 'is a real policy open' test is exactly resolveShellMode's id>0 → 'policy' vs id===0 → 'search' distinction. A component can gate the umbrella fetch on mode === 'policy' instead of re-testing the raw id string.",
+    "category": "converted"
+  },
+  {
+    "vbsLines": "450",
+    "vbsCode": "    window.setTimeout \"document.frames(\"\"menu\"\").FetchUmbrellaMappingStatus()\", 1000, \"vbscript\"",
+    "vbsExplanation": "Schedules, 1 second later, a call into the MENU frame's FetchUmbrellaMappingStatus method (which fetches whether this policy has umbrella / excess-liability coverage mappings). The 1000ms delay plus the cross-frame document.frames(\"menu\") reach are a timing hack — defer the fetch until the frames have settled. The trailing \"vbscript\" argument tells IE the deferred code string is VBScript, not JScript.",
+    "reactCode": "eliminated (as a timing hack) — the umbrella-mapping status becomes the policy page's own data fetch (a component effect / query), not a cross-frame setTimeout fired from the shell.",
+    "reactExplanation": "There are no frames to reach into and no need to wait a second for them to settle, so the setTimeout timing workaround is eliminated. The umbrella-status data would be fetched by the policy page component itself (e.g. a React Query call or its route loader) when it mounts; it is not part of the shell load routine, which is why shell-load.ts does not implement it.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "451",
+    "vbsCode": "  End If",
+    "vbsExplanation": "Closes the If that began on line 449 (the 'real policy?' guard). Purely syntactic.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "A structural block-closer with no runtime behavior; the guard it closes became the mode === 'policy' check, so nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "452",
+    "vbsCode": "End Sub",
+    "vbsExplanation": "Marks the end of the LoadFirstPage subroutine and thus the end of the menu→tree→first-page serial chain.",
+    "reactCode": "framework-handles — the whole LoadFirstPage sub is replaced by the router running the child page loader after the shell loader (shell-load.ts:157-162).",
+    "reactExplanation": "This closes the subroutine whose entire purpose (load the first content page after the tree) is handled automatically by React Router's ordered parent→child loader execution, so there is no equivalent function to end.",
+    "category": "framework-handles"
+  },
+  {
+    "vbsLines": "453",
+    "vbsCode": "(section banner: '------ divider line)",
+    "vbsExplanation": "A dashes-only comment used as a visual divider after the routine. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "A decorative comment separator with no behavior; nothing to convert.",
+    "category": "eliminated"
+  },
+  {
+    "vbsLines": "454",
+    "vbsCode": "(blank line — end of band)",
+    "vbsExplanation": "A trailing blank line closing out the band. No runtime effect.",
+    "reactCode": "— (eliminated)",
+    "reactExplanation": "Whitespace with no behavior; nothing to convert.",
+    "category": "eliminated"
+  }
+]

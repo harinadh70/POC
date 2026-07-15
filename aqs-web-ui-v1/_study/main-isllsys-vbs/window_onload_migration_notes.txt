@@ -1,0 +1,273 @@
+================================================================================================
+window_onload — migration notes
+Main_ISLLSYS_20010101.vbs  (the frameset shell)  ->  src/engine/load/shell-load.ts
+================================================================================================
+
+Main_ISLLSYS_20010101.vbs is the outer browser window that holds the AQS frameset - the menu
+bar, the navigation tree, and the content area. Its window_onload runs once when that window
+opens: it registers the window, works out the screen layout from the policy id, reads the user's
+permissions, and starts loading the frames. (This is the frameset-level window_onload, not the
+page-level one in Eebrowser.vbs.)
+
+In React the single routine splits in two: shellLoad() runs before the shell renders (a React
+Router loader), and useShellLoad() runs just after it renders (a React effect). It's wired into
+router.tsx and AppLayout.tsx, and it's already working in the POC. Below is how each part maps
+across, section by section.
+
+
+
+ 1. Getting into the routine, and the window references
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    Sub window_onload
+        On Error Resume Next
+    
+        AddWindowToCollection window
+    
+        ' resize window if resolution less than 1024 x 768
+        If screen.width < 1024 And screen.height < 768 Then
+            window.moveTo 0,0
+            window.resizeTo screen.availWidth, screen.availHeight
+        End If
+    
+        Set GlobalVars = New globalVarsClass
+        Set mobjAQSMain = window
+        Set mobjParentWindow = window.opener
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    export function shellLoad(session): ShellLoadResult {
+      performance.mark('shell-load:start');
+    
+      // a missing session degrades to the search shell
+      if (!session) return { mode:'search', isChildWindow:false,
+                             nodeKey:'POL|POL|0|', action:'INQUIRY' };
+    
+      const isChildWindow = window.opener != null;
+      ...
+    }
+    
+    // inside useShellLoad(), after render:
+    app.setVariable('shellMode', mode);   // = GlobalVars
+
+The routine starts with On Error Resume Next, which in VBScript means "if anything below fails,
+ignore it and keep going." I didn't carry that blanket suppression over. It hides real problems.
+Instead shellLoad guards the one failure that actually matters: no session means we fall back to
+a safe search shell and let the layout redirect to login.
+
+AddWindowToCollection registered the window in a global list so that logout could walk the list
+and close everything. That's a window-registry job, and in the POC it belongs to window-
+manager.ts, not the load routine, so I left it there.
+
+The 1024x768 resize is a leftover from the fixed-resolution frameset days. The MUI layout is
+responsive, so it's gone. GlobalVars became the shared appStore, mobjAQSMain (a pointer back to
+this window) isn't needed when there's a single component tree, and window.opener survives as a
+simple isChildWindow flag.
+
+
+
+ 2. Re-parenting child windows (the "replacement search page")
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    If mblnReplacementHomePage Then
+        arrKeys   = mobjParentWindow.mdicChildWindows.Keys
+        arrWindows = mobjParentWindow.mdicChildWindows.Items
+        For intCount = 0 To mobjParentWindow.mdicChildWindows.Count - 1
+            If StrComp(Left(arrKeys(intCount),6),"policy",1) = 0 Then
+                Call LoadWindowReferences(arrKeys(intCount), _
+                                          arrWindows(intCount))
+            End If
+        Next
+        ' ... then adopt each child, and repeat for non-policy windows
+        Set objWindow.mobjParentWindow = window
+    End If
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    // engine/window-manager.ts owns the open-window registry.
+    // The re-parenting is not part of the load routine in React.
+    
+    createWindowManager({ ... })   // reuse / focus / hand-off
+
+This block only fires in one odd situation: the user closed the search window while policy
+windows were still open, then clicked Home. The new window becomes the "replacement" search
+window and has to adopt the orphaned policy windows and tell each one it's the new parent.
+
+It's all multi-window bookkeeping over VBScript dictionaries, and none of it really belongs in a
+page-load routine. In the POC that responsibility sits in window-manager.ts, which keeps the
+registry of open windows. I didn't translate it line for line. The registry pattern replaces the
+manual key/item array juggling.
+
+
+
+ 3. The little error-cleanup guard
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    If Err.number <> 0 Then
+        Err.clear
+        Set mobjParentWindow = Nothing
+    End If
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    // nothing to port — isChildWindow can't half-fail
+    const isChildWindow = window.opener != null;
+
+This cleans up after the block above: if reading window.opener threw, it clears the error and
+nulls the parent reference so later code sees "no parent" instead of a half-set object. There's
+no global Err to inspect in the React version, and window.opener != null can't fail halfway, so
+there's nothing left to clean up.
+
+
+
+ 4. Choosing the layout from the policy id  (the important bit)
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    document.body.setAttribute "policyid", mstrPolicyID
+    
+    If CLng(mstrPolicyID) > 0 Then
+        fraHorizontal.rows = "46,*"      ' policy: menu + tree
+        fraTreeColumn.rows = "90,*"
+    ElseIf CLng(mstrPolicyID) = 0 Then
+        mblnSearchPage = True            ' search page
+    Else
+        mblnSearchPage = True            ' utility: dropdown only
+        fraHorizontal.rows = "23,*"
+        fraVertical.cols  = "0,*"
+    End If
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    export function resolveShellMode(policyId?): ShellMode {
+      const id = Number.parseInt(policyId ?? '', 10);
+      if (Number.isNaN(id)) return 'utility';
+      if (id > 0)   return 'policy';   // menu + tree
+      if (id === 0) return 'search';   // search page
+      return 'utility';                // dropdown only
+    }
+
+This is the heart of the routine. The entire screen layout comes from one number. A positive
+policy id is a live policy, so it shows the menu and the tree; zero is the search page; a
+negative id is a utility screen with just the dropdown. The old code says that by writing frame
+row and column pixel sizes.
+
+I kept the decision and dropped the pixels. resolveShellMode returns 'policy', 'search', or
+'utility', and the shell renders its layout from that. Same three-way branch, none of the frame
+arithmetic.
+
+
+
+ 5. Initial action, and the security data island
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    Select Case CLng(mstrPolicyID)
+        Case -3
+            mstrAction = "LIB"
+    End Select
+    
+    Set mxmlSecurity = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlSecurity.async = False
+    mxmlSecurity.loadXML(document.all("xdiSecurity").XMLDocument.xml)
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    export function resolveInitialAction(session): string {
+      if (Number.parseInt(session.policyId ?? '', 10) === -3)
+        return 'LIB';
+      return session.action ?? 'INQUIRY';
+    }
+    
+    // permissions arrive as JSON at login and live in authStore
+    // — no <xml id="xdiSecurity"> to parse at boot
+
+Policy id -3 is the library/utilities entry point, so the action is forced to "LIB".
+resolveInitialAction makes the same check and otherwise keeps whatever action the session came
+in with.
+
+After that the routine parses an <xml id="xdiSecurity"> block embedded in the page with MSXML to
+read the user's permissions. We don't ship an inline XML island. Permissions come back as JSON
+at login and sit in authStore, so there's nothing to parse when the shell boots.
+
+
+
+ 6. Kicking off the load, and clearing a stale flag
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    Call ExecuteAction("menu", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+    ' After the menu page loads, it calls the LoadNextPage routine
+    
+    Call SessionXML_ClearItem("ratingdatachanged")
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    // React Router runs the shell route's loader, then the
+    // child page route's loader, in order — see section 7.
+    
+    app.setVariable('ratingdatachanged', undefined);
+
+The routine loads only the menu frame here, then stops. When the menu finishes loading, its own
+onload calls LoadNextPage, which loads the tree, whose onload calls LoadFirstPage. That's the
+chain, and section 7 covers how it goes away.
+
+The last real statement clears a stale "rating data changed" flag left over from a previous
+transaction. In the effect that's just app.setVariable('ratingdatachanged', undefined).
+
+
+
+ 7. The serial load chain — LoadNextPage / LoadFirstPage
+
+
+--- Legacy VBScript ----------------------------------------------------------------------------
+    Sub LoadNextPage()
+      If StrComp(Left(mstrNodeKey,3),"SYS",0) = 0 Then
+        Call ExecuteAction(mstrAction, mstrNodeKey, 0, "")
+      Else
+        Select Case UCase(Left(mstrNodeKey,7))
+          Case "POL|POL"      ' policy: load the TREE first
+            Call ExecuteAction("TREE", "POL|POL|" & _
+                                mstrExpiredNumber & "|", -1, "")
+          Case Else
+            Call ExecuteAction(mstrAction, "POL|POL|" & _
+                                mstrExpiredNumber & "|", 0, "")
+        End Select
+      End If
+    End Sub
+    
+    Sub LoadFirstPage
+      Call ExecuteAction(mstrAction, "POL|POL|" & _
+                         mstrExpiredNumber & "|", 0, "")
+    End Sub
+
+--- React POC · shell-load.ts ------------------------------------------------------------------
+    // router.tsx — parent loader runs before child loader,
+    // automatically and in order:
+    { path: '/', element: <AppLayout/>, loader: shellLoader,
+      children: [
+        { path: 'lob/:lob/:pageId',
+          element: <LobPage/>, loader: lobPageLoader },
+      ]
+    }
+    // shell (menu/tree) resolves, THEN the page. No chain to write.
+
+These two subroutines are the entire reason the load is staggered. The source comment says it
+outright: loading all the frames at once caused timing problems, so each frame's onload triggers
+the next one. Menu loads the tree, tree loads the first page.
+
+This is the part that just disappears in React. Router loaders already run parent-before-child,
+in order, on their own. The shell route's loader runs first, then the page route's loader, so we
+get "tree, then page" without writing anything. There's no chain to maintain and no race to
+design around. Honestly it's the cleanest win in the whole file.
+
+
+ Where this leaves us
+
+
+For the POC, window_onload is fully handled - every part is either rewritten in shell-load.ts,
+moved to a file that already owns it (the window registry, authStore), or dropped because a
+single-page app doesn't need it. Nothing here is left as a to-do.
+
+The one thing I deliberately left out is the umbrella-status fetch (the setTimeout near the end
+of LoadFirstPage). That's really the policy page's data, not the shell's, so it should load with
+the page rather than the frameset. The other remaining work - pointing the app at the real .NET
+APIs instead of the mock backend - is a whole-app task and isn't specific to this routine.
+
