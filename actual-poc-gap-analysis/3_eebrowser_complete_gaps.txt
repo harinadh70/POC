@@ -1,0 +1,315 @@
+================================================================================
+3. EEBROWSER.VBS COMPLETE — GAP ANALYSIS (all 32 routines vs actual POC)
+================================================================================
+VBS file: Eebrowser.vbs (~1,235 lines, 32 routines)
+Actual POC: aqs-web-ui (hitanshu/experimental branch)
+
+Eebrowser.vbs is the PER-PAGE CONTROLLER — it runs inside every content frame.
+Many of its routines are thin delegation stubs that call through mobjAQSMain
+to Main_ISLLSYS routines. The actual work happens in Main_ISLLSYS; Eebrowser
+wires page-level events to the shell's dispatcher.
+
+Legend:  DONE     = implemented in actual POC
+        PARTIAL  = concept exists but incomplete
+        GAP      = not implemented
+        N/A      = not needed in SPA
+
+KEY INSIGHT: Eebrowser has two kinds of routines:
+  A) Delegation stubs (call mobjAQSMain.XXX) — these are N/A because the
+     SPA calls handlers directly, no cross-frame delegation needed.
+  B) Real logic (CallServer, window_onload, etc.) — these need mapping.
+
+
+================================================================================
+PAGE INITIALIZATION (Lines 119-399)
+================================================================================
+
+#1  window_onload (Sub, 3 lines)
+    PURPOSE: Entry point, delegates to second_window_onload
+    STATUS: N/A
+    REASON: VBScript error-scoping trick. React has ErrorBoundary.
+
+#2  second_window_onload (Sub, ~280 lines)
+    PURPOSE: Full page init — see "1_eebrowser_window_onload_gaps.txt"
+    STATUS: PARTIAL (7 gaps identified in that file)
+    POC FILES: loader.ts, static-renderer.tsx, dynamic-renderer.tsx,
+              session-store.ts, global-vars-store.ts, browser-cmd-store.ts
+    REMAINING GAPS:
+      - Data-changed flag init by action (Small)
+      - ShowNextOnEdit two-arm logic (Medium)
+      - Path label / breadcrumb build (Medium)
+      - Tab selection from session (Small)
+      - Cancel focus on tab switch (Tiny)
+      - Force tab click handler (Small)
+      - Menu timing update (Small)
+
+
+================================================================================
+EVENT DELEGATION HANDLERS (Lines 404-450)
+================================================================================
+
+#3  OnFocusHandler (Sub)
+    PURPOSE: If page loaded AND not closing, delegate to mobjAQSMain.OnFocusHandler,
+             then call SelectControlText
+    STATUS: DONE
+    POC FILES: src/hooks/use-command-handlers.ts (85 lines)
+             + src/stores/focus-store.ts (26 lines)
+    HOW: React onFocus events on form fields. No cross-frame delegation.
+         focus-store tracks current focused field.
+    GAP: SelectControlText (auto-select text on focus) — see #29
+
+#4  DateOnFocusHandler (Sub)
+    PURPOSE: EOLA ActiveX patch — extract srcElement.id, call OnFocusHandler
+    STATUS: N/A
+    REASON: ActiveX date controls replaced by MUI DatePicker.
+            React handles focus events natively.
+
+#5  GetRefOnFocusHandler (Function)
+    PURPOSE: VBScript function pointer for late-binding events
+    STATUS: N/A
+    REASON: VBScript-specific. React uses JSX event props.
+
+#6  DateOnKeyUpHandler (Sub)
+    PURPOSE: EOLA patch — extract srcElement.id, call OnKeyUpHandler
+    STATUS: N/A
+    REASON: ActiveX date controls replaced. React handles keyUp natively.
+
+#7  GetRefDateOnFocusHandler (Function)
+    PURPOSE: Function pointer wrapper
+    STATUS: N/A
+
+#8  GetRefDateOnKeyUpHandler (Function)
+    PURPOSE: Function pointer wrapper
+    STATUS: N/A
+
+
+================================================================================
+SERVER CALL CONFIGURATION (Lines 452-523)
+================================================================================
+
+#9  FillCallArray2 (Sub)
+    PURPOSE: Queries XML data island for pre/post-process subroutine calls
+             per matchcode. Builds marrServerCalls() 2D array.
+    STATUS: DONE (differently)
+    POC FILE: src/utils/form-action-executor.ts (244 lines)
+    HOW: ActionBinding[] in the JSON schema define per-field server calls.
+         executeFormActionBindings dispatches by type ('server-ee', 'custom',
+         'builtin', 'navigate'). No XML XPath queries.
+
+
+================================================================================
+XML CONVERSION UTILITIES (Lines 525-651)
+================================================================================
+
+#10 convertArrayToXML (Sub)
+    PURPOSE: Converts 1D VBScript array to XML string for server transport
+    STATUS: N/A
+    REASON: API uses JSON. No XML serialization needed.
+
+#11 convertXMLToArray (Sub)
+    PURPOSE: Parses XML response back into VBScript array
+    STATUS: N/A
+    REASON: API returns JSON. Zod schemas validate responses.
+
+#12 convertBrowserXMLTo2DArray (Sub)
+    PURPOSE: Parses BrowserCommands XML into 2D array
+    STATUS: N/A
+    REASON: Browser commands arrive as JSON array from API.
+            browser-cmd-store.ts queues them directly.
+
+#13 EscapeForHTTPTrip (Function)
+    PURPOSE: XML-entity-encode special characters for HTTP transport
+    STATUS: N/A
+    REASON: JSON.stringify handles encoding. Axios handles HTTP.
+
+#14 UnEscapeFromHTTPTrip (Function)
+    PURPOSE: Reverse XML entity decoding
+    STATUS: N/A
+    REASON: JSON.parse handles decoding.
+
+
+================================================================================
+CORE SERVER COMMUNICATION (Lines 654-857)
+================================================================================
+
+#15 CallServer (Sub, ~203 lines)
+    PURPOSE: THE HEART OF EEBROWSER. Builds XML payload from
+             marrSessionInformation + marrEEData + marrServerCallXML,
+             POSTs synchronously via MSXML2.XMLHTTP to xmlservercall.asp,
+             parses response, extracts ListItems and BrowserCommands,
+             delegates to mobjAQSMain.ExecuteBrowserCommands.
+    STATUS: DONE
+    POC FILES: src/services/page-data.ts (95 lines) — the data exchange
+             + src/utils/http-instance.ts (219 lines) — axios instance
+             + src/handlers/common/payload.ts (282 lines) — builds EEData
+             + src/handlers/common/command.ts (274 lines) — processes commands
+    HOW: page-data service POSTs JSON to /ui/page/data. Response contains
+         sessionInformation, eeData, listItems, browserCtl (commands).
+         Axios handles HTTP. handlerForBrowserCommands dispatches commands.
+    GAP: None — this is the most complete part of the POC.
+
+
+================================================================================
+BUTTON/NAV/CHECKBOX CLICK HANDLERS (Lines 870-1068)
+================================================================================
+
+#16 NavButtonOnClick (Sub)
+    PURPOSE: Sets mblnNavButtonClicked=True, delegates to mobjAQSMain.NavButtonOnClick
+    STATUS: DONE
+    POC FILE: src/handlers/common/payload.ts
+    HOW: handlerForButtonOnClick handles OK/NEXT/CANCEL/BACK button actions.
+         Builds EE payload and calls page-data service.
+
+#17 ButtonOnClickHandler (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.ButtonOnClickHandler
+    STATUS: DONE
+    POC FILE: src/utils/form-action-executor.ts
+    HOW: executeFormActionBindings dispatches button click bindings.
+         Handler registry allows per-page overrides.
+
+#18 CalendarButtonOnClick (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.CalendarButtonOnClick
+    STATUS: DONE
+    POC FILE: src/components/ui/date.tsx (81 lines)
+    HOW: MUI DatePicker replaces calendar button + modal dialog.
+         No delegation needed — picker is inline.
+
+#19 InfoButtonOnClick (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.InfoButtonOnClick
+    STATUS: *** GAP ***
+    WHAT: Opens an info/lookup popup for a field.
+    POC COVERAGE: The handler registry pattern supports this
+                  (handlers/common/shared.ts has openAddressSearch, etc.)
+                  but no generic InfoButtonOnClick handler exists.
+    EFFORT: Medium (per-page handlers need info button wiring)
+
+#20 NoteButtonOnClick (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.NoteButtonOnClick
+    STATUS: *** GAP ***
+    WHAT: Opens a note attachment dialog for a field.
+    EFFORT: Medium (needs modal + note service)
+
+#21 ListButtonOnClick (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.ListButtonOnClick
+    STATUS: PARTIAL
+    POC FILE: src/handlers/common/payload.ts
+    HOW: handlerForListButtonOnClick handles SELECT/DELETE/REFRESH.
+         But not all list-button scenarios are wired.
+
+#22 ListButtonClick (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.ListButtonClick (item click vs button click)
+    STATUS: PARTIAL (same as #21)
+
+#23 OnCheckBoxClick (Sub)
+    PURPOSE: Fills marrEEData slots and calls CallServer directly
+    STATUS: DONE
+    POC FILE: src/handlers/common/payload.ts
+    HOW: handlerForEEData builds the 13-element EEData array.
+         Checkbox click triggers server-ee binding in form-action-executor.
+
+#24 OnTabClickHandler (Sub)
+    PURPOSE: Thin stub → mobjAQSMain.OnTabClickHandler
+    STATUS: DONE
+    POC FILE: src/layouts/tab-layout.tsx (42 lines)
+    HOW: MUI Tabs onChange handler. Handler registry allows per-page
+         tab click hooks.
+
+#25 EnableButtonOnSelection (Sub)
+    PURPOSE: Enable/disable button based on combo box selection
+    STATUS: *** GAP ***
+    WHAT: When combo listIndex > 0, enable a related button.
+    EFFORT: Small (can be a derived-fields dependency rule)
+
+
+================================================================================
+PAGE LIFECYCLE (Lines 1084-1133)
+================================================================================
+
+#26 Window_OnBeforeUnload (Sub)
+    PURPOSE: If modal + dirty + no nav click: send CANCEL to roll back
+             server state. Null all frame refs to prevent IE memory leaks.
+             Call PageUniqueRoutine("local_before_window_unload").
+    STATUS: PARTIAL
+    POC FILES: src/hooks/use-unmount.ts (32 lines)
+    GAP: CANCEL rollback on dirty modal close is NOT implemented.
+         The POC nullifies refs (not needed in SPA), but doesn't send
+         a CANCEL server call when a dirty modal is abandoned.
+    EFFORT: Medium (needs dirty-check + CANCEL service call in modal close)
+
+#27 Window_OnUnload (Sub)
+    PURPOSE: Minimal cleanup — TrapBrowserError logging
+    STATUS: N/A
+    REASON: React component unmount handles cleanup. use-unmount hook.
+
+
+================================================================================
+HELPERS (Lines 1136-1235)
+================================================================================
+
+#28 PageUniqueRoutine (Sub)
+    PURPOSE: VBScript Execute (eval) to run page-specific scripts
+             like "local_window_onload", "local_before_window_unload"
+    STATUS: DONE (differently)
+    POC FILE: src/features/frame/hooks/use-register-handlers.ts (27 lines)
+    HOW: Handler registry replaces VBScript eval. Per-page handler files
+         export named functions. use-register-handlers mounts/unmounts them.
+         Lifecycle hooks (onMount, onUpdate, onUnmount) in static-renderer.
+
+#29 SelectControlText (Sub, 52 lines)
+    PURPOSE: Select text on focus — switch on control tagName
+             (INPUT/TEXTAREA/COMBO/SELECT/OBJECT etc.)
+    STATUS: *** GAP ***
+    WHAT: When a text field receives focus, auto-select its content.
+          Also handles inf/cal ID prefix redirection to dta-prefixed dates.
+    EFFORT: Small (15-20 lines — onFocus handler on text/textarea components)
+
+#30 ReDimBrowserArray (Sub)
+    PURPOSE: Resize fixed-size VBScript arrays
+    STATUS: N/A
+    REASON: JavaScript arrays are dynamic. No resize needed.
+
+#31 ShowUserMessage (Function)
+    PURPOSE: Creates UserMessage ActiveX object, shows modal dialog,
+             returns user's button choice (blocking)
+    STATUS: DONE
+    POC FILE: src/stores/modal-store.ts (86 lines)
+             + src/components/dialog/dialog.tsx (58 lines)
+    HOW: DISPLAY_MESSAGE/DISPLAY_ERROR/DISPLAY_QUESTION browser commands
+         open MUI Dialog via modal-store. User response stored as returnValue.
+
+#32 GetControlXML (Function, inferred)
+    PURPOSE: Extract a control's XML definition from mxmlDoc data island
+    STATUS: N/A
+    REASON: Control definitions come from JSON schema, not XML extraction.
+
+
+================================================================================
+SUMMARY: COMPLETE EEBROWSER.VBS GAPS
+================================================================================
+
+STATUS        COUNT  ROUTINES
+-----------  ------  --------
+DONE           13    #2(partial), #3, #9, #15, #16, #17, #18, #23, #24, #28, #31
+PARTIAL         4    #2, #21, #22, #26
+GAP             5    #19, #20, #25, #29, #2(sub-gaps)
+N/A            14    #1, #4-8, #10-14, #27, #30, #32
+
+DETAILED GAP LIST:
+
+GAP                              EFFORT    WHAT TO BUILD
+--------------------------------+----------+-----------------------------------
+Data-changed flag init           Small      Set dirty flag by action in onMount
+ShowNextOnEdit two-arm           Medium     Handler utility for NEXT button
+Path label / breadcrumb          Medium     New component + path builder
+Tab selection from session       Small      Wire session tab to tab-layout
+Cancel focus on tab switch       Tiny       3 lines in tab-layout
+Force tab click handler          Small      Handler registry call
+Menu timing update               Small      Wire perf data to header
+InfoButtonOnClick                Medium     Info/lookup modal per page
+NoteButtonOnClick                Medium     Note attachment modal + service
+EnableButtonOnSelection          Small      Derived field dependency rule
+CANCEL on dirty modal close      Medium     Dirty check + CANCEL service
+SelectControlText                Small      Auto-select text on focus
+ListButton full wiring           Small      Complete list button scenarios
+
+TOTAL: ~400-500 lines of new code across ~8 files

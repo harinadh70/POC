@@ -1,0 +1,262 @@
+================================================================================
+2. MAIN_ISLLSYS window_onload — GAP ANALYSIS (what's left to implement)
+================================================================================
+VBS file: Main_ISLLSYS_20010101.vbs, Sub window_onload (lines 216-410)
+        + Sub LoadNextPage (lines 414-434)
+        + Sub LoadFirstPage (lines 438-452)
+Actual POC: aqs-web-ui (hitanshu/experimental branch)
+
+This is the SHELL/FRAMESET controller. Its window_onload runs ONCE when the
+application opens — it sets up the entire layout, loads security, and kicks
+off the serial menu→tree→page load chain.
+
+Legend:  DONE     = implemented in actual POC
+        PARTIAL  = concept exists but logic incomplete
+        GAP      = not implemented, needs to be built
+        N/A      = not needed in SPA
+
+
+================================================================================
+VBS LINES 216-241: ON ERROR + WINDOW REGISTER + SCREEN RESIZE
+================================================================================
+
+    Sub window_onload
+        On Error Resume Next
+        AddWindowToCollection window
+        If screen.width < 1024 And screen.height < 768 Then
+            window.moveTo 0,0
+            window.resizeTo screen.availWidth, screen.availHeight
+        End If
+
+    On Error Resume Next:
+        STATUS: DONE
+        POC FILE: src/app.tsx (ErrorBoundary wraps entire app)
+
+    AddWindowToCollection:
+        STATUS: N/A
+        REASON: SPA — single window, no window collection needed.
+
+    Screen resize < 1024x768:
+        STATUS: N/A
+        REASON: MUI responsive layout. No fixed-resolution resize.
+
+
+================================================================================
+VBS LINES 243-250: GLOBAL VARS + WINDOW REFERENCES
+================================================================================
+
+    Set GlobalVars = New globalVarsClass
+    Set mobjAQSMain = window
+    Set mobjParentWindow = window.opener
+
+    GlobalVars:
+        STATUS: DONE
+        POC FILE: src/stores/global-vars-store.ts (97 lines)
+        HOW: Zustand store with all 7 flags + cascade logic.
+
+    mobjAQSMain / mobjParentWindow:
+        STATUS: N/A
+        REASON: SPA — single component tree, no frame references.
+
+
+================================================================================
+VBS LINES 252-317: REPLACEMENT SEARCH PAGE — RE-PARENT CHILD WINDOWS
+================================================================================
+
+    If mblnReplacementHomePage Then
+        arrKeys = mobjParentWindow.mdicChildWindows.Keys
+        For intCount = 0 To Count - 1
+            If Left(arrKeys(intCount),6) = "policy" Then
+                Call LoadWindowReferences(arrKeys(intCount), arrWindows(intCount))
+            End If
+        Next
+        ' Re-parent policy windows
+        ' Re-parent non-policy windows
+    End If
+
+STATUS: N/A
+REASON: SPA — no child windows to orphan or re-parent.
+        Cross-tab sync handled by window-storage.ts (266 lines) if needed.
+
+
+================================================================================
+VBS LINES 322-331: ERROR CLEANUP GUARD
+================================================================================
+
+    If Err.number <> 0 Then
+        Err.clear
+        Set mobjParentWindow = Nothing
+    End If
+
+STATUS: N/A
+REASON: VBScript error cleanup for window.opener access. No equivalent
+        needed — ErrorBoundary catches application errors.
+
+
+================================================================================
+VBS LINES 333-372: CHOOSE LAYOUT FROM POLICY ID (core logic)
+================================================================================
+
+    document.body.setAttribute "policyid", mstrPolicyID
+
+    If CLng(mstrPolicyID) > 0 Then
+        fraHorizontal.rows = "46,*"       ' policy: show menu + tree
+        fraTreeColumn.rows = "90,*"
+    ElseIf CLng(mstrPolicyID) = 0 Then
+        mblnSearchPage = True             ' search page
+    Else
+        mblnSearchPage = True             ' utility: dropdown only
+        fraHorizontal.rows = "23,*"
+        fraVertical.cols = "0,*"
+    End If
+
+STATUS: DONE
+POC FILES: src/routes/routes.tsx (110 lines) — route tree IS the layout
+         + src/utils/data-strategy.ts (104 lines) — cycling drives routing
+         + src/stores/session-store.ts (152 lines) — policyId stored
+
+HOW: The three-way branch (policy/search/utility) is expressed as the
+     route tree itself:
+     /static/system/str-piphsys-20010101 → search page (policyId=0)
+     /static/pol/pol-piphpol-20150801    → policy page (policyId>0)
+     /dynamic/:folder/:asp              → dynamic pages
+
+     Frame row/column sizing → MUI layout (Header + Sidebar + Content).
+     The policyId drives navigation via cycling API → fileResolver → route.
+
+
+================================================================================
+VBS LINES 377-383: INITIAL ACTION (Case -3 = "LIB")
+================================================================================
+
+    Select Case CLng(mstrPolicyID)
+        Case -3
+            mstrAction = "LIB"
+    End Select
+
+STATUS: DONE
+POC: Server-driven. When cycling API receives policyId=-3, it returns
+     action="LIB" in the response. Client stores it in session-store.
+     No client-side hardcoding needed.
+
+
+================================================================================
+VBS LINES 387-395: SECURITY DATA ISLAND
+================================================================================
+
+    Set mxmlSecurity = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlSecurity.loadXML(document.all("xdiSecurity").XMLDocument.xml)
+
+STATUS: DONE
+POC FILES: src/stores/auth-store.ts (67 lines)
+         + src/services/auth.ts (123 lines)
+HOW: Login API returns permissions as JSON. Stored in auth-store.
+     No inline XML data island, no MSXML parsing.
+
+
+================================================================================
+VBS LINES 397-401: KICK OFF MENU LOAD
+================================================================================
+
+    Call ExecuteAction("menu", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+
+STATUS: DONE
+POC FILES: src/resources/menu.tsx (93 lines) — /menu action route
+         + src/utils/data-strategy.ts (104 lines) — orchestrates load
+HOW: React Router route tree has /menu as an action route.
+     dataStrategy runs executeAction before route loaders.
+     Menu data loaded into menu-store via clientMenuAction.
+
+
+================================================================================
+VBS LINES 406-408: CLEAR STALE ratingdatachanged
+================================================================================
+
+    Call SessionXML_ClearItem("ratingdatachanged")
+
+STATUS: DONE
+POC FILE: src/stores/global-vars-store.ts
+HOW: GlobalVarsStoreApi.getState().actions.setRatingDataChanged(false)
+     Called during navigation reset.
+
+
+================================================================================
+VBS LINES 414-434: LoadNextPage
+================================================================================
+
+    Sub LoadNextPage()
+        If Left(mstrNodeKey,3) = "SYS" Then
+            Call ExecuteAction(mstrAction, mstrNodeKey, 0, "")
+        Else
+            Select Case Left(mstrNodeKey,7)
+                Case "POL|POL"
+                    Call ExecuteAction("TREE", "POL|POL|" & mstrExpiredNumber, -1, "")
+                Case Else
+                    Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber, 0, "")
+            End Select
+        End If
+    End Sub
+
+STATUS: DONE (framework handles)
+POC FILE: src/routes/routes.tsx + src/utils/data-strategy.ts
+HOW: React Router runs parent→child loaders in order. The serial chain
+     (menu.onload → LoadNextPage → tree.onload → LoadFirstPage) is
+     IMPLICIT in the route tree. dataStrategy interleaves cycling.
+     The SYS/POL|POL branch logic is in data-strategy.ts's
+     shouldCallCycling + getActionMenuFrameName.
+
+
+================================================================================
+VBS LINES 438-452: LoadFirstPage
+================================================================================
+
+    Sub LoadFirstPage
+        Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber, 0, "")
+        If mstrPolicyID <> "0" Then
+            window.setTimeout "FetchUmbrellaMappingStatus()", 1000
+        End If
+    End Sub
+
+    ExecuteAction for first page:
+        STATUS: DONE (framework handles — see LoadNextPage above)
+
+    FetchUmbrellaMappingStatus:
+        STATUS: *** GAP ***
+        WHAT: 1 second after first page loads, polls menu frame for
+              umbrella mapping status. This is a policy-specific check.
+        EFFORT: Small (service call + conditional in page handler)
+        NOTE: Low priority — can be deferred to policy-page implementation.
+
+
+================================================================================
+SUMMARY: MAIN_ISLLSYS window_onload GAPS
+================================================================================
+
+SECTION                              STATUS     EFFORT    NOTES
+------------------------------------+----------+---------+------------------------
+On Error Resume Next                 DONE       -         ErrorBoundary
+AddWindowToCollection                N/A        -         SPA
+Screen resize                        N/A        -         MUI responsive
+GlobalVars = New globalVarsClass     DONE       -         global-vars-store.ts
+mobjAQSMain = window                 N/A        -         SPA
+mobjParentWindow = window.opener     N/A        -         SPA
+Replacement search re-parenting      N/A        -         SPA
+Error cleanup guard                  N/A        -         No window.opener
+Layout from policyId (3-way)         DONE       -         Route tree + cycling
+Case -3 → action = "LIB"            DONE       -         Server-driven
+Security data island                 DONE       -         auth-store + auth.ts
+ExecuteAction("menu", ...)           DONE       -         /menu action route
+Clear ratingdatachanged              DONE       -         global-vars-store
+LoadNextPage serial chain            DONE       -         React Router ordering
+LoadFirstPage                        DONE       -         React Router ordering
+FetchUmbrellaMappingStatus           *** GAP ** Small     Policy-specific check
+
+DONE:       10 sections
+N/A:         5 sections (SPA/framework handles)
+GAP:         1 section
+
+TOTAL ESTIMATED EFFORT: ~20-30 lines (just the umbrella status check)
+
+VERDICT: Main_ISLLSYS window_onload is essentially COMPLETE in the actual POC.
+The only gap is FetchUmbrellaMappingStatus, which is a low-priority
+policy-specific feature that can be added when the policy page is fully wired.

@@ -1,0 +1,358 @@
+================================================================================
+Main_ISLLSYS_20010101.vbs window_onload  →  ACTUAL POC (aqs-web-ui)
+================================================================================
+
+This analysis maps every section of the shell-level window_onload in
+Main_ISLLSYS_20010101.vbs (lines 216–410) to the ACTUAL team-built POC
+codebase. This is the TOP-LEVEL FRAMESET ORCHESTRATOR — the outer browser
+window that hosts the menu bar, navigation tree, and content area.
+
+In the actual POC, this maps to the ROOT route and its infrastructure:
+routes.tsx, root loader, root middleware, RootLayout, dataStrategy, and the
+navigation store.
+
+
+################################################################################
+1. GETTING INTO THE ROUTINE + WINDOW REFERENCES
+################################################################################
+
+--- Legacy VBScript (Main_ISLLSYS lines 216-250) ------------------------------
+    Sub window_onload
+        On Error Resume Next
+        AddWindowToCollection window
+        If screen.width < 1024 And screen.height < 768 Then
+            window.moveTo 0,0
+            window.resizeTo screen.availWidth, screen.availHeight
+        End If
+        Set GlobalVars = New globalVarsClass
+        Set mobjAQSMain = window
+        Set mobjParentWindow = window.opener
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/main.tsx (entry point + frameHandlerRegistry)
+         + src/stores/global-vars-store.ts (GlobalVars equivalent)
+         + src/routes/routes.tsx (root route definition)
+
+    main.tsx is the application entry point:
+        - Creates FrameHandlerRegistry on window (the global handler system)
+        - Renders <App /> which wires ErrorBoundary + ThemeProvider + RouterProvider
+
+    GlobalVars = New globalVarsClass → useGlobalVarsStore (Zustand)
+        The store is created at module load time — always available.
+        Contains: policyRated, documentsSelected, documentsComplete, sumMsgChg,
+        clientIssueAllowed, dataChanged, ratingDataChanged.
+        Preserves the Property Let cascade logic from the VBScript class.
+
+    AddWindowToCollection → not needed (SPA, single window)
+    screen.width < 1024 resize → not needed (responsive MUI layout)
+    mobjAQSMain = window → not needed (single component tree)
+    mobjParentWindow = window.opener → not needed (no multi-window)
+
+
+################################################################################
+2. RE-PARENTING CHILD WINDOWS ("replacement search page")
+################################################################################
+
+--- Legacy VBScript (lines 252-320) -------------------------------------------
+    If mblnReplacementHomePage Then
+        arrKeys = mobjParentWindow.mdicChildWindows.Keys
+        arrWindows = mobjParentWindow.mdicChildWindows.Items
+        For intCount = 0 To mobjParentWindow.mdicChildWindows.Count - 1
+            If StrComp(Left(arrKeys(intCount),6),"policy",1) = 0 Then
+                Call LoadWindowReferences(arrKeys(intCount), arrWindows(intCount))
+            End If
+        Next
+        Set objWindow.mobjParentWindow = window
+    End If
+
+--- Actual POC -----------------------------------------------------------------
+    NOT IMPLEMENTED — and correctly so.
+
+    The actual POC is a single-page application. There are no child windows to
+    orphan or re-parent. The multi-window bookkeeping (mdicChildWindows, policy
+    windows, replacement search page) is a legacy IE pattern that does not apply.
+
+    The actual POC handles "open in new window" via window-storage.ts (266 lines)
+    which provides cross-tab state synchronization, but not the legacy
+    re-parenting pattern.
+
+    STATUS: ELIMINATED (correct decision)
+
+
+################################################################################
+3. THE ERROR-CLEANUP GUARD
+################################################################################
+
+--- Legacy VBScript (lines 321-325) -------------------------------------------
+    If Err.number <> 0 Then
+        Err.clear
+        Set mobjParentWindow = Nothing
+    End If
+
+--- Actual POC -----------------------------------------------------------------
+    NOT NEEDED.
+
+    This was cleanup for window.opener access failures. In the SPA there is no
+    window.opener to fail on. Error boundaries (app.tsx ErrorBoundary) handle
+    catastrophic errors at the application level.
+
+    STATUS: ELIMINATED (correct decision)
+
+
+################################################################################
+4. CHOOSING THE LAYOUT FROM THE POLICY ID  (the core logic)
+################################################################################
+
+--- Legacy VBScript (lines 335-372) -------------------------------------------
+    document.body.setAttribute "policyid", mstrPolicyID
+    If CLng(mstrPolicyID) > 0 Then
+        fraHorizontal.rows = "46,*"      ' policy: menu + tree
+        fraTreeColumn.rows = "90,*"
+    ElseIf CLng(mstrPolicyID) = 0 Then
+        mblnSearchPage = True            ' search page
+    Else
+        mblnSearchPage = True            ' utility: dropdown only
+        fraHorizontal.rows = "23,*"
+        fraVertical.cols  = "0,*"
+    End If
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/routes/routes.tsx (route tree defines the layout)
+         + src/stores/session-store.ts (policyId)
+         + src/features/system/components/ (sidebar.tsx, str-home-subframe.tsx, etc.)
+         + src/layouts/root.tsx (RootLayout)
+
+    The three-way branch (policy / search / utility) is now expressed as the
+    ROUTE TREE itself:
+
+    / (Root) → RootLayout
+      ├── /static/system/str-piphsys-20010101  → Start/Search page (policyId=0)
+      ├── /static/pol/pol-piphpol-20150801     → Policy page (policyId>0)
+      └── /dynamic/:folder/:asp               → Dynamic pages
+
+    The policyId drives navigation via the cycling API (executeAction →
+    pageNavigation), which returns the aspFilePath. fileResolver maps that to
+    the correct route. The layout adapts automatically because different routes
+    render different components.
+
+    Frame row/column pixel sizes → MUI layout components
+    fraHorizontal.rows = "46,*" → Header component (fixed height) + flex content
+    fraTreeColumn.rows = "90,*" → Sidebar component (tree) + flex content
+
+    The system page (str-piphsys-20010101.tsx) contains subframes:
+        - str-home-subframe.tsx (121 lines) — the start/search page
+        - str-all-policies-subframe.tsx — all policies view
+        - str-wip-subframe.tsx — work in progress view
+
+    STATUS: DONE (architecture-level, not line-for-line)
+
+
+################################################################################
+5. INITIAL ACTION + THE SECURITY DATA ISLAND
+################################################################################
+
+--- Legacy VBScript (lines 377-395) -------------------------------------------
+    Select Case CLng(mstrPolicyID)
+        Case -3
+            mstrAction = "LIB"
+    End Select
+
+    Set mxmlSecurity = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlSecurity.async = False
+    mxmlSecurity.loadXML(document.all("xdiSecurity").XMLDocument.xml)
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/stores/session-store.ts (action field)
+         + src/stores/auth-store.ts (permissions/auth data)
+         + src/services/auth.ts (login flow)
+
+    The Select Case for policyId=-3 → action="LIB" is handled by the cycling
+    API. When the server receives a navigation request with policyId=-3, it
+    returns action="LIB" in the response. The client doesn't need to hardcode
+    this — it's server-driven.
+
+    The security XML data island (xdiSecurity parsed with MSXML) is replaced by
+    the login flow:
+        1. src/services/auth.ts calls the auth API
+        2. Response includes user permissions as JSON
+        3. Stored in auth-store.ts (AuthStoreApi)
+        4. Available everywhere via AuthStoreApi.getState()
+
+    No inline XML parsing, no MSXML COM objects.
+
+    STATUS: DONE (server-driven action, JSON auth)
+
+
+################################################################################
+6. KICKING OFF THE LOAD + CLEARING A STALE FLAG
+################################################################################
+
+--- Legacy VBScript (lines 396-410) -------------------------------------------
+    Call ExecuteAction("menu", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+    ' After the menu page loads, it calls LoadNextPage
+    Call SessionXML_ClearItem("ratingdatachanged")
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/utils/data-strategy.ts (orchestrates the load)
+         + src/resources/menu.tsx (menu action)
+         + src/resources/tree.tsx (tree action)
+         + src/stores/global-vars-store.ts (ratingDataChanged)
+         + src/stores/navigation-store.ts (menuLoaded, treeLoaded)
+
+    ExecuteAction("menu", ...) → the route tree has dedicated resource routes:
+        /menu  → clientMenuAction (loads menu data into menu-store)
+        /tree  → clientTreeAction (loads tree data into tree-store)
+
+    These are React Router "actions" (POST-like mutations), not loaders. They
+    run when the app needs to refresh menu/tree data.
+
+    The dataStrategy (data-strategy.ts) orchestrates the load sequence:
+        1. Checks if cycling should run (shouldExecuteAction)
+        2. Runs cycling (executeAction → pageNavigation API)
+        3. Routes to the correct page
+        4. Page loader runs (in parallel: schema + layout + component + handler)
+
+    Navigation state tracking:
+        menuLoaded, treeLoaded → NavigationStore tracks which frames are loaded
+        markFrameLoaded(frame) → called after each frame finishes loading
+
+    SessionXML_ClearItem("ratingdatachanged") →
+        GlobalVarsStoreApi.getState().actions.setRatingDataChanged(false)
+        Called during navigation reset.
+
+    STATUS: DONE (route-based, not imperative chaining)
+
+
+################################################################################
+7. THE SERIAL LOAD CHAIN — LoadNextPage / LoadFirstPage
+################################################################################
+
+--- Legacy VBScript (lines 414-445) -------------------------------------------
+    Sub LoadNextPage()
+      If StrComp(Left(mstrNodeKey,3),"SYS",0) = 0 Then
+        Call ExecuteAction(mstrAction, mstrNodeKey, 0, "")
+      Else
+        Select Case UCase(Left(mstrNodeKey,7))
+          Case "POL|POL"
+            Call ExecuteAction("TREE", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+          Case Else
+            Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber & "|", 0, "")
+        End Select
+      End If
+    End Sub
+
+    Sub LoadFirstPage
+      Call ExecuteAction(mstrAction, "POL|POL|" & mstrExpiredNumber & "|", 0, "")
+    End Sub
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/utils/data-strategy.ts (dataStrategy replaces the chain)
+         + src/routes/routes.tsx (parent → child route nesting)
+
+    This is the CLEANEST WIN — same as our earlier analysis, and the actual POC
+    confirms it.
+
+    The serial chain (menu.onload → LoadNextPage → tree.onload → LoadFirstPage)
+    existed because loading all frames at once caused timing problems in IE.
+    Each frame's onload triggered the next.
+
+    In React Router 7, this chain is IMPLICIT:
+        1. Root route loader runs (clientRootLoader — auth check)
+        2. Root middleware runs (clientRootMiddleware — auth guard)
+        3. dataStrategy runs (cycling, frame routing)
+        4. Frame loader runs (clientStaticLoader or clientDynamicLoader)
+        5. Component renders with loader data
+
+    The parent → child ordering is guaranteed by React Router. No manual
+    chaining needed.
+
+    The PREFETCH_ROUTE_FRAGMENTS in data-strategy.ts shows the actual POC's
+    awareness of the menu/tree/modal resource routes:
+        const PREFETCH_ROUTE_FRAGMENTS = ['menu', 'tree', 'modal'] as const;
+
+    STATUS: ELIMINATED (framework handles it — confirmed in actual POC)
+
+
+################################################################################
+8. CYCLING DEPTH GUARD
+################################################################################
+
+--- Legacy VBScript (not in window_onload but closely related) -----------------
+    ' No explicit depth guard in legacy — infinite loops were a known bug
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/utils/execute-action.ts (MAX_NAVIGATION_DEPTH = 10)
+         + src/utils/data-strategy.ts (MAX_CYCLING_DEPTH = 5)
+         + src/stores/navigation-store.ts (navigationDepth, incrementDepth/decrementDepth)
+
+    The actual POC adds EXPLICIT depth guards that the legacy code lacked:
+
+    executeAction():
+        if (currentDepth >= MAX_NAVIGATION_DEPTH) {
+            return { success: false, error: 'Max navigation depth exceeded...' };
+        }
+
+    dataStrategy():
+        MAX_CYCLING_DEPTH = 5 (separate, tighter limit)
+
+    NavigationStore tracks:
+        navigationDepth: number
+        incrementDepth() / decrementDepth() actions
+
+    STATUS: NEW (improvement over legacy — prevents infinite navigation loops)
+
+
+################################################################################
+SUMMARY: MAIN_ISLLSYS window_onload COVERAGE IN ACTUAL POC
+################################################################################
+
+Section                          | Actual POC File(s)                    | Status
+---------------------------------|---------------------------------------|--------
+On Error Resume Next             | ErrorBoundary (app.tsx)                | DONE
+AddWindowToCollection            | Not needed (SPA)                      | ELIMINATED
+Screen resize < 1024x768         | Responsive MUI layout                 | ELIMINATED
+GlobalVars = New globalVarsClass | global-vars-store.ts                  | DONE
+mobjAQSMain = window             | Not needed (single tree)              | ELIMINATED
+mobjParentWindow = window.opener | Not needed (SPA)                      | ELIMINATED
+Replacement search re-parenting  | Not needed (SPA)                      | ELIMINATED
+Error cleanup guard              | Not needed (no opener)                | ELIMINATED
+Layout from policyId (3-way)     | Route tree + cycling → file resolver  | DONE
+Case -3 → action = "LIB"        | Server-driven (cycling API response)  | DONE
+Security data island (MSXML)     | auth-store.ts (JSON from login)       | DONE
+ExecuteAction("menu", ...)       | Resource routes /menu, /tree, /modal  | DONE
+LoadNextPage serial chain        | React Router parent→child loaders     | ELIMINATED
+LoadFirstPage                    | React Router parent→child loaders     | ELIMINATED
+Clear ratingdatachanged          | global-vars-store.ts                  | DONE
+Cycling depth guard              | execute-action.ts + data-strategy.ts  | NEW (improvement)
+
+DONE:       7 sections
+ELIMINATED: 7 sections (correctly — SPA/framework handles them)
+NEW:        1 section  (depth guard — improvement over legacy)
+
+VERDICT: The actual POC has COMPLETE coverage. The 7 eliminated sections are
+all multi-window or IE-era patterns that don't apply to a single-page app.
+The 7 implemented sections cover all the business logic (session state,
+layout routing, action dispatch, GlobalVars, auth, browser commands). The
+depth guard is an improvement the legacy code should have had.
+
+
+################################################################################
+COMPARISON: OUR EARLIER POC vs ACTUAL POC (for Main_ISLLSYS window_onload)
+################################################################################
+
+What we built (shell-load.ts):
+    resolveShellMode(policyId) → 'policy'|'search'|'utility'
+    resolveInitialAction(session) → 'LIB' for Case -3
+    useShellLoad() → seeds appStore globals
+
+What the team built:
+    routes.tsx getContext() → builds NavigationRouterContext from session
+    data-strategy.ts → cycling interleaved with routing (replaces shell mode)
+    clientRootLoader → auth check
+    clientRootMiddleware → auth guard
+    navigation-store.ts → menuLoaded/treeLoaded/navigationDepth/deferred/nextAction
+
+Our shell-load.ts was a correct SIMPLIFICATION of the concept. The actual POC
+distributes the same logic across the router infrastructure (middleware, context,
+dataStrategy) which is architecturally cleaner — it puts navigation decisions
+in the routing layer where they belong, rather than in a standalone loader.

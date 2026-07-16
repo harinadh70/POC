@@ -1,0 +1,318 @@
+================================================================================
+Eebrowser.vbs window_onload  →  ACTUAL POC (aqs-web-ui, hitanshu/experimental)
+================================================================================
+
+This analysis maps every section of the page-level window_onload in
+Eebrowser.vbs (lines 114–438, ~325 lines) to the ACTUAL team-built POC
+codebase. This is DIFFERENT from our earlier scaffold — this is the real code
+the team wrote.
+
+Eebrowser.vbs is the per-page controller. Its window_onload runs once each time
+a new ASP page loads inside the content frame. In the actual POC, this becomes
+the frame loader + renderer lifecycle.
+
+
+################################################################################
+1. ON ERROR RESUME NEXT + INITIAL SETUP
+################################################################################
+
+--- Legacy VBScript (Eebrowser lines 114-120) --------------------------------
+    Sub window_onload()
+        On Error Resume Next
+        Set mxmlDoc = document.all("xdiData").XMLDocument
+        mblnCallServer = True
+
+--- Actual POC -----------------------------------------------------------------
+    File: src/features/frame/utils/loader.ts (clientStaticLoader / clientDynamicLoader)
+
+    The loader fetches data from the PageLayout API and schema. There is no
+    On Error Resume Next — errors are handled by React Router's errorElement
+    and React Error Boundary (app.tsx wraps everything in ErrorBoundary).
+
+    mxmlDoc (the XML data island) is replaced by the PageLayout API response
+    (JSON). The loader calls pageLayout() which returns JSON controls/commands.
+
+    mblnCallServer = True becomes the default behavior — every page load calls
+    the API. The flag that PREVENTS server calls is cyclingCalled in
+    navigation-store.ts.
+
+
+################################################################################
+2. READING THE XML DATA ISLAND + SETTING MODULE VARS
+################################################################################
+
+--- Legacy VBScript (lines 121-155) -------------------------------------------
+    Set mxmlBrowserCtl = mxmlDoc.selectSingleNode("//browserctl")
+    Set mxmlDivElements = mxmlDoc.selectSingleNode("//divelements")
+    mstrAction = mxmlDoc.selectSingleNode("//sessioninformation/action").text
+    mstrNodeKey = mxmlDoc.selectSingleNode("//sessioninformation/nodekey").text
+    mstrPolicyId = mxmlDoc.selectSingleNode("//sessioninformation/policyid").text
+    ...
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/stores/session-store.ts + src/routes/context.ts
+
+    Session variables (action, nodeKey, policyId, compLoc, userId) live in
+    SessionStore (Zustand). They are populated by the cycling response in
+    executeAction() (src/utils/execute-action.ts) which calls
+    SessionStoreApi.getState().actions.updateSessionFromResponse().
+
+    The route context (NavigationRouterContext in routes/context.ts) carries
+    these values per-navigation, built by getContext() in routes.tsx:
+        action, compLoc, nodeKey, userId, policyId, frame, xmlDetail,
+        cyclingCalled, navigationDepth, deferred
+
+    mxmlBrowserCtl (browser commands) → browser-cmd-store.ts queue
+    mxmlDivElements (div layout) → layout-tree-builder.ts builds from API JSON
+
+
+################################################################################
+3. ShowNextOnEdit — TWO-ARM VISIBILITY LOGIC
+################################################################################
+
+--- Legacy VBScript (lines 156-215) -------------------------------------------
+    If UCase(pageHeader.ShowNextOnEdit) = "T" Then
+        ' ARM 1: ShowNextOnEdit = True → DISABLE dtaNEXT
+        Select Case UCase(mstrAction)
+            Case "EDIT", "RLVUPDATE", "EDITTYPRAT"
+                dtaNEXT.disabled = True
+        End Select
+    Else
+        ' ARM 2: ShowNextOnEdit = False → HIDE via VISIBLE=F
+        Select Case UCase(mstrAction)
+            Case "EDIT", "RLVUPDATE", "EDITTYPRAT"
+                Call ExecuteBrowserCommands("SET_VISIBLE", "dtaNEXT", "F", ...)
+        End Select
+    End If
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/handlers/common/command.ts (SET_VISIBLE, SET_ENABLED commands)
+         + src/components/ui/action-button.tsx
+         + per-page handler files (e.g. src/handlers/pol/pol-piphpol-20150801.ts)
+
+    The ShowNextOnEdit two-arm logic is now server-driven. The PageLayout API
+    sends browser commands (SET_VISIBLE, SET_ENABLED) as part of its response.
+    The actual POC processes these in:
+
+    1. handlerForBrowserCommands() in handlers/common/command.ts (274 lines)
+       - Dispatches SET_VISIBLE, SET_ENABLED, SET_VALUE, SET_REQUIRED, etc.
+       - Commands are queued in browser-cmd-store.ts
+
+    2. useProcessBrowserCommands() hook (src/hooks/use-process-browser-commands.ts)
+       - Mounted in frame components
+       - Consumes queue, calls handlerForBrowserCommands()
+
+    3. action-button.tsx reads runtime-override-store to check visibility/enabled
+
+    The key insight from the 9/25/00 "TW" comment in the VBS asking for exactly
+    this design is now IMPLEMENTED: the server decides what is visible/enabled,
+    not the client code branching on action strings.
+
+
+################################################################################
+4. SETTING INITIAL VALUES + FocusFirstControl
+################################################################################
+
+--- Legacy VBScript (lines 216-280) -------------------------------------------
+    Call SetInitialValueData()
+    Call FocusFirstControl()
+    Call CheckRequiredIndicators()
+    mblnRespondTabClick = True
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/utils/schema-merger.ts (mergeSchemaWithLayout, buildDefaultValues)
+         + src/components/ui/form-renderer.tsx (uses react-hook-form)
+         + src/stores/focus-store.ts
+         + src/utils/validation-rules.ts
+
+    SetInitialValueData → buildDefaultValues() in schema-merger.ts
+        Extracts default values from merged schema fields and passes them to
+        react-hook-form's useForm({ defaultValues }).
+
+    FocusFirstControl → focus-store.ts tracks focus
+        The form renderer auto-focuses the first enabled field.
+
+    CheckRequiredIndicators → validation-rules.ts
+        Required indicators are driven by the schema's field definitions
+        (required: true) and by SET_REQUIRED browser commands from the server.
+
+    mblnRespondTabClick → no equivalent needed
+        React's event system handles tab clicks natively. The flag was an IE
+        timing hack to prevent double-fire during initial page load.
+
+
+################################################################################
+5. EXECUTING BROWSER COMMANDS (the big one)
+################################################################################
+
+--- Legacy VBScript (lines 281-350) -------------------------------------------
+    If mxmlBrowserCtl.childNodes.length > 0 Then
+        Call ExecuteBrowserCommands(verb, matchcode, value, ...)
+    End If
+    ' Processes: SET_VALUE, SET_VISIBLE, SET_REQUIRED, SET_ENABLED,
+    '            DISPLAY_WARNING, DISPLAY_ERROR, DISPLAY_MESSAGE,
+    '            NAVIGATE_CYCLING, SET_NEXT_ACTION, etc.
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/handlers/common/command.ts (274 lines — the full dispatcher)
+         + src/handlers/common/payload.ts (282 lines — command parameter extraction)
+         + src/handlers/common/shared.ts (150 lines — shared utilities)
+         + src/stores/browser-cmd-store.ts (command queue)
+         + src/hooks/use-process-browser-commands.ts (React consumer)
+
+    This is the most complete part of the actual POC. The full command
+    dispatcher handles:
+
+    SET_VALUE        → updates form field values via react-hook-form setValue
+    SET_VISIBLE      → runtime-override-store toggles visibility
+    SET_REQUIRED     → runtime-override-store toggles required indicators
+    SET_ENABLED      → runtime-override-store toggles disabled state
+    DISPLAY_WARNING  → MUI Alert/Toast
+    DISPLAY_MESSAGE  → MUI Dialog
+    DISPLAY_ERROR    → error handling + focus on error field
+    SET_FOCUS        → focus-store
+    CLEAR_VALUE      → clears form field
+
+    The flow:
+    1. API response includes browser commands as JSON array
+    2. Commands queued in browser-cmd-store.ts
+    3. useProcessBrowserCommands() hook (mounted in StaticRenderer/DynamicRenderer)
+       consumes the queue
+    4. handlerForBrowserCommands() dispatches each command
+    5. payload.ts extracts/normalizes command parameters
+
+    This is a DIRECT implementation of the legacy ExecuteBrowserCommands — same
+    verbs, same parameter structure, different data format (JSON vs XML nodes).
+
+
+################################################################################
+6. NAVIGATE_CYCLING + DEFERRED NAVIGATION
+################################################################################
+
+--- Legacy VBScript (lines 351-400) -------------------------------------------
+    Case "NAVIGATE_CYCLING"
+        If mblnModalOpen Then
+            mblnNextAction_DeferNavigation = True
+            mstrNextAction_Action = value
+            mstrNextAction_NodeKey = nodekey
+        Else
+            Call ExecuteAction(action, nodekey, ...)
+        End If
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/utils/execute-action.ts (executeAction function)
+         + src/utils/data-strategy.ts (dataStrategy — cycling interleaved with routing)
+         + src/stores/navigation-store.ts (deferred flag, nextAction)
+         + src/hooks/use-deferred-navigation.ts (replays after modal close)
+
+    NAVIGATE_CYCLING in the actual POC:
+
+    1. dataStrategy (data-strategy.ts) runs BEFORE the route loader
+       - Checks shouldExecuteAction()
+       - Calls executeAction() which calls pageNavigation API (= cycling)
+       - Cycling returns: aspFilePath, xmlFile, frame, action
+       - fileResolver maps aspFilePath → React route
+       - If result says MODAL → stores command in modal-store, sets deferred=true
+       - If result says WINDOW → external redirect
+       - Otherwise → updates context, lets loader run
+
+    2. Deferred navigation (use-deferred-navigation.ts):
+       - Mounted in RootLayout
+       - Subscribes to ModalStore.isOpen transitions (true → false)
+       - When modal closes: reads nextAction from NavigationStore
+       - Updates SessionStore, resets deferred/cyclingCalled flags
+       - Sets forceCycling=true so dataStrategy re-runs cycling
+       - Navigates to current path (replace: true) — no URL flicker
+
+    This is the exact equivalent of the legacy pattern:
+        mblnNextAction_DeferNavigation + mstrNextAction_* → NavigationStore.nextAction
+        "wait for modal to close, then replay" → useDeferredNavigation hook
+
+
+################################################################################
+7. GlobalVars (policyRated, dataChanged, etc.)
+################################################################################
+
+--- Legacy VBScript (lines 401-438) -------------------------------------------
+    Set GlobalVars = mobjAQSMain.GlobalVars
+    mblnPolicyRated = GlobalVars.PolicyRated
+    If mblnDataChanged Then ...
+
+--- Actual POC -----------------------------------------------------------------
+    File: src/stores/global-vars-store.ts (97 lines)
+
+    The legacy globalVarsClass is now a Zustand store with typed actions:
+        policyRated        → GlobalVarsStore.policyRated
+        documentsSelected  → GlobalVarsStore.documentsSelected
+        documentsComplete  → GlobalVarsStore.documentsComplete
+        sumMsgChg          → GlobalVarsStore.sumMsgChg
+        clientIssueAllowed → GlobalVarsStore.clientIssueAllowed (1|2|3)
+        dataChanged        → GlobalVarsStore.dataChanged
+        ratingDataChanged  → GlobalVarsStore.ratingDataChanged
+
+    The store preserves the legacy cascade logic:
+        setPolicyRated(false) → also resets documentsSelected, documentsComplete, sumMsgChg
+        setDocumentsSelected(false) → also resets documentsComplete
+        setSumMsgChg(true) → also resets documentsSelected, documentsComplete
+
+    This is a faithful port of the VBScript Property Let cascades.
+
+
+################################################################################
+8. HANDLER REGISTRATION (per-page event handlers)
+################################################################################
+
+--- Legacy VBScript (not in window_onload but wired by it) --------------------
+    ' Each ASP page defines its own event handlers (ButtonOnClickHandler,
+    ' OnFocusHandler, etc.) which are called by Eebrowser's dispatcher
+
+--- Actual POC -----------------------------------------------------------------
+    Files: src/main.tsx (frameHandlerRegistry — global on window)
+         + src/features/frame/hooks/use-register-handlers.ts
+         + src/handlers/pol/pol-piphpol-20150801.ts (example per-page handler)
+         + src/handlers/modal/start-options-handlers.ts
+
+    main.tsx creates a global FrameHandlerRegistry on window with:
+        register(name, fn), unregister(name, fn), has(name), call(name, schema)
+
+    use-register-handlers.ts is a React hook that:
+        - On mount: registers all handlers from the handler module
+        - On unmount: unregisters them (cleanup)
+
+    Each page has its own handler file (e.g. pol-piphpol-20150801.ts) that
+    exports handler functions. The loader resolves the handler file via
+    handlerResolver() in file-resolver.ts.
+
+    static-renderer.tsx calls the lifecycle handlers:
+        - schema.lifecycle.onMount → called on initial render
+        - schema.lifecycle.onUpdate → called on context/schema changes
+        - schema.lifecycle.onUnmount → called on cleanup
+
+    This is the React equivalent of how each ASP page's VBScript handlers
+    were wired into Eebrowser's dispatcher.
+
+
+################################################################################
+SUMMARY: EEBROWSER window_onload COVERAGE IN ACTUAL POC
+################################################################################
+
+Section                          | Actual POC File(s)                    | Status
+---------------------------------|---------------------------------------|--------
+On Error Resume Next             | ErrorBoundary (app.tsx)                | DONE
+XML data island (mxmlDoc)        | PageLayout API → JSON                 | DONE
+Session vars (action/nodeKey/...) | session-store.ts + routes/context.ts | DONE
+ShowNextOnEdit two-arm           | command.ts + server-driven commands    | DONE
+SetInitialValueData              | schema-merger.ts buildDefaultValues    | DONE
+FocusFirstControl                | focus-store.ts + form auto-focus       | DONE
+CheckRequiredIndicators          | validation-rules.ts + SET_REQUIRED     | DONE
+ExecuteBrowserCommands           | command.ts (274 lines, full dispatcher)| DONE
+NAVIGATE_CYCLING                 | data-strategy.ts + execute-action.ts  | DONE
+Deferred navigation              | use-deferred-navigation.ts             | DONE
+GlobalVars cascade               | global-vars-store.ts (97 lines)       | DONE
+Handler registration             | frameHandlerRegistry + use-register    | DONE
+mblnRespondTabClick              | Not needed (IE timing hack)           | ELIMINATED
+
+VERDICT: The actual POC has COMPLETE coverage of Eebrowser.vbs window_onload.
+Every section is implemented, not just scaffolded. The browser command
+dispatcher alone (command.ts + payload.ts + shared.ts = 706 lines) is more
+code than the entire Eebrowser.vbs window_onload routine.

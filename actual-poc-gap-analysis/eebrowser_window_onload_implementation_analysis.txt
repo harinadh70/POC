@@ -1,0 +1,654 @@
+================================================================================
+Eebrowser.vbs window_onload — IMPLEMENTATION ANALYSIS FOR REACT MIGRATION
+================================================================================
+
+Eebrowser.vbs is the PER-PAGE CONTROLLER. Its window_onload runs every time a
+new ASP page loads inside the content frame. It initializes data, sets up
+controls, processes browser commands, and handles focus/navigation.
+
+This document breaks down WHAT the VBS code does and HOW to implement each
+piece in the React migration.
+
+
+################################################################################
+SECTION 1: MODULE-LEVEL VARIABLES (lines 1-113)
+################################################################################
+
+--- What the VBS does ---
+    Declares ~30 module-level variables that persist for the life of the page:
+    - mblnCallServer        — flag: should we call the server on next action?
+    - mvntInitialValue      — captures control value before editing (dirty check)
+    - mstrPreviousMatchcode — last-focused matchcode (for onfocus tracking)
+    - mstrErrorMatchcode    — matchcode that failed server validation
+    - mxmlDoc               — the XML data island document
+    - mvntRtnValue          — date value passed to/from calendar modal
+    - mblnRespondTabClick   — gate to prevent tab click events during load
+    - mxmlResults           — temp XML from async modal calls
+    - mxmlBrowserCtl        — browser commands from server
+    - mstrServerCallXML     — XML payload for server calls
+    - mobjServerRequest     — XMLHttpRequest for server calls
+    - mobjCallingWindow     — reference to opener if this is a modal
+    - mblnDoBrowserCommands — gate: allow/disallow browser command execution
+    - mlngXMLElapsedTime    — server processing time from XML
+    - mobjAQSMain           — handle to the main frameset window
+    - mobjMenuFrame         — handle to menu frame
+    - mobjTreeFrame         — handle to tree frame
+    - mstrReturnValue       — return info from modal dialogs
+    - mconQuote             — constant chr(34)
+    - mstrProtocolServer    — "https://" + server name
+    - mblnPageLoaded        — flag: page finished loading
+    - mblnNavButtonClicked  — flag: nav button was clicked (skip beforeunload)
+    - mblnEEDataChanged     — local data change indicator
+    - mblnClosing           — flag: page is closing
+    - marrListItems()       — combo box items array
+    - marrServerCalls()     — server call queue array
+    - marrEEData(12)        — page data array
+    - marrSessionInformation() — session state array
+
+--- How to implement in React ---
+
+    These module variables split into several React constructs:
+
+    1. ZUSTAND STORES (already exist in actual POC):
+       - session-store.ts     ← marrSessionInformation() (action, nodeKey, policyId, etc.)
+       - browser-cmd-store.ts ← mxmlBrowserCtl, mblnDoBrowserCommands
+       - navigation-store.ts  ← mblnCallServer (cyclingCalled), mblnNavButtonClicked
+       - modal-store.ts       ← mobjCallingWindow, mxmlResults, mstrReturnValue, mvntRtnValue
+       - focus-store.ts       ← mstrPreviousMatchcode, mstrErrorMatchcode
+       - global-vars-store.ts ← mblnEEDataChanged (dataChanged)
+
+    2. REACT-HOOK-FORM STATE:
+       - mvntInitialValue → useForm({ defaultValues }) tracks initial values
+       - Dirty check → formState.isDirty / formState.dirtyFields
+
+    3. COMPONENT-LOCAL STATE (useRef or useState):
+       - mblnRespondTabClick → not needed (React handles event ordering)
+       - mblnPageLoaded      → not needed (component lifecycle = loaded)
+       - mblnClosing         → not needed (unmount = closing)
+       - mconQuote           → not needed (JS has backticks and quotes)
+       - mstrProtocolServer  → environment config (.env)
+
+    4. API LAYER:
+       - mobjServerRequest   → axios instance (http-instance.ts)
+       - mstrServerCallXML   → JSON payloads (services/*.ts)
+
+    5. ELIMINATED:
+       - mobjAQSMain, mobjMenuFrame, mobjTreeFrame → SPA, no frame references
+       - marrListItems()     → combo-options-store.ts (fetched per-field)
+       - marrServerCalls()   → replaced by direct API calls
+       - marrEEData(12)      → replaced by typed form state
+       - mlngXMLElapsedTime  → performance-monitor.ts
+
+    FILES TO CREATE/MODIFY:
+       None — the actual POC already has all required stores. The module
+       variables are just the VBS equivalent of state declarations.
+
+
+################################################################################
+SECTION 2: WINDOW_ONLOAD ENTRY + MODAL SIZING (lines 114-164)
+################################################################################
+
+--- What the VBS does ---
+    Sub window_onload()
+        Call second_window_onload()    ← indirection for error isolation
+    End Sub
+
+    Sub second_window_onload()
+        On Error Resume Next
+        If mblnModal Then
+            ' Shrink modal if taller/wider than screen
+            If dialogHeight > screen.availHeight Then resize
+            If dialogWidth > screen.availWidth Then resize
+            ' Set frame references through modal's dialogArguments
+            Set mobjCallingWindow = window.dialogArguments
+            Set mobjAQSMain = mobjCallingWindow.mobjAQSMain
+            Set mobjMenuFrame = mobjAQSMain.frames("menu")
+            Set mobjTreeFrame = mobjAQSMain.frames("tree")
+        Else
+            ' Normal page: parent is the frameset
+            Set mobjAQSMain = window.parent
+            Set mobjMenuFrame = mobjAQSMain.frames("menu")
+            Set mobjTreeFrame = mobjAQSMain.frames("tree")
+        End If
+        ' Browser timing updates
+
+--- How to implement in React ---
+
+    MODAL SIZING:
+        The actual POC uses MUI Dialog (modal.tsx, 217 lines). MUI handles
+        responsive sizing automatically. The cycling API returns modalHeight
+        and modalWidth (see ExecuteActionResult in execute-action.ts), which
+        are passed to the MUI Dialog's sx prop.
+
+        Implementation:
+        - modal.tsx already reads modalHeight/modalWidth from modal-store
+        - MUI's maxHeight/maxWidth + CSS overflow handles screen overflow
+        - No manual dialogHeight/dialogWidth manipulation needed
+
+    FRAME REFERENCES:
+        The modal's dialogArguments chain (mobjCallingWindow → mobjAQSMain →
+        frames("menu")) is eliminated. In the SPA:
+        - Modal accesses state via Zustand stores (no frame traversal)
+        - Menu/tree are sibling routes, not frames
+        - mobjCallingWindow → modal-store tracks which component opened the modal
+
+    ERROR ISOLATION (second_window_onload pattern):
+        The double-sub pattern exists solely for VBScript's On Error Resume Next
+        scoping. In React:
+        - Component-level ErrorBoundary catches render errors
+        - try/catch in loaders catches data fetch errors
+        - No equivalent needed
+
+    BROWSER TIMING:
+        mlngTimeEndBrowserRequest, mlngTimeStartModalRequest, etc.
+        → performance-monitor.ts (PerformanceMonitor class, 101 lines)
+        Already implemented. Uses performance.mark() and performance.measure().
+
+    FILES TO CREATE/MODIFY:
+        None — modal.tsx and performance-monitor.ts already handle this.
+
+
+################################################################################
+SECTION 3: DATA-CHANGED FLAGS (lines 165-200)
+################################################################################
+
+--- What the VBS does ---
+    If mblnTRN Then Call CheckScreenProblems     ← training-mode check
+
+    ' Set data-changed flag based on action type
+    If action does NOT contain "EDIT", "INQUIRY", or "SELECT" Then
+        ' Must be an ADD → mark data as changed immediately
+        mobjAQSMain.mblnDataChanged = True
+        mblnEEDataChanged = True
+    Else
+        ' EDIT/INQUIRY → no changes yet
+        mobjAQSMain.mblnDataChanged = False
+        mobjAQSMain.mblnRatingDataChanged = False
+    End If
+
+--- How to implement in React ---
+
+    The logic: if action is ADD-type (not EDIT/INQUIRY/SELECT), pre-mark the
+    form as dirty because a new record should always be saveable.
+
+    Implementation in the PAGE HANDLER (per-page handler file):
+
+    // In the handler's onMount lifecycle callback:
+    function onMount(context) {
+        const { action } = SessionStoreApi.getState();
+        const isAddMode = !['EDIT', 'INQUIRY', 'SELECT'].some(
+            a => action.toUpperCase().includes(a)
+        );
+
+        if (isAddMode) {
+            GlobalVarsStoreApi.getState().actions.setDataChanged(true);
+        } else {
+            GlobalVarsStoreApi.getState().actions.setDataChanged(false);
+            GlobalVarsStoreApi.getState().actions.setRatingDataChanged(false);
+        }
+    }
+
+    CheckScreenProblems (training mode) → out of scope for migration.
+
+    FILES TO CREATE/MODIFY:
+        - src/handlers/common/shared.ts — add initializeDataChangedFlags()
+          utility that per-page handlers call in their onMount.
+        - Each per-page handler calls it from onMount.
+
+
+################################################################################
+SECTION 4: SESSION XML + XML DATA ISLAND PARSING (lines 200-224)
+################################################################################
+
+--- What the VBS does ---
+    ' Decompress and store XML detail
+    marrSessionInformation(6) = mobjAQSMain.Decompress(marrSessionInformation(6))
+    mobjAQSMain.mstrXMLDetail = marrSessionInformation(6)
+
+    ' Parse the embedded XML data island
+    Set mxmlDoc = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlDoc.loadXML(document.all("xdiPageData").XMLDocument.xml)
+    mxmlDoc.setProperty "SelectionNamespaces", "xmlns:xsl=..."
+
+    ' Extract data values and combo box items
+    Call GetEEData(mxmlDoc, Window)
+
+--- How to implement in React ---
+
+    SESSION XML DETAIL:
+        The actual POC stores xmlDetail in session-store.ts:
+        - updateSessionFromResponse() sets xmlDetail from API response
+        - toPayload() includes xmlDetail when sending requests back
+        - No decompression needed — API returns JSON, not compressed XML
+
+    XML DATA ISLAND:
+        The <xml id="xdiPageData"> tag embedded in the HTML is replaced by the
+        PageLayout API call (page-layout.ts, 93 lines):
+        - Returns JSON with controls, commands, session updates
+        - No MSXML parsing, no namespace setup
+
+    GetEEData (extract controls + combo items):
+        This is the schema-merger.ts + layout-tree-builder.ts pipeline:
+        1. schemaResolver loads JSON schema (field definitions)
+        2. pageLayout API returns runtime values and controls
+        3. mergeSchemaWithLayout() combines them
+        4. buildDefaultValues() extracts initial form values
+        5. combo-options-store.ts caches dropdown options
+
+    FILES TO CREATE/MODIFY:
+        None — the loader pipeline (loader.ts) already orchestrates:
+        parallel(schemaResolver, pageLayout, componentResolver, handlerResolver)
+
+
+################################################################################
+SECTION 5: ShowNextOnEdit — TWO-ARM VISIBILITY LOGIC (lines 225-280)
+################################################################################
+
+--- What the VBS does ---
+    Two separate paths for controlling the NEXT button during EDIT actions:
+
+    ARM 1 (ShowNextOnEdit = "T"):
+        EDIT        → DISABLE dtaNEXT
+        RLVUPDATE   → check session "rlvupdateadd"; if not "yes" → DISABLE
+        EDITTYPRAT  → check session "chgtypratadd"; if not "yes" → DISABLE
+
+    ARM 2 (ShowNextOnEdit = "F" or missing):
+        EDIT        → HIDE dtaNEXT (SET_VISIBLE = "F")
+        RLVUPDATE   → check session "rlvupdateadd"; if not "yes" → HIDE
+        EDITTYPRAT  → check session "chgtypratadd"; if not "yes" → HIDE
+
+    The difference: Arm 1 greys out the button (disabled but visible), Arm 2
+    removes it completely (invisible).
+
+--- How to implement in React ---
+
+    This logic should be SERVER-DRIVEN. The PageLayout API should send browser
+    commands (SET_VISIBLE or SET_ENABLED) based on the action and page config.
+    The comment from 9/25/2000 ("TW") in the VBS literally asks for this.
+
+    However, until the server is updated, implement as a HANDLER:
+
+    // src/handlers/common/shared.ts
+    function applyNextButtonRules(context: {
+        action: string;
+        showNextOnEdit: boolean;
+        sessionXml: Record<string, string>;
+    }) {
+        const { action, showNextOnEdit, sessionXml } = context;
+        const upperAction = action.toUpperCase();
+        const overrides = RuntimeOverrideStoreApi.getState().actions;
+
+        const shouldRestrict = (() => {
+            if (upperAction === 'EDIT') return true;
+            if (upperAction === 'RLVUPDATE')
+                return sessionXml['rlvupdateadd']?.toLowerCase() !== 'yes';
+            if (upperAction === 'EDITTYPRAT')
+                return sessionXml['chgtypratadd']?.toLowerCase() !== 'yes';
+            return false;
+        })();
+
+        if (shouldRestrict) {
+            if (showNextOnEdit) {
+                overrides.setEnabled('dtaNEXT', false);   // grey out
+            } else {
+                overrides.setVisible('dtaNEXT', false);   // hide completely
+            }
+        }
+    }
+
+    CALLED FROM: the onMount lifecycle in per-page handlers, AFTER schema
+    merge but BEFORE the first render.
+
+    RUNTIME OVERRIDE STORE: The actual POC already has runtime-override-store.ts
+    (44 lines) which tracks per-control visibility/enabled/required overrides.
+
+    FILES TO CREATE/MODIFY:
+        - src/handlers/common/shared.ts — add applyNextButtonRules()
+        - Per-page handlers call it in onMount
+
+
+################################################################################
+SECTION 6: CheckRequiredIndicators (line 284)
+################################################################################
+
+--- What the VBS does ---
+    Call mobjAQSMain.CheckRequiredIndicators("", Window)
+
+    Walks all controls on the page. For each required (level 1) control,
+    checks if it has data. If ALL required controls have data, enables the
+    [Ok] and [Next] buttons.
+
+--- How to implement in React ---
+
+    This is FORM VALIDATION. react-hook-form handles it natively:
+
+    1. Schema defines which fields are required (via validation-rules.ts)
+    2. react-hook-form tracks validity via formState.isValid
+    3. Action buttons read formState.isValid to enable/disable:
+
+    // src/components/ui/action-button.tsx
+    const { formState: { isValid } } = useFormContext();
+    <Button disabled={!isValid && requiresValidation}>
+        {label}
+    </Button>
+
+    Server-side SET_REQUIRED commands (from browser-cmd-store) toggle
+    required state at runtime via runtime-override-store.
+
+    FILES TO CREATE/MODIFY:
+        - validation-rules.ts already handles this
+        - action-button.tsx already reads form validity
+        - No additional work needed
+
+
+################################################################################
+SECTION 7: PATH LABEL BUILD (lines 286-331)
+################################################################################
+
+--- What the VBS does ---
+    Reads pageHeader.pathstart and pageHeader.pathend from the page schema.
+    Calls mobjAQSMain.PathDescription() to build a breadcrumb-style path:
+        "Policy Coverages - General Liability - Premises" → "General Liability - Premises"
+    Strips "Policy Coverages -", trims dashes, sets pageHeader.PathLabel.
+    Also reads/clears "pagelabelkey" from session XML.
+
+--- How to implement in React ---
+
+    This is a BREADCRUMB component. The path comes from the tree structure:
+
+    // src/components/breadcrumb.tsx (new)
+    function Breadcrumb() {
+        const { nodeKey } = useSessionStore();
+        const treeData = useTreeStore(s => s.treeData);
+
+        // Build path from nodeKey walking up the tree
+        const pathSegments = buildPathFromNodeKey(nodeKey, treeData);
+
+        // Strip "Policy Coverages" prefix (matches legacy behavior)
+        const filtered = pathSegments.filter(
+            s => s !== 'Policy Coverages'
+        );
+
+        return (
+            <Typography variant="body2" color="text.secondary">
+                {filtered.join(' - ')}
+            </Typography>
+        );
+    }
+
+    The page header's pathstart/pathend fields define which segment range
+    to show. This comes from the schema JSON, not client logic.
+
+    SessionXML_GetItem("pagelabelkey") → session-store xmlDetail accessor
+    SessionXML_ClearItem("pagelabelkey") → session-store clearXmlDetail("pagelabelkey")
+
+    FILES TO CREATE/MODIFY:
+        - src/components/breadcrumb.tsx — new component
+        - src/utils/path-builder.ts — utility to walk tree and build path string
+        - Include breadcrumb in the frame layout (static-renderer / dynamic-renderer)
+
+
+################################################################################
+SECTION 8: FOCUS FIRST CONTROL + TAB SELECTION (lines 342-358)
+################################################################################
+
+--- What the VBS does ---
+    Call mobjAQSMain.FocusFirstControl(Window)
+        → Finds the first enabled, visible control on the page and focuses it.
+        → Sets mblnRespondTabClick = True (now safe to handle tab events).
+
+    If tab index from session (marrSessionInformation(9)) is not 0:
+        Call mobjAQSMain.SelectTab(tabIndex, Window)
+        → Programmatically selects the specified tab strip tab.
+
+--- How to implement in React ---
+
+    FOCUS FIRST CONTROL:
+        React can auto-focus the first field using autoFocus prop or a ref:
+
+        // In form-renderer.tsx, the first rendered field gets autoFocus
+        // OR use focus-store.ts to track and set initial focus:
+
+        useEffect(() => {
+            const firstField = document.querySelector(
+                'input:not(:disabled):not([type=hidden]), select:not(:disabled)'
+            );
+            if (firstField) (firstField as HTMLElement).focus();
+        }, []);
+
+        The actual POC already has focus-store.ts (26 lines) for this.
+
+    TAB SELECTION:
+        Session info contains a tab index. If non-zero, select that tab:
+
+        // In tab-layout.tsx or the page component:
+        const { tab } = useSessionStore();
+        const [activeTab, setActiveTab] = useState(tab || 0);
+
+        The actual POC's tab-layout.tsx (42 lines) handles tab rendering.
+        Session store's tab field drives initial selection.
+
+    FILES TO CREATE/MODIFY:
+        - focus-store.ts already handles focus
+        - tab-layout.tsx already handles tab selection
+        - Minor: ensure tab value from session-store flows to tab-layout
+
+
+################################################################################
+SECTION 9: BROWSER TIMING + LOADING INDICATOR (lines 362-394)
+################################################################################
+
+--- What the VBS does ---
+    Records timing milestones:
+        mlngTimeEndBrowserProcessing = GetTimeMilliseconds()
+        mlngTimeBOProcessing = mlngXMLElapsedTime
+    Updates menu frame timing display:
+        If mobjMenuFrame.mblnPageReady Then mobjMenuFrame.UpdateInfo()
+    Hides loading animation:
+        document.all("divLoading").style.visibility = "hidden"
+    Sets page-loaded flag:
+        mblnPageLoaded = True
+
+--- How to implement in React ---
+
+    TIMING:
+        performance-monitor.ts (101 lines) already handles this with
+        performance.mark() and performance.measure(). The loader can
+        record timing:
+
+        performance.mark('page-load:start');
+        // ... fetch data ...
+        performance.mark('page-load:end');
+        performance.measure('page-load', 'page-load:start', 'page-load:end');
+
+    LOADING INDICATOR:
+        React Suspense + React Router's loading state handles this:
+
+        // In the frame layout or page component:
+        const navigation = useNavigation();
+        if (navigation.state === 'loading') return <Spinner />;
+
+        The actual POC has spinner.tsx (23 lines) as the loading component.
+
+    PAGE-LOADED FLAG:
+        Not needed. A React component IS loaded when it renders. The flag
+        was used to gate event handlers (OnFocusHandler), but React's event
+        system handles ordering automatically.
+
+    FILES TO CREATE/MODIFY:
+        None — spinner.tsx and performance-monitor.ts already exist.
+
+
+################################################################################
+SECTION 10: ExecuteBrowserCommands (called throughout window_onload)
+################################################################################
+
+--- What the VBS does ---
+    Processes browser commands from the XML data island:
+        SET_VALUE        — sets a control's value
+        SET_VISIBLE      — shows/hides a control
+        SET_REQUIRED     — marks a control as required/optional
+        SET_ENABLED      — enables/disables a control
+        SET_FOCUS        — moves focus to a control
+        CLEAR_VALUE      — clears a control's value
+        DISPLAY_WARNING  — shows a warning message
+        DISPLAY_ERROR    — shows an error, focuses the error field
+        DISPLAY_MESSAGE  — shows an info message
+        NAVIGATE_CYCLING — triggers cycling navigation (with modal deferral)
+        SET_NEXT_ACTION  — sets the action for the next navigation
+
+--- How to implement in React ---
+
+    THE ACTUAL POC HAS THIS FULLY IMPLEMENTED (706 lines total):
+
+    1. command.ts (274 lines) — the dispatcher
+       - handlerForBrowserCommands(command, formMethods, registry)
+       - Switch on command.verb: SET_VALUE, SET_VISIBLE, SET_ENABLED, etc.
+       - SET_VALUE → formMethods.setValue(matchcode, value)
+       - SET_VISIBLE → RuntimeOverrideStoreApi.setVisible(matchcode, bool)
+       - SET_REQUIRED → RuntimeOverrideStoreApi.setRequired(matchcode, bool)
+       - SET_ENABLED → RuntimeOverrideStoreApi.setEnabled(matchcode, bool)
+
+    2. payload.ts (282 lines) — parameter extraction
+       - Parses command parameters from JSON (was XML attribute reading)
+       - Normalizes matchcodes, values, types
+
+    3. shared.ts (150 lines) — shared utilities
+       - Common helpers used by command handlers
+
+    4. browser-cmd-store.ts (58 lines) — command queue
+       - enqueue(commands) — adds commands to queue
+       - dequeue() — removes and returns next command
+       - clear() — clears the queue
+
+    5. use-process-browser-commands.ts (36 lines) — React consumer
+       - Mounted in StaticRenderer and DynamicRenderer
+       - useEffect subscribes to browser-cmd-store
+       - Calls handlerForBrowserCommands() for each queued command
+
+    FILES TO CREATE/MODIFY:
+        None — this is the most complete part of the actual POC.
+
+
+################################################################################
+SECTION 11: NAVIGATE_CYCLING + DEFERRED NAVIGATION
+################################################################################
+
+--- What the VBS does ---
+    When a NAVIGATE_CYCLING browser command arrives:
+        If a modal is open:
+            Save action/nodeKey for later (deferred navigation)
+            mblnNextAction_DeferNavigation = True
+            mstrNextAction_Action = action
+            mstrNextAction_NodeKey = nodeKey
+        Else:
+            Call ExecuteAction(action, nodeKey, ...)
+
+    When the modal closes:
+        Check if deferred navigation exists
+        If yes → execute the stored action
+
+--- How to implement in React ---
+
+    THE ACTUAL POC HAS THIS FULLY IMPLEMENTED:
+
+    1. execute-action.ts (118 lines):
+       - executeAction() calls pageNavigation API
+       - Returns ExecuteActionResult with actionType:
+         STORE_MODAL_CMD → open modal, defer navigation
+         STORE_WINDOW_CMD → external redirect
+         COMMANDS_ONLY → just process commands, no page change
+         CONTINUE_TO_LOADER → normal page load
+         EXTERNAL_REDIRECT → window.open / location.href
+
+    2. navigation-store.ts (104 lines):
+       - deferred: boolean (is navigation deferred?)
+       - nextAction: { action, nodeKey } (stored for later)
+       - cyclingCalled: boolean (has cycling run this cycle?)
+       - forceCycling: boolean (force cycling on next navigation)
+       - navigationDepth: number (depth guard)
+
+    3. use-deferred-navigation.ts (53 lines):
+       - Subscribes to ModalStore.isOpen transitions (true → false)
+       - When modal closes: reads nextAction, resets flags, navigates
+
+    4. data-strategy.ts (104 lines):
+       - Custom React Router dataStrategy
+       - Runs executeAction BEFORE route loaders
+       - Handles the cycling → routing → loading pipeline
+
+    FILES TO CREATE/MODIFY:
+        None — fully implemented in actual POC.
+
+
+################################################################################
+SECTION 12: EVENT HANDLERS WIRED BY WINDOW_ONLOAD
+################################################################################
+
+--- What the VBS does ---
+    After window_onload completes, these handlers are active:
+
+    OnFocusHandler(strID):
+        If mblnPageLoaded Then
+            Call mobjAQSMain.OnFocusHandler(strID, Window)
+        End If
+        Call SelectControlText(strID)
+
+    document_onfocusin:
+        Call OnFocusHandler(window.event.srcElement.id)
+
+    document_onkeyup:
+        Call OnKeyUpHandler(window.event.srcElement.id)
+
+--- How to implement in React ---
+
+    These are standard React event handlers:
+
+    FOCUS HANDLING:
+        - React's onFocus prop on form fields
+        - focus-store.ts tracks current focused field
+        - SelectControlText → input.select() on focus (text fields)
+
+    KEY HANDLING:
+        - React's onKeyUp prop on form fields
+        - use-command-handlers.ts (85 lines) handles keyboard shortcuts
+        - Tab, Enter, Escape key behaviors defined per control type
+
+    The frameHandlerRegistry (main.tsx) allows per-page handlers to override
+    default focus/key behavior. Each page's handler file exports custom
+    handlers that are registered via use-register-handlers.ts.
+
+    FILES TO CREATE/MODIFY:
+        None — handler registry and hooks already exist.
+
+
+################################################################################
+IMPLEMENTATION SUMMARY
+################################################################################
+
+Section                      | React Implementation              | Status in POC
+-----------------------------|-----------------------------------|---------------
+Module variables             | 12 Zustand stores                 | DONE
+window_onload entry          | Route loader + component mount    | DONE
+Modal sizing                 | MUI Dialog + modalHeight/Width    | DONE
+Frame references             | Zustand stores (no frames)        | ELIMINATED
+Error isolation              | ErrorBoundary + try/catch         | DONE
+Data-changed flags           | Handler onMount + GlobalVarsStore | NEEDS WIRING
+Session XML + data island    | PageLayout API (JSON)             | DONE
+GetEEData (extract controls) | schema-merger + layout-tree-build | DONE
+ShowNextOnEdit two-arm       | Handler + RuntimeOverrideStore    | NEEDS HANDLER
+CheckRequiredIndicators      | react-hook-form isValid           | DONE
+Path label / breadcrumb      | Breadcrumb component + tree data  | NEEDS COMPONENT
+FocusFirstControl            | focus-store + autoFocus           | DONE
+Tab selection                | tab-layout + session tab value    | DONE
+Browser commands (all verbs) | command.ts dispatcher (706 lines) | DONE
+NAVIGATE_CYCLING + deferred  | execute-action + deferred-nav     | DONE
+Browser timing               | performance-monitor.ts            | DONE
+Loading indicator            | Spinner + navigation.state        | DONE
+Event handlers (focus/key)   | React events + handler registry   | DONE
+
+WORK REMAINING:
+    1. Wire data-changed flag logic into handler onMount (small)
+    2. Implement ShowNextOnEdit as shared handler utility (medium)
+    3. Build breadcrumb component from tree data (medium)
+    Everything else is already implemented in the actual POC.

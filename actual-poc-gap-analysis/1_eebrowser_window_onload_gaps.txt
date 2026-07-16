@@ -1,0 +1,410 @@
+================================================================================
+1. EEBROWSER.VBS window_onload — GAP ANALYSIS (what's left to implement)
+================================================================================
+VBS file: Eebrowser.vbs, Sub second_window_onload (lines 119-399, ~280 lines)
+Actual POC: aqs-web-ui (hitanshu/experimental branch)
+
+This is the PER-PAGE controller. Its window_onload runs every time a new ASP
+page loads in the content frame.
+
+Legend:  DONE     = implemented in actual POC
+        PARTIAL  = concept exists but logic incomplete
+        GAP      = not implemented, needs to be built
+        N/A      = not needed in SPA
+
+
+================================================================================
+VBS LINES 119-131: ENTRY + VARIABLE DECLARATIONS
+================================================================================
+
+    Sub window_onload()
+        Call second_window_onload()
+    End Sub
+    Sub second_window_onload()
+        On Error Resume Next
+        Dim objTemp, strTemp, strRlvUpdateAdd, strChgTypRatAdd
+        Dim strPageLabelKey, strShowNextOnEdit
+
+STATUS: N/A
+REASON: The double-sub pattern is VBScript error scoping. React has
+ErrorBoundary (app.tsx) and try/catch in loaders. Variable declarations
+are implicit in TypeScript.
+
+
+================================================================================
+VBS LINES 132-166: MODAL SIZING + FRAME REFERENCES + TIMING
+================================================================================
+
+    If mblnModal Then
+        ' Shrink modal if taller/wider than screen
+        window.dialogTop = "0px"
+        window.dialogHeight = screen.availHeight & "px"
+        window.dialogleft = "0px"
+        window.dialogWidth = screen.availWidth & "px"
+        ' Get frame refs through dialogArguments
+        Set mobjAQSMain = window.dialogArguments.parent
+        Set mobjMenuFrame = mobjAQSMain.frames("menu")
+        Set mobjTreeFrame = mobjAQSMain.frames("tree")
+    Else
+        Set mobjAQSMain = window.parent
+        Set mobjMenuFrame/mobjTreeFrame = mobjAQSMain.frames(...)
+        ' Timing: set all modal timers to 0
+    End If
+
+    MODAL SIZING:
+        STATUS: DONE
+        POC FILE: src/components/modal/modal.tsx (217 lines)
+        HOW: MUI Dialog reads modalHeight/modalWidth from modal-store.
+             Responsive sizing handled by MUI maxHeight/maxWidth.
+
+    FRAME REFERENCES (mobjAQSMain, mobjMenuFrame, mobjTreeFrame):
+        STATUS: N/A
+        REASON: SPA — no frames. Stores replace cross-frame access.
+
+    TIMING (mlngTimeEndBrowserRequest, mlngTimeStartModalRequest, etc.):
+        STATUS: DONE
+        POC FILE: src/utils/performance-monitor.ts (101 lines)
+        HOW: performance.mark() / performance.measure()
+
+
+================================================================================
+VBS LINES 168-170: TRAINING MODE CHECK
+================================================================================
+
+    If mblnTRN Then Call CheckScreenProblems
+
+STATUS: N/A
+REASON: Training mode screen validation is out of scope for migration.
+
+
+================================================================================
+VBS LINES 172-187: DATA-CHANGED FLAG INITIALIZATION
+================================================================================
+
+    With mobjAQSMain
+    If Not mobjAQSMain Is Nothing Then
+        If action NOT IN ("EDIT","INQUIRY","SELECT") Then
+            .mblnDataChanged = True          ' ADD mode = dirty
+            mblnEEDataChanged = True
+        Else
+            .mblnDataChanged = False          ' EDIT/INQUIRY = clean
+            .mblnRatingDataChanged = False
+        End If
+
+STATUS: *** GAP ***
+POC FILE: src/stores/global-vars-store.ts has the flags (dataChanged,
+          ratingDataChanged) but NO code auto-sets them based on action.
+
+WHAT TO BUILD:
+    In the static/dynamic renderer onMount (or a shared handler utility):
+
+    const action = SessionStoreApi.getState().action.toUpperCase();
+    const isAddMode = !['EDIT','INQUIRY','SELECT'].some(a => action.includes(a));
+    if (isAddMode) {
+        GlobalVarsStoreApi.getState().actions.setDataChanged(true);
+    } else {
+        GlobalVarsStoreApi.getState().actions.setDataChanged(false);
+        GlobalVarsStoreApi.getState().actions.setRatingDataChanged(false);
+    }
+
+EFFORT: Small (10-15 lines in shared.ts, called from renderer mount)
+
+
+================================================================================
+VBS LINES 189-204: SESSION XML UPDATE + XML DATA ISLAND PARSE
+================================================================================
+
+    marrSessionInformation(6) = .Decompress(marrSessionInformation(6))
+    .mstrXMLDetail = marrSessionInformation(6)
+
+    Set mxmlDoc = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlDoc.loadXML(document.all("xdiPageData").XMLDocument.xml)
+    mxmlDoc.setProperty "SelectionNamespaces", ...
+
+    SESSION XML:
+        STATUS: DONE
+        POC FILE: src/stores/session-store.ts (152 lines)
+        HOW: updateSessionFromResponse() sets xmlDetail from API JSON.
+             toPayload() serializes back. No decompression needed.
+
+    XML DATA ISLAND PARSE:
+        STATUS: DONE
+        POC FILE: src/services/page-layout.ts (93 lines)
+        HOW: PageLayout API returns JSON. No MSXML parsing needed.
+
+
+================================================================================
+VBS LINES ~207-222: GetEEData + pageHeader CHECK
+================================================================================
+
+    Call .GetEEData(⟪...⟫, Window)
+    If pageHeader Is Nothing Then Exit Sub
+    strShowNextOnEdit = pageHeader.ShowNextOnEdit
+
+    GetEEData (extract controls + combo items from XML):
+        STATUS: DONE
+        POC FILES: src/utils/schema-merger.ts (113 lines)
+                 + src/utils/layout-tree-builder.ts (272 lines)
+        HOW: Schema merger + layout tree builder replace GetEEData.
+             Parallel fetch: schema + pageLayout + component + handler.
+
+    pageHeader Is Nothing guard:
+        STATUS: DONE
+        POC FILE: src/features/frame/components/static-renderer.tsx (96 lines)
+        HOW: Loader returns null schema → renderer shows fallback warning.
+
+
+================================================================================
+VBS LINES ~224-280: ShowNextOnEdit TWO-ARM LOGIC
+================================================================================
+
+    ARM 1 (ShowNextOnEdit = "T"):
+        EDIT/RLVUPDATE/EDITTYPRAT → DISABLE dtaNEXT
+
+    ARM 2 (ShowNextOnEdit = "F"):
+        EDIT/RLVUPDATE/EDITTYPRAT → HIDE dtaNEXT (SET_VISIBLE = "F")
+
+    Both arms check session XML for "rlvupdateadd" and "chgtypratadd"
+    to determine if it's a re-add during RLVUPDATE/EDITTYPRAT.
+
+STATUS: *** GAP ***
+POC FILES: command.ts handles SET_VISIBLE/SET_ENABLED verbs.
+           runtime-override-store.ts tracks per-control overrides.
+           BUT: No code reads ShowNextOnEdit from schema and applies
+           the two-arm logic during page init.
+
+WHAT TO BUILD:
+    A shared handler utility (in handlers/common/shared.ts):
+
+    function applyNextButtonRules(schema, action, sessionStore) {
+        const showNextOnEdit = schema.pageHeader?.showNextOnEdit;
+        const isReAdd = (action) => {
+            if (action === 'RLVUPDATE')
+                return sessionStore.getXmlDetailItem('rlvupdateadd') === 'yes';
+            if (action === 'EDITTYPRAT')
+                return sessionStore.getXmlDetailItem('chgtypratadd') === 'yes';
+            return false;
+        };
+        const shouldRestrict =
+            action === 'EDIT' ||
+            ((action === 'RLVUPDATE' || action === 'EDITTYPRAT') && !isReAdd(action));
+
+        if (shouldRestrict) {
+            if (showNextOnEdit) {
+                RuntimeOverrideStoreApi...setEnabled('dtaNEXT', false);
+            } else {
+                RuntimeOverrideStoreApi...setVisible('dtaNEXT', false);
+            }
+        }
+    }
+
+    Call from static-renderer/dynamic-renderer onMount.
+
+EFFORT: Medium (30-40 lines)
+NOTE: The 9/25/00 "TW" comment in the VBS says this should be server-driven.
+      Long term, the PageLayout API should send the right commands.
+
+
+================================================================================
+VBS LINES 282-285: CheckRequiredIndicators
+================================================================================
+
+    Call .CheckRequiredIndicators("", Window)
+
+STATUS: DONE
+POC FILES: src/utils/validation-rules.ts (105 lines)
+         + react-hook-form formState.isValid
+HOW: Schema defines required fields. react-hook-form tracks validity.
+     SET_REQUIRED browser commands toggle at runtime via
+     runtime-override-store. Action buttons read formState.isValid.
+
+
+================================================================================
+VBS LINES 287-320: PATH LABEL / BREADCRUMB BUILD
+================================================================================
+
+    strPageLabelKey = ""
+    Call .SessionXML_GetItem("pagelabelkey", strPageLabelKey)
+    If Len(strPageLabelKey) = 0 Then strPageLabelKey = marrSessionInformation(3)
+
+    If mxmlDoc has no PathLabel control Then
+        If pageHeader.pathstart > 0 And pageHeader.pathend > 0 Then
+            strTemp = .PathDescription(strPageLabelKey, pathstart, pathend)
+            ' Strip "Policy Coverages -", append coverage name, trim dashes
+            pageHeader.PathLabel = strTemp
+        End If
+    End If
+
+STATUS: *** GAP ***
+POC: No breadcrumb/path label component exists.
+
+WHAT TO BUILD:
+    1. src/components/breadcrumb.tsx — reads tree-store, session-store
+       to build path from nodeKey walking up the tree.
+    2. The PathDescription logic (strip "Policy Coverages -", append
+       coverage name) as a utility function.
+    3. Include in static-renderer layout.
+
+EFFORT: Medium (50-60 lines total)
+
+
+================================================================================
+VBS LINES 321-333: PAGE LABEL APPEND + SESSION XML CLEAR
+================================================================================
+
+    If Not mblnModal And headertype = "append" Then
+        ⟪append page label to path⟫
+    Call .SessionXML_ClearItem("pagelabelkey")
+    marrSessionInformation(6) = .mstrXMLDetail
+
+STATUS: *** GAP *** (same as breadcrumb — part of path label feature)
+
+
+================================================================================
+VBS LINES 335-340: SELECT FIRST TAB (NON-MODAL)
+================================================================================
+
+    If Not mblnModal Then
+        tabstrip.SelectedTab = 0
+    End If
+
+STATUS: DONE
+POC FILE: src/layouts/tab-layout.tsx (42 lines)
+HOW: Default tab index is 0. Tab state managed by MUI Tabs.
+
+
+================================================================================
+VBS LINES 342-344: FOCUS FIRST CONTROL
+================================================================================
+
+    Call .FocusFirstControl(Window)
+
+STATUS: DONE
+POC FILE: src/stores/focus-store.ts (26 lines)
+HOW: focus-store tracks pendingFocus. Form renderer auto-focuses
+     the first enabled field.
+
+
+================================================================================
+VBS LINES 347-358: TAB SELECTION + CANCEL FOCUS + FORCE TAB CLICK
+================================================================================
+
+    If mblnTabCheck Then
+        tabstrip.SelectedTab = mqsTab
+        If Not dtaCancel.disabled And visible Then dtaCancel.focus
+        Call mobjAQSMain.OnTabClickHandler(Window)
+    End If
+
+    TAB SELECTION (mqsTab):
+        STATUS: PARTIAL
+        POC FILE: src/layouts/tab-layout.tsx
+        GAP: Tab index from session (mqsTab equivalent) not wired.
+
+    CANCEL BUTTON FOCUS:
+        STATUS: *** GAP ***
+        WHAT: When showing a non-first tab, focus Cancel button.
+        EFFORT: Tiny (3-5 lines in tab-layout)
+
+    FORCE TAB CLICK HANDLER:
+        STATUS: *** GAP ***
+        WHAT: After programmatic tab selection, fire OnTabClickHandler
+              to rebuild dynamically-built controls.
+        EFFORT: Small (wire to handler registry call)
+
+
+================================================================================
+VBS LINES 362-373: BROWSER TIMING (MODAL vs NON-MODAL)
+================================================================================
+
+    If mblnModal Then
+        .mlngTimeEndModalRequest = .GetTimeMilliseconds()
+        .mlngTimeModalBOProcessing = mlngXMLElapsedTime
+    Else
+        .mlngTimeEndBrowserProcessing = .GetTimeMilliseconds()
+        .mlngTimeBOProcessing = mlngXMLElapsedTime
+    End If
+
+STATUS: DONE
+POC FILE: src/utils/performance-monitor.ts (101 lines)
+
+
+================================================================================
+VBS LINES 374-379: PAGE URL ATTRIBUTE + MENU UPDATE
+================================================================================
+
+    .document.body.setAttribute "pageurl", window.location.href
+    If mobjMenuFrame.mblnPageReady Then mobjMenuFrame.UpdateInfo()
+
+    PAGE URL:
+        STATUS: N/A (React Router already tracks current URL)
+
+    MENU UPDATE (timing display in menu frame):
+        STATUS: *** GAP ***
+        WHAT: After page load, update menu bar's timing display.
+        EFFORT: Small (wire performance-monitor data to header component)
+
+
+================================================================================
+VBS LINES 381-384: pageHeader.resize
+================================================================================
+
+    ' Adjusts header size to fit window, eliminates horizontal scrollbars
+    pageHeader.resize
+
+STATUS: N/A
+REASON: MUI responsive layout handles this. No manual resize needed.
+
+
+================================================================================
+VBS LINES 387-396: HIDE LOADING + SET PAGE LOADED FLAG
+================================================================================
+
+    Set objTemp = document.all("divLoading")
+    objTemp.style.visibility = "hidden"
+    mblnPageLoaded = True
+
+    LOADING INDICATOR:
+        STATUS: DONE
+        POC FILE: src/components/ui/spinner.tsx (23 lines)
+        HOW: React Router navigation.state + Suspense handles loading.
+
+    PAGE LOADED FLAG:
+        STATUS: N/A
+        REASON: React component IS loaded when it renders.
+
+
+================================================================================
+SUMMARY: EEBROWSER window_onload GAPS
+================================================================================
+
+SECTION                              STATUS     EFFORT    NOTES
+------------------------------------+----------+---------+------------------------
+Entry + var declarations             N/A        -         VBScript scoping
+Modal sizing                         DONE       -         modal.tsx
+Frame references                     N/A        -         SPA, no frames
+Timing init                          DONE       -         performance-monitor.ts
+Training mode check                  N/A        -         Out of scope
+Data-changed flag init               *** GAP ** Small     10-15 lines in shared.ts
+Session XML + data island            DONE       -         session-store + page-layout
+GetEEData (extract controls)         DONE       -         schema-merger + layout-tree
+ShowNextOnEdit two-arm               *** GAP ** Medium    30-40 lines in shared.ts
+CheckRequiredIndicators              DONE       -         validation-rules + RHF
+Path label / breadcrumb              *** GAP ** Medium    50-60 lines new component
+Page label append + clear            *** GAP ** Medium    Part of breadcrumb feature
+Select first tab (non-modal)         DONE       -         tab-layout.tsx
+FocusFirstControl                    DONE       -         focus-store.ts
+Tab selection (mqsTab)               PARTIAL    Small     Wire session tab to layout
+Cancel focus on tab switch           *** GAP ** Tiny      3-5 lines
+Force tab click handler              *** GAP ** Small     Wire to handler registry
+Browser timing                       DONE       -         performance-monitor.ts
+Menu timing update                   *** GAP ** Small     Wire perf data to header
+pageHeader.resize                    N/A        -         MUI responsive
+Hide loading                         DONE       -         spinner.tsx
+Page loaded flag                     N/A        -         Component lifecycle
+
+DONE:       10 sections
+N/A:         7 sections (SPA/framework handles)
+GAP:         7 sections (need implementation)
+PARTIAL:     1 section
+
+TOTAL ESTIMATED EFFORT FOR ALL GAPS: ~150-200 lines of new code

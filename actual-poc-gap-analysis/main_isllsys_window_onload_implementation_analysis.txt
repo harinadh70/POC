@@ -1,0 +1,663 @@
+================================================================================
+Main_ISLLSYS_20010101.vbs window_onload — IMPLEMENTATION ANALYSIS FOR REACT MIGRATION
+================================================================================
+
+Main_ISLLSYS_20010101.vbs is the TOP-LEVEL FRAMESET SHELL. Its window_onload
+runs ONCE when the application opens. It sets up the entire screen layout, loads
+the user's permissions, initializes GlobalVars, and kicks off the sequential
+frame load chain (menu → tree → first page).
+
+This document breaks down WHAT the VBS code does and HOW to implement each
+piece in the React migration.
+
+
+################################################################################
+SECTION 1: ON ERROR RESUME NEXT + AddWindowToCollection (lines 216-220)
+################################################################################
+
+--- What the VBS does ---
+    Sub window_onload
+        On Error Resume Next
+        AddWindowToCollection window
+
+    On Error Resume Next: blanket error suppression for the entire routine.
+    AddWindowToCollection: registers this window in a global dictionary
+    (mdicChildWindows) so that logout can walk the list and close all windows.
+
+--- How to implement in React ---
+
+    ON ERROR RESUME NEXT:
+        Do NOT replicate blanket error suppression. Instead use targeted handling:
+
+        1. ErrorBoundary (app.tsx) — catches render errors, shows fallback UI
+        2. try/catch in loaders — catches data fetch errors
+        3. React Router errorElement — per-route error handling
+
+        // app.tsx (already exists)
+        <ErrorBoundary fallback={<ErrorPage />}>
+            <ThemeProvider>
+                <RouterProvider router={router} />
+            </ThemeProvider>
+        </ErrorBoundary>
+
+    AddWindowToCollection:
+        The SPA is a single window. Multi-window scenarios (popup policy windows)
+        are handled by window-storage.ts (266 lines) which provides cross-tab
+        state synchronization using BroadcastChannel or localStorage events.
+
+        For logout-closes-all-windows:
+        // window-storage.ts already handles this:
+        // - Broadcasts 'logout' event to all tabs
+        // - Each tab's auth-store listens and redirects to /login
+
+    FILES TO CREATE/MODIFY:
+        None — ErrorBoundary and window-storage.ts already exist.
+
+
+################################################################################
+SECTION 2: SCREEN SIZE CHECK + RESIZE (lines 221-226)
+################################################################################
+
+--- What the VBS does ---
+    If screen.width < 1024 And screen.height < 768 Then
+        window.moveTo 0,0
+        window.resizeTo screen.availWidth, screen.availHeight
+    End If
+
+    Forces the browser to fill the screen if resolution is below 1024x768.
+
+--- How to implement in React ---
+
+    NOT NEEDED. The MUI layout is responsive. CSS handles all screen sizes:
+    - MUI's Container, Grid, Box use flex/grid
+    - Tailwind utility classes for responsive breakpoints
+    - No fixed pixel layouts
+
+    If a minimum viewport warning is desired (optional):
+    // A small banner for very small screens
+    @media (max-width: 768px) {
+        .viewport-warning { display: block; }
+    }
+
+    FILES TO CREATE/MODIFY:
+        None — responsive by default.
+
+
+################################################################################
+SECTION 3: GLOBALVARS INITIALIZATION (lines 227-229)
+################################################################################
+
+--- What the VBS does ---
+    Set GlobalVars = New globalVarsClass
+
+    Creates the global variable object that tracks application-wide state:
+    - PolicyRated (Boolean)
+    - DocumentsSelected (Boolean)
+    - DocumentsComplete (Boolean)
+    - SumMsgChg (Boolean)
+    - ClientIssueAllowed (1|2|3)
+    - DataChanged (Boolean)
+    - RatingDataChanged (Boolean)
+
+    The globalVarsClass has Property Let cascades:
+    - Setting PolicyRated=False also resets DocumentsSelected, DocumentsComplete, SumMsgChg
+    - Setting DocumentsSelected=False also resets DocumentsComplete
+    - Setting SumMsgChg=True also resets DocumentsSelected, DocumentsComplete
+
+--- How to implement in React ---
+
+    THE ACTUAL POC HAS THIS FULLY IMPLEMENTED:
+
+    // src/stores/global-vars-store.ts (97 lines)
+    interface GlobalVarsState {
+        policyRated: boolean;
+        documentsSelected: boolean;
+        documentsComplete: boolean;
+        sumMsgChg: boolean;
+        clientIssueAllowed: 1 | 2 | 3;
+        dataChanged: boolean;
+        ratingDataChanged: boolean;
+        actions: {
+            setPolicyRated: (value: boolean) => void;
+            setDocumentsSelected: (value: boolean) => void;
+            setDocumentsComplete: (value: boolean) => void;
+            setSumMsgChg: (value: boolean) => void;
+            setClientIssueAllowed: (value: 1 | 2 | 3) => void;
+            setDataChanged: (value: boolean) => void;
+            setRatingDataChanged: (value: boolean) => void;
+            reset: () => void;
+        };
+    }
+
+    The cascade logic is preserved in the action implementations:
+
+    setPolicyRated: (value) => set(state => {
+        state.policyRated = value;
+        if (!value) {
+            state.documentsSelected = false;
+            state.documentsComplete = false;
+            state.sumMsgChg = false;
+        }
+    }),
+
+    The store is created at module load time (Zustand), so it's always
+    available — equivalent to "Set GlobalVars = New globalVarsClass" running
+    before anything else.
+
+    FILES TO CREATE/MODIFY:
+        None — global-vars-store.ts is complete.
+
+
+################################################################################
+SECTION 4: WINDOW REFERENCE SETUP (lines 230-235)
+################################################################################
+
+--- What the VBS does ---
+    Set mobjAQSMain = window           ' "this window IS the main window"
+    Set mobjParentWindow = window.opener ' "my parent, if I was opened by another"
+
+    These references let any frame (menu, tree, content) reach the main window
+    and thereby reach any other frame. The entire inter-frame communication
+    pattern is: contentFrame → window.parent (=mobjAQSMain) → frames("menu").
+
+--- How to implement in React ---
+
+    NOT NEEDED. The SPA has no frames. Components communicate via:
+
+    1. Zustand stores (direct state access from anywhere):
+       - SessionStoreApi.getState() — any component can read session
+       - NavigationStoreApi.getState() — any component can read nav state
+       - No frame traversal needed
+
+    2. React Router navigation:
+       - useNavigate() — programmatic navigation
+       - useLoaderData() — data from loaders
+       - No frame-to-frame messaging
+
+    3. Handler registry (main.tsx frameHandlerRegistry):
+       - register/unregister/call handlers by name
+       - Replaces the pattern of calling parent.frames("menu").SomeFunction()
+
+    FILES TO CREATE/MODIFY:
+        None — Zustand stores replace frame references.
+
+
+################################################################################
+SECTION 5: REPLACEMENT SEARCH PAGE — RE-PARENTING CHILD WINDOWS (lines 252-320)
+################################################################################
+
+--- What the VBS does ---
+    If mblnReplacementHomePage Then
+        ' Walk the parent's child window dictionary
+        For each key in mobjParentWindow.mdicChildWindows.Keys
+            If key starts with "policy" Then
+                ' Load this child's window references
+                Call LoadWindowReferences(key, childWindow)
+            End If
+        Next
+        ' Each child now points to THIS window as its parent
+        Set objWindow.mobjParentWindow = window
+    End If
+
+    This handles an edge case: user closed the search window while policy
+    windows were open, then clicked Home. The new window must "adopt" the
+    orphaned policy windows.
+
+--- How to implement in React ---
+
+    NOT NEEDED in the SPA. There are no orphan-able child windows.
+
+    For multi-tab scenarios (user opens policies in new tabs):
+    - window-storage.ts handles cross-tab communication
+    - BroadcastChannel sends state updates to all tabs
+    - Each tab is self-contained (has its own stores)
+    - No parent/child relationship to maintain
+
+    FILES TO CREATE/MODIFY:
+        None — window-storage.ts already handles cross-tab.
+
+
+################################################################################
+SECTION 6: ERROR CLEANUP GUARD (lines 321-325)
+################################################################################
+
+--- What the VBS does ---
+    If Err.number <> 0 Then
+        Err.clear
+        Set mobjParentWindow = Nothing
+    End If
+
+    If accessing window.opener failed (Section 4), null out the parent ref
+    so downstream code sees "no parent" instead of a broken reference.
+
+--- How to implement in React ---
+
+    NOT NEEDED. window.opener access can't "half-fail" in modern JS.
+    The SPA doesn't use window.opener for navigation at all.
+
+    FILES TO CREATE/MODIFY:
+        None.
+
+
+################################################################################
+SECTION 7: CHOOSING THE LAYOUT FROM POLICY ID (lines 335-372) — THE CORE LOGIC
+################################################################################
+
+--- What the VBS does ---
+    document.body.setAttribute "policyid", mstrPolicyID
+
+    If CLng(mstrPolicyID) > 0 Then
+        ' POLICY MODE: show menu bar + tree panel
+        fraHorizontal.rows = "46,*"      ' menu bar = 46px, rest = content
+        fraTreeColumn.rows = "90,*"      ' tree = 90px height, rest = content
+    ElseIf CLng(mstrPolicyID) = 0 Then
+        ' SEARCH MODE: search page (no tree)
+        mblnSearchPage = True
+    Else
+        ' UTILITY MODE: dropdown only, no tree
+        mblnSearchPage = True
+        fraHorizontal.rows = "23,*"      ' shorter menu bar
+        fraVertical.cols  = "0,*"        ' tree width = 0 (hidden)
+    End If
+
+--- How to implement in React ---
+
+    The three-way layout decision is expressed as the ROUTE TREE + components:
+
+    1. ROUTE-LEVEL (routes.tsx):
+       The router doesn't branch on policyId directly. Instead, the cycling
+       API (executeAction) determines which page to load based on policyId,
+       and the file resolver maps to the correct route.
+
+    2. LAYOUT-LEVEL:
+       The layout components adapt based on the loaded page:
+
+       // Policy mode (policyId > 0):
+       // Header (fixed 46px) + Sidebar (tree, collapsible) + Content area
+       // → Uses RootLayout with full sidebar
+
+       // Search mode (policyId = 0):
+       // Header + Content area (no tree sidebar)
+       // → System page (str-piphsys-20010101.tsx) renders search subframes
+
+       // Utility mode (policyId < 0):
+       // Compact header + Content area (no tree)
+       // → Similar to search but with different header
+
+    3. IMPLEMENTATION:
+       The actual POC handles this through route structure:
+
+       // routes.tsx
+       {
+           path: '/',
+           element: <Root />,
+           loader: clientRootLoader,
+           middleware: [clientRootMiddleware],
+           children: [
+               { path: 'login', ... },
+               {
+                   element: <RootLayout />,     // ← layout with sidebar/header
+                   children: [
+                       { path: 'menu', action: clientMenuAction },
+                       { path: 'tree', action: clientTreeAction },
+                       { path: 'static/:folder/:asp', ... },
+                       { path: 'dynamic/:folder/:asp', ... },
+                   ]
+               }
+           ]
+       }
+
+       RootLayout conditionally renders the sidebar based on session state:
+
+       // layouts/root.tsx
+       function RootLayout() {
+           useDeferredNavigation();  // handles deferred nav after modal close
+           const { policyId } = useSessionStore();
+           const showTree = Number(policyId) > 0;
+
+           return (
+               <>
+                   <Header />
+                   <Box sx={{ display: 'flex' }}>
+                       {showTree && <Sidebar />}
+                       <Box sx={{ flex: 1 }}>
+                           <Outlet />
+                       </Box>
+                   </Box>
+                   <Modal />
+               </>
+           );
+       }
+
+    FILES TO CREATE/MODIFY:
+        - layouts/root.tsx — may need to add policyId-based sidebar toggle
+          if not already conditional (currently 24 lines, verify)
+        - The routing and layout structure is already in place
+
+
+################################################################################
+SECTION 8: INITIAL ACTION OVERRIDE — CASE -3 → "LIB" (lines 377-382)
+################################################################################
+
+--- What the VBS does ---
+    Select Case CLng(mstrPolicyID)
+        Case -3
+            mstrAction = "LIB"
+    End Select
+
+    Policy ID -3 is the library/utilities entry point. Forces action to "LIB".
+
+--- How to implement in React ---
+
+    TWO OPTIONS:
+
+    Option A — SERVER-DRIVEN (recommended):
+        The cycling API (pageNavigation) already handles this. When policyId=-3,
+        the server returns action="LIB" in the navigation response. The client
+        doesn't hardcode it.
+
+        // execute-action.ts already calls pageNavigation API
+        // Server returns { action: 'LIB', aspFilePath: '...', ... }
+        // Client just follows the server's instruction
+
+    Option B — CLIENT FALLBACK (if server doesn't handle it):
+        Add to the root loader or getContext:
+
+        // routes.tsx getContext()
+        function getContext() {
+            const session = SessionStoreApi.getState();
+            let action = session.action;
+
+            // Legacy override: library entry point
+            if (Number(session.policyId) === -3) {
+                action = 'LIB';
+            }
+
+            return { action, compLoc, nodeKey, userId, policyId, ... };
+        }
+
+    FILES TO CREATE/MODIFY:
+        - Likely none — server handles this via cycling API
+        - If needed: small addition to routes.tsx getContext()
+
+
+################################################################################
+SECTION 9: SECURITY DATA ISLAND (lines 383-395)
+################################################################################
+
+--- What the VBS does ---
+    Set mxmlSecurity = CreateObject("MSXML2.DOMDocument.6.0")
+    mxmlSecurity.async = False
+    mxmlSecurity.loadXML(document.all("xdiSecurity").XMLDocument.xml)
+
+    Parses the <xml id="xdiSecurity"> block embedded in the HTML page.
+    This contains user permissions (what menus/actions the user can access).
+
+--- How to implement in React ---
+
+    Replaced by the LOGIN FLOW:
+
+    1. User logs in (pages/login.tsx → features/auth/utils/action.ts)
+    2. Auth API returns user permissions as JSON
+    3. Stored in auth-store.ts:
+
+       interface AuthState {
+           isAuthenticated: boolean;
+           userId: string;
+           token: string;
+           permissions: UserPermissions;   // ← replaces xdiSecurity
+           actions: { ... };
+       }
+
+    4. Any component reads permissions via:
+       const { permissions } = useAuthStore();
+
+    No XML parsing. No embedded data islands. Permissions are fetched once
+    at login and cached in the store for the session lifetime.
+
+    FILES TO CREATE/MODIFY:
+        None — auth-store.ts and the login flow already handle this.
+
+
+################################################################################
+SECTION 10: ExecuteAction("menu", ...) — KICKING OFF THE LOAD (lines 396-400)
+################################################################################
+
+--- What the VBS does ---
+    Call ExecuteAction("menu", "POL|POL|" & mstrExpiredNumber & "|", -1, "")
+
+    Loads ONLY the menu frame. When menu finishes loading, its onload calls
+    LoadNextPage (Section 11), which loads the tree, whose onload calls
+    LoadFirstPage, which loads the first content page.
+
+    This is the START of the serial load chain.
+
+--- How to implement in React ---
+
+    The serial chain is replaced by React Router's route tree:
+
+    1. RESOURCE ROUTES for menu and tree:
+
+       // routes.tsx
+       { path: 'menu', action: clientMenuAction }   // POST-like mutation
+       { path: 'tree', action: clientTreeAction }    // POST-like mutation
+
+       These are React Router "actions" — they run when explicitly called
+       (e.g., via useFetcher().submit()), not on every navigation.
+
+    2. INITIAL DATA LOADING:
+       The root loader (clientRootLoader) handles auth check.
+       The dataStrategy runs cycling (executeAction) which determines the
+       first page to load.
+
+       // On initial app load:
+       // 1. Root loader → auth check → redirect to /login if not authed
+       // 2. After login → navigate to /static/system/str-piphsys-20010101
+       // 3. dataStrategy → executeAction → cycling → determines page
+       // 4. Frame loader → parallel(schema, layout, component, handler)
+       // 5. Page renders
+
+    3. MENU/TREE POPULATION:
+       Menu and tree data are loaded via their resource route actions:
+
+       // resources/menu.tsx (93 lines)
+       export async function clientMenuAction({ request }) {
+           const menuData = await fetchMenuData();
+           MenuStoreApi.getState().actions.setMenuItems(menuData);
+           return null;
+       }
+
+       // resources/tree.tsx (77 lines)
+       export async function clientTreeAction({ request }) {
+           const treeData = await fetchTreeData();
+           TreeStoreApi.getState().actions.setTreeData(treeData);
+           return null;
+       }
+
+    FILES TO CREATE/MODIFY:
+        None — resource routes and stores already exist.
+
+
+################################################################################
+SECTION 11: CLEARING ratingdatachanged FLAG (line 401)
+################################################################################
+
+--- What the VBS does ---
+    Call SessionXML_ClearItem("ratingdatachanged")
+
+    Clears a stale flag from a previous transaction so it doesn't bleed into
+    the new page load.
+
+--- How to implement in React ---
+
+    // Called during navigation reset (in dataStrategy or root loader):
+    GlobalVarsStoreApi.getState().actions.setRatingDataChanged(false);
+
+    The actual POC's global-vars-store.ts has the reset() action which
+    clears all flags to defaults. This should be called at the start of
+    a new navigation cycle.
+
+    FILES TO CREATE/MODIFY:
+        - Ensure global-vars-store reset() is called in dataStrategy or
+          root loader at the start of a new page navigation cycle.
+        - May already be wired — verify in data-strategy.ts.
+
+
+################################################################################
+SECTION 12: THE SERIAL LOAD CHAIN — LoadNextPage / LoadFirstPage (lines 414-445)
+################################################################################
+
+--- What the VBS does ---
+    Sub LoadNextPage()
+        If Left(mstrNodeKey, 3) = "SYS" Then
+            ' System node: load directly
+            Call ExecuteAction(mstrAction, mstrNodeKey, 0, "")
+        Else
+            Select Case Left(mstrNodeKey, 7)
+                Case "POL|POL"
+                    ' Policy: load TREE next
+                    Call ExecuteAction("TREE", "POL|POL|" & expiredNum & "|", -1, "")
+                Case Else
+                    ' Other: load first page
+                    Call ExecuteAction(mstrAction, "POL|POL|" & expiredNum & "|", 0, "")
+            End Select
+        End If
+    End Sub
+
+    Sub LoadFirstPage
+        Call ExecuteAction(mstrAction, "POL|POL|" & expiredNum & "|", 0, "")
+    End Sub
+
+    The chain: menu.onload → LoadNextPage → tree.onload → LoadFirstPage
+    Each frame's onload triggers the next frame to load.
+
+--- How to implement in React ---
+
+    THIS IS THE CLEANEST WIN IN THE MIGRATION.
+
+    React Router loaders run parent-before-child, automatically:
+        1. Root loader runs (auth check)
+        2. Root middleware runs (auth guard)
+        3. dataStrategy runs (cycling — determines which page)
+        4. Frame loader runs (fetches schema + layout + component + handler)
+        5. Component renders
+
+    The serial chain existed because IE couldn't load all frames simultaneously
+    without timing bugs. React Router guarantees ordering by design.
+
+    The dataStrategy is aware of the resource routes:
+        const PREFETCH_ROUTE_FRAGMENTS = ['menu', 'tree', 'modal'] as const;
+
+    For the SYS vs POL|POL branching:
+    - The cycling API handles this on the server side
+    - The server knows the nodeKey and returns the correct aspFilePath
+    - The client just follows the server's routing instruction
+
+    FILES TO CREATE/MODIFY:
+        None — the route tree and dataStrategy replace the serial chain.
+
+
+################################################################################
+SECTION 13: CYCLING DEPTH GUARD (not in original VBS — new in React)
+################################################################################
+
+--- What the VBS does ---
+    NOTHING. The legacy code has no depth guard. Infinite navigation loops were
+    a known bug — if cycling returned a NAVIGATE_CYCLING command that led to
+    another NAVIGATE_CYCLING, the browser would hang.
+
+--- How to implement in React ---
+
+    THE ACTUAL POC ADDS THIS AS AN IMPROVEMENT:
+
+    // execute-action.ts
+    const MAX_NAVIGATION_DEPTH = 10;
+
+    if (currentDepth >= MAX_NAVIGATION_DEPTH) {
+        return {
+            success: false,
+            error: `Max navigation depth (${MAX_NAVIGATION_DEPTH}) exceeded`,
+            ...
+        };
+    }
+
+    // data-strategy.ts
+    const MAX_CYCLING_DEPTH = 5;  // tighter limit for cycling specifically
+
+    // navigation-store.ts tracks depth:
+    navigationDepth: number;
+    incrementDepth(): void;
+    decrementDepth(): void;
+
+    Two separate limits:
+    - MAX_CYCLING_DEPTH (5) — how many cycling calls per single navigation
+    - MAX_NAVIGATION_DEPTH (10) — total navigation depth across the app
+
+    FILES TO CREATE/MODIFY:
+        None — already implemented as a safety improvement.
+
+
+################################################################################
+IMPLEMENTATION SUMMARY
+################################################################################
+
+Section                       | React Implementation              | Status in POC
+------------------------------|-----------------------------------|---------------
+On Error Resume Next          | ErrorBoundary + try/catch         | DONE
+AddWindowToCollection         | window-storage.ts (cross-tab)     | DONE
+Screen resize < 1024x768     | Responsive MUI/Tailwind layout    | ELIMINATED
+GlobalVars = New globalVarsClass | global-vars-store.ts (97 lines)| DONE
+mobjAQSMain = window          | Not needed (SPA, Zustand stores)  | ELIMINATED
+mobjParentWindow = opener     | Not needed (SPA)                  | ELIMINATED
+Replacement page re-parenting | Not needed (SPA)                  | ELIMINATED
+Error cleanup guard           | Not needed (no opener)            | ELIMINATED
+Layout from policyId (3-way)  | Route tree + RootLayout sidebar   | DONE (verify)
+Case -3 → action = "LIB"     | Server-driven (cycling API)       | DONE
+Security data island (MSXML)  | auth-store.ts (JSON from login)   | DONE
+ExecuteAction("menu", ...)    | Resource routes /menu, /tree      | DONE
+Clear ratingdatachanged       | global-vars-store reset()         | NEEDS WIRING
+LoadNextPage serial chain     | React Router parent→child loaders | ELIMINATED
+LoadFirstPage                 | React Router parent→child loaders | ELIMINATED
+Cycling depth guard           | execute-action.ts (MAX_DEPTH=10)  | DONE (new)
+
+WORK REMAINING:
+    1. Verify RootLayout conditionally shows/hides sidebar based on policyId
+       (may need small addition to layouts/root.tsx)
+    2. Wire global-vars-store reset() into dataStrategy or root loader
+       to clear ratingDataChanged at navigation start
+    Everything else is either implemented or correctly eliminated.
+
+
+################################################################################
+KEY ARCHITECTURAL DECISIONS FOR THE MIGRATION
+################################################################################
+
+1. FRAME COMMUNICATION → ZUSTAND STORES
+   Legacy: contentFrame.parent.frames("menu").UpdateInfo()
+   React:  MenuStoreApi.getState().actions.updateInfo()
+   Rule: Never traverse frames. Always use stores.
+
+2. SERIAL LOAD CHAIN → ROUTE TREE
+   Legacy: menu.onload → LoadNextPage → tree.onload → LoadFirstPage
+   React:  React Router guarantees parent-before-child loader ordering.
+   Rule: Trust the framework.
+
+3. XML DATA ISLANDS → JSON APIs
+   Legacy: CreateObject("MSXML2.DOMDocument.6.0").loadXML(...)
+   React:  axios.get('/api/v1/...') → JSON response
+   Rule: All data comes from API calls, not embedded XML.
+
+4. GLOBAL ERROR SUPPRESSION → TARGETED ERROR HANDLING
+   Legacy: On Error Resume Next (hides all errors)
+   React:  ErrorBoundary (render), try/catch (async), errorElement (routes)
+   Rule: Handle specific errors, never suppress all.
+
+5. MULTI-WINDOW → SINGLE PAGE + CROSS-TAB
+   Legacy: window.open(), window.opener, mdicChildWindows
+   React:  Single SPA + window-storage.ts for multi-tab
+   Rule: One window, shared stores, BroadcastChannel for tabs.
+
+6. PIXEL LAYOUTS → RESPONSIVE COMPONENTS
+   Legacy: fraHorizontal.rows = "46,*"
+   React:  MUI Box with flex/grid
+   Rule: Use CSS layout, not pixel arithmetic.
