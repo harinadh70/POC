@@ -1,4 +1,4 @@
-import { SessionStoreApi } from '@stores/session-store';
+import { SessionStoreApi } from '@/stores/session-store';
 
 // VBS: Main_ISLLSYS LoadFirstPage lines 438-452
 // After first page loads, if policyId != "0", poll umbrella mapping status.

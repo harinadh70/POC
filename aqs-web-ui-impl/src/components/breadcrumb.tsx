@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { Breadcrumbs, Typography } from '@mui/material';
 import { NavigateNext } from '@mui/icons-material';
 
-import { SessionStoreApi } from '@stores/session-store';
-import { TreeStoreApi } from '@stores/tree-store';
+import { SessionStoreApi } from '@/stores/session-store';
+import { TreeStoreApi } from '@/stores/tree-store';
 
 import type { TreeNode } from '@/types/tree';
 

@@ -1,6 +1,6 @@
-import { GlobalVarsStoreApi } from '@stores/global-vars-store';
-import { SessionStoreApi } from '@stores/session-store';
-import { RuntimeOverrideStoreApi } from '@stores/runtime-override-store';
+import { GlobalVarsStoreApi } from '@/stores/global-vars-store';
+import { SessionStoreApi } from '@/stores/session-store';
+import { RuntimeOverrideStoreApi } from '@/stores/runtime-override-store';
 
 // VBS: Eebrowser second_window_onload lines 172-280
 // Two separate init rules that run on every page mount.

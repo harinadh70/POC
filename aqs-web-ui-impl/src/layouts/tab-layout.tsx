@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tabs, Tab, Box } from '@mui/material';
 import { RenderLayoutNode } from './render-layout-node';
-import { FocusStoreApi } from '@stores/focus-store';
+import { FocusStoreApi } from '@/stores/focus-store';
 
 // types
 import type { SyntheticEvent } from 'react';

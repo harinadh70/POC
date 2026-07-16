@@ -15,7 +15,7 @@ import { buildLayoutTree } from '@utils/layout-tree-builder';
 
 // components
 import { FormRenderer } from '@components/ui/form-renderer';
-import { RuntimeOverrideStoreApi } from '@stores/runtime-override-store';
+import { RuntimeOverrideStoreApi } from '@/stores/runtime-override-store';
 
 // types
 import type { ClientDynamicLoader } from '../utils/loader';

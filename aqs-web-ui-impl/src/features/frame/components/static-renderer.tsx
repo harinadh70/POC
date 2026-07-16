@@ -5,7 +5,7 @@ import { Alert, AlertTitle, Box, Typography } from '@mui/material';
 // components
 import { FormRenderer } from '@components/ui/form-renderer';
 import { Breadcrumb } from '@components/breadcrumb';
-import { RuntimeOverrideStoreApi } from '@stores/runtime-override-store';
+import { RuntimeOverrideStoreApi } from '@/stores/runtime-override-store';
 
 // contexts
 import { HandlersProvider } from '@/contexts/handlers-context';
