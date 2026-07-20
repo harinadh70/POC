@@ -1,0 +1,686 @@
+================================================================================
+4. MAIN_ISLLSYS COMPLETE — GAP ANALYSIS (all 85 routines vs actual POC)
+================================================================================
+VBS file: Main_ISLLSYS_20010101.vbs (~9,090 lines, 85 routines)
+Actual POC: aqs-web-ui (hitanshu/experimental branch)
+
+Main_ISLLSYS is the SHELL/FRAMESET CONTROLLER — it runs ONCE when the
+application opens and provides all shared services (navigation, commands,
+security, focus, controls, lifecycle) to every content page.
+
+IMPORTANT: The earlier "Main_ISLLSYS_full_routine_reference.txt" tracked
+statuses (SHIPPED/SCAFFOLDED/DESIGN/ELIMINATED) against an EARLIER scaffold
+POC. This file RE-EVALUATES every routine against the ACTUAL POC codebase
+(12 Zustand stores, 44 files, hitanshu/experimental branch).
+
+Legend:  DONE     = implemented in actual POC
+        PARTIAL  = concept/mechanism exists but logic incomplete
+        GAP      = not implemented, needs to be built
+        N/A      = not needed in SPA (frames/ActiveX/VBScript-only)
+
+
+================================================================================
+SHELL / LIFECYCLE (5 routines)
+================================================================================
+
+#1  window_onload (lines 216-410)
+    PURPOSE: Boot — global vars, layout choice, security, kick off menu load
+    STATUS: DONE
+    POC FILES: routes.tsx, data-strategy.ts, session-store.ts,
+              global-vars-store.ts, auth-store.ts
+    NOTE: See "2_main_isllsys_window_onload_gaps.txt" — 1 sub-gap
+          (FetchUmbrellaMappingStatus, low priority)
+
+#16 ShowFrame (lines 904-989)
+    PURPOSE: Switch visible frameset row, clear dirty, toggle tree, retitle
+    STATUS: DONE
+    POC FILES: routes.tsx (route tree IS the layout), session-store.ts
+    NOTE: The 3-way branch (policy/search/utility) is the route tree itself.
+          Frame row sizing eliminated (CSS layout).
+
+#17 SetFrameTitle (lines 992-1029)
+    PURPOSE: Set document.title from windowtitle + policyNumber + insuredName
+    STATUS: *** GAP ***
+    WHAT: No document.title logic exists in the actual POC.
+    EFFORT: Small (15-20 lines — useEffect hook reading session-store)
+    NOTE: windowtitle comes from Navigation API (per the Fulcrum C# work)
+
+#38 window_onbeforeunload (lines 2876-2997)
+    PURPOSE: Warn user before closing if dirty data or open child windows
+    STATUS: *** GAP ***
+    WHAT: No beforeunload listener or React Router useBlocker for dirty state.
+    EFFORT: Medium (30-40 lines — beforeunload + useBlocker + dirty check)
+
+#39 window_onunload (lines 3000-3095)
+    PURPOSE: Close child windows, fire CANCEL on EE page, refocus opener
+    STATUS: PARTIAL
+    POC FILE: src/hooks/use-unmount.ts (32 lines)
+    GAP: CANCEL server call on unload not wired. Child window close loop
+         absent (no window registry in actual POC).
+
+
+================================================================================
+NAVIGATION (11 routines)
+================================================================================
+
+#2  LoadNextPage (lines 414-434)
+    PURPOSE: Second step of serial load — SYS/POL branch → tree or page
+    STATUS: DONE
+    POC FILE: src/utils/data-strategy.ts (104 lines)
+    HOW: dataStrategy interleaves executeAction before route loaders.
+         The serial chain is implicit in the route tree.
+
+#3  LoadFirstPage (lines 438-452)
+    PURPOSE: Third step — load first page, poll umbrella status
+    STATUS: DONE (except umbrella — see #1)
+    POC FILE: src/utils/data-strategy.ts
+
+#4  ClearActionMenus (lines 456-490)
+    PURPOSE: Force action menu reload after rate-level change
+    STATUS: *** GAP ***
+    WHAT: No menu invalidation mechanism. Menu renders from menu-store
+          but has no invalidate/refetch trigger.
+    EFFORT: Small (10-15 lines — menu-store invalidation action)
+
+#15 ParentWindow_Navigate (lines 875-901)
+    PURPOSE: Back button — focus parent/search window, reopen if closed
+    STATUS: PARTIAL
+    POC: React Router exists (routes.tsx) but no explicit "back to search"
+         route handler.
+    EFFORT: Small (navigate('/search') or navigate(-1))
+
+#21 ExecuteAction (lines 1427-1872, the master navigation router)
+    PURPOSE: Given action + nodekey → resolve destination → route to frame/modal/window
+    STATUS: DONE
+    POC FILES: src/utils/data-strategy.ts (104 lines)
+             + src/routes/routes.tsx (110 lines)
+    HOW: dataStrategy runs executeAction (cycling API) BEFORE route loaders.
+         fileResolver maps folder/asp to schema+component+handler.
+    NOTE: DELETE branch, MODELESS, HIDDEN not built (see #19)
+
+#23 GetActionMenuNameException (lines 1937-1964)
+    PURPOSE: NodeKey → LOB/program-type key (BOP 4th/5th element exception)
+    STATUS: *** GAP ***
+    WHAT: BOP node key parsing not built. The LOB from nodeKey is needed
+          for menu/toolbar routing.
+    EFFORT: Small (10-15 lines — utility function)
+
+#25 UpdateToolBar (lines 1997-2020)
+    PURPOSE: After navigation, tell toolbar to re-evaluate button states
+    STATUS: *** GAP ***
+    WHAT: No toolbar/action-menu component exists in the actual POC.
+          In React this would be reactive (store subscription, not explicit call).
+    EFFORT: Medium (toolbar component + store wiring)
+
+#26 RefreshSelectedPage (lines 2023-2057)
+    PURPOSE: Tell a hidden frame's page to refresh with current data
+    STATUS: N/A
+    REASON: React store subscriptions auto-rerender. No cross-frame refresh.
+
+#36 SetExpiredNumber (lines 2782-2815)
+    PURPOSE: Replace 3rd pipe-field of nodeKey with expired number
+    STATUS: *** GAP ***
+    WHAT: Pure utility — split/replace/join on nodeKey
+    EFFORT: Tiny (5 lines)
+
+#43 SetNextAction (lines 3148-3166)
+    PURPOSE: Stash next navigation params for after modal close
+    STATUS: *** GAP ***
+    WHAT: No pendingAction in browser-cmd-store. Modal close doesn't
+          resume deferred navigation.
+    EFFORT: Small (15-20 lines — store field + modal-close handler)
+
+#44 GetCyclingValues (lines 3169-3242)
+    PURPOSE: Call cycling API to resolve action → destination URL + frame
+    STATUS: DONE
+    POC FILE: src/utils/data-strategy.ts
+    HOW: data-strategy calls cycling API and routes based on response.
+
+
+================================================================================
+TREE (7 routines)
+================================================================================
+
+#18 RefreshTree (lines 1032-1039)
+    PURPOSE: Rebuild nav tree from root node
+    STATUS: *** GAP ***
+    WHAT: No tree component or tree-store refresh action.
+          tree-store.ts (exists) has node state but no rebuild/refetch.
+    EFFORT: Medium (tree component + refresh action)
+
+#19 DeleteAction (lines 1045-1362)
+    PURPOSE: Delete policy node on server, remove from tree, refresh branches
+    STATUS: *** GAP ***
+    WHAT: No delete handler. Would need: confirm dialog, server call,
+          tree-store node removal, per-LOB branch refresh table.
+    EFFORT: Large (100-150 lines — multiple concerns)
+
+#29 SelectedNodeKey (lines 2474-2492)
+    PURPOSE: Return currently selected tree node key
+    STATUS: PARTIAL
+    POC FILE: src/stores/tree-store.ts
+    GAP: tree-store exists but no explicit selectedNodeKey selector
+         for external consumers.
+    EFFORT: Tiny (3-5 lines — store selector)
+
+#30 PathDescription (lines 2495-2513)
+    PURPOSE: Build breadcrumb by walking tree ancestors
+    STATUS: *** GAP ***
+    WHAT: No breadcrumb/path component. Tree ancestor walk not built.
+    EFFORT: Medium (40-50 lines — ancestor selector + component)
+    NOTE: Same gap as Eebrowser path label (#12 in file 3)
+
+#34 Tree_IsNodeValid (lines 2741-2758)
+    PURPOSE: Check if a node exists in the tree
+    STATUS: *** GAP ***
+    WHAT: tree-store has no node existence check.
+    EFFORT: Tiny (3-5 lines — nodeIndex.has(key))
+
+#35 Tree_SelectNode (lines 2761-2779)
+    PURPOSE: Programmatically select a tree node
+    STATUS: PARTIAL
+    POC FILE: src/stores/tree-store.ts
+    GAP: No explicit selectNode action that also navigates.
+    EFFORT: Small (10 lines — store action + navigate)
+
+#84 SetIconImages (lines 9026-9036)
+    PURPOSE: Update tree node icon
+    STATUS: *** GAP ***
+    WHAT: No tree icon state or rendering.
+    EFFORT: Small (10-15 lines — store field + tree component prop)
+
+
+================================================================================
+WINDOWS (11 routines)
+================================================================================
+
+#6  AddWindowToCollection (lines 516-528)
+    PURPOSE: Register window in global collection
+    STATUS: N/A
+    REASON: SPA — single JS context, no window collection needed.
+
+#10 ShowBatchEdits (lines 718-758)
+    PURPOSE: Open batch-edits popup (or close if no data)
+    STATUS: *** GAP ***
+    WHAT: No batch-edits modal/view.
+    EFFORT: Medium (modal component + conditional open/close)
+
+#11 ShowConversionReport (lines 762-789)
+    PURPOSE: Open conversion summary popup, show-once
+    STATUS: *** GAP ***
+    WHAT: No conversion report modal.
+    EFFORT: Medium (modal component + show-once flag)
+
+#12 LoadWindowReferences (lines 792-810)
+    PURPOSE: Register policy child window
+    STATUS: N/A (SPA, no child windows)
+
+#13 LoadNonPolicyWindowReferences (lines 813-831)
+    STATUS: N/A (SPA)
+
+#14 LoadExternalWindowReferences (lines 837-871)
+    STATUS: N/A (SPA)
+
+#22 FocusBatchEditWindow (lines 1916-1934)
+    PURPOSE: Focus existing batch-edit window
+    STATUS: N/A (SPA — batch edits would be a modal, not a window)
+
+#31 BlankModelessWindowSetFocus (lines 2614-2634)
+    STATUS: N/A (IE showModelessDialog artifact)
+
+#32 mblnPolicyOpen (lines 2637-2674)
+    PURPOSE: Check if policy window is open
+    STATUS: N/A (SPA — policy is a route, not a window)
+
+#33 IsExternalWindowOpen (lines 2677-2738)
+    STATUS: N/A (SPA)
+
+#37 RefreshSearchPageLists (lines 2818-2873)
+    PURPOSE: Refresh WIP queue on search page after action
+    STATUS: *** GAP ***
+    WHAT: No WIP queue component or refetch trigger.
+    EFFORT: Medium (grid refetch via grid-store invalidation)
+
+
+================================================================================
+LOGOUT (3 routines)
+================================================================================
+
+#7  LogoutMain (lines 530-587)
+    PURPOSE: Close all windows, set logout flag
+    STATUS: *** GAP ***
+    POC: auth-store.ts (67 lines) has login/token management but no
+         logout action that clears all state.
+    EFFORT: Small (20 lines — auth-store logout + store resets)
+
+#8  Logout (lines 590-650)
+    PURPOSE: Logout from policy window (reaches parent)
+    STATUS: *** GAP *** (same as #7 — SPA has single logout)
+
+#9  LogoutGrandParent (lines 654-714)
+    PURPOSE: Logout from grandchild popup
+    STATUS: N/A (SPA — no window hierarchy)
+
+
+================================================================================
+SESSION / CONFIG (4 routines)
+================================================================================
+
+#27 SessionXML_SetItem (lines 2112-2183)
+    PURPOSE: Set a key/value pair in session XML detail
+    STATUS: DONE
+    POC FILE: src/stores/session-store.ts (152 lines)
+    HOW: session-store has setXmlDetailItem action. No XML parsing needed.
+
+#28 SessionXML_GetItem (lines 2187-2236)
+    PURPOSE: Read a value by name from session XML detail
+    STATUS: DONE
+    POC FILE: src/stores/session-store.ts
+    HOW: session-store has getXmlDetailItem selector.
+
+#85 ClearXMLDetail (lines 9040-9087)
+    PURPOSE: Remove named items from session XML detail
+    STATUS: DONE
+    POC FILE: src/stores/session-store.ts
+    HOW: clearXmlDetailItem action exists. JSON object, not XML.
+
+#5  IsEmptyEval (lines 500-513)
+    PURPOSE: VBScript workaround — check if variable is defined
+    STATUS: N/A (typeof/optional-chaining in JS)
+
+
+================================================================================
+SECURITY (5 routines)
+================================================================================
+
+#45 ApplySecurityPolicy (lines 3252-3401)
+    PURPOSE: Per-control security — look up vis/dis from permissions XML
+    STATUS: *** GAP ***
+    POC: auth-store.ts holds permissions from login. But NO per-control
+         security resolver (lob→page→object lookup).
+    EFFORT: Medium-Large (50-80 lines — resolver + render-time application)
+
+#58 GetSecurityValues (lines 5697-5709)
+    PURPOSE: Allow-by-default security lookup wrapper
+    STATUS: *** GAP *** (part of #45)
+
+#59 GetSecurityValuesWithExistCheck (lines 5713-5725)
+    PURPOSE: Deny-by-default security lookup wrapper
+    STATUS: *** GAP *** (part of #45)
+
+#60 GetSecurityValues_DefaultDisabled (lines 5728-5740)
+    PURPOSE: Deny-by-default (duplicate of #59)
+    STATUS: *** GAP *** (part of #45)
+    NOTE: All 3 wrappers collapse to one parameterized selector.
+
+#61 SecurityValues_Read (lines 5743-5759)
+    PURPOSE: Core resolver — read vis/dis from security node
+    STATUS: *** GAP *** (part of #45)
+    NOTE: All 5 security routines (#45, #58-61) are ONE feature:
+          a per-control security resolver. ~50-80 lines total.
+
+
+================================================================================
+SERVER COMMANDS (6 routines)
+================================================================================
+
+#20 CheckForAsynchProcess (lines 1364-1424)
+    PURPOSE: Pre-flight check — is an async background job running?
+    STATUS: *** GAP ***
+    WHAT: No CHECKASYNCH endpoint call or progress indicator.
+    EFFORT: Small (15-20 lines — service call + flag)
+
+#50 ExecuteBrowserCommands (lines 3825-5005, ~1180 lines)
+    PURPOSE: THE client-side command interpreter — processes all server replies
+    STATUS: DONE
+    POC FILE: src/handlers/common/command.ts (274 lines)
+    HOW: handlerForBrowserCommands dispatches 26+ verbs (SET_TEXT, SET_VALUE,
+         SET_DISABLED, SET_VISIBLE, SET_REQUIRED, NAVIGATE, OPEN_MODAL,
+         CLOSE_MODAL, LOAD_COMBO, DISPLAY_ERROR/MESSAGE/QUESTION,
+         CALL_SERVER, REFRESH_TREE/MENU, LOAD_GRID, CLEAR_GRID, etc.)
+    NOTE: This is the most complete part of the actual POC. The ~1180-line
+          VBS routine compressed to 274 lines by eliminating ActiveX/frame code.
+
+#51 FillCallArray (lines 5008-5093)
+    PURPOSE: Build server-side call array from XML data island
+    STATUS: N/A
+    REASON: Server owns its own pre/post processing now.
+
+#74 PreProcess (lines 7432-7522)
+    PURPOSE: On focus — pre-call for combos, fill empty lists, capture baseline
+    STATUS: *** GAP ***
+    WHAT: No focus-driven pre-process server call. Combo pre-population
+          from schema exists (schema-merger.ts) but not on-demand pre-calls.
+    EFFORT: Medium (30-40 lines — focus handler + conditional server call)
+
+#75 RunXMLBrowserProcedures (lines 7525-7603)
+    PURPOSE: Execute page-declared browser procedures by name
+    STATUS: PARTIAL
+    POC FILE: src/features/frame/hooks/use-register-handlers.ts (27 lines)
+    HOW: Handler registry replaces VBScript Execute-by-name. Per-page
+         handler files export named functions.
+    GAP: The calls-by-type dispatch (browser_windowonload, tab|matchcode)
+         is not wired through the registry yet.
+
+#76 SetArrayData (lines 7606-7882)
+    PURPOSE: Serialize one control's value into the outbound payload array
+    STATUS: DONE
+    POC FILE: src/handlers/common/payload.ts (282 lines)
+    HOW: handlerForEEData builds the 13-element EEData array.
+         handlerForButtonOnClick, handlerForListButtonOnClick handle
+         different button actions.
+
+
+================================================================================
+EVENTS / BUTTONS (11 routines)
+================================================================================
+
+#46 ButtonOnClickHandler (lines 3404-3486)
+    PURPOSE: Generic button click — find related control, harvest value, post
+    STATUS: DONE
+    POC FILE: src/utils/form-action-executor.ts (244 lines)
+    HOW: ActionBinding[] in schema define per-field server calls.
+         executeFormActionBindings dispatches by type.
+
+#47 CalendarButtonOnClick (lines 3489-3533)
+    PURPOSE: Open IE calendar modal for date field
+    STATUS: N/A (MUI DatePicker replaces — src/components/ui/date.tsx)
+
+#64 NoteButtonOnClick (lines 6365-6468)
+    PURPOSE: Note/attachment button — collect row-ids, post to server
+    STATUS: *** GAP ***
+    WHAT: No notes/attachment feature.
+    EFFORT: Large (modal + service + per-page wiring)
+
+#65 InfoButtonOnClick (lines 6472-6549)
+    PURPOSE: Info/lookup button — calltype-driven server call
+    STATUS: *** GAP ***
+    WHAT: No generic info/lookup handler.
+    EFFORT: Medium (handler + calltype branching)
+
+#66 ListButtonClick (lines 6553-6590)
+    PURPOSE: Grid toolbar button → stamp action on grid → delegate
+    STATUS: *** GAP ***
+    WHAT: No grid toolbar action wiring.
+    EFFORT: Small (10-15 lines — click handler on grid toolbar)
+
+#67 XMLListonItemSelected (lines 6594-6605)
+    PURPOSE: Grid row selection → stage value for next server call
+    STATUS: PARTIAL
+    POC FILE: src/stores/grid-store.ts
+    GAP: grid-store exists but row selection doesn't stage data for server.
+    EFFORT: Small (10 lines)
+
+#68 ListButtonOnClick (lines 6609-6708)
+    PURPOSE: Real grid action processor — confirm delete, post, loop on NEXT
+    STATUS: *** GAP ***
+    WHAT: No confirm-and-post grid flow. No NEXT-loop.
+    EFFORT: Medium (40-50 lines — confirm dialog + post + recursion)
+
+#69 NavButtonOnClick (lines 6711-6875)
+    PURPOSE: Save/OK/Next/Cancel/Back — validate, dirty-guard, post
+    STATUS: DONE
+    POC FILE: src/handlers/common/payload.ts (282 lines)
+    HOW: handlerForButtonOnClick handles OK/NEXT/CANCEL/BACK.
+    GAP: Required-field validation gate not built (see #48).
+         Unsaved-changes guard not built (see #38).
+
+#70 OnFocusHandler (lines 6878-7274)
+    PURPOSE: Focus-change engine — post-process lost field, pre-process gained
+    STATUS: PARTIAL
+    POC FILES: src/hooks/use-command-handlers.ts (85 lines)
+             + src/stores/focus-store.ts (26 lines)
+    GAP: Focus-driven server round-trip (post/pre-process) not built.
+         This is the most complex gap — the heart of the edit loop.
+    EFFORT: Large (80-100 lines)
+
+#73 OnTabClickHandler (lines 7417-7429)
+    PURPOSE: Tab click → lazy build tab content
+    STATUS: DONE
+    POC FILE: src/layouts/tab-layout.tsx (42 lines)
+    HOW: MUI Tabs onChange handler. Handler registry allows per-page hooks.
+
+
+================================================================================
+INDICATORS (5 routines)
+================================================================================
+
+#48 CheckRequiredIndicators (lines 3536-3638)
+    PURPOSE: Aggregate required-field gate — enable/disable OK/Next buttons
+    STATUS: *** GAP ***
+    POC: validation-rules.ts (105 lines) exists with per-field rules.
+         react-hook-form tracks validity. BUT no aggregate completeness
+         check that toggles OK/Next buttons.
+    EFFORT: Medium (25-35 lines — selector + button wiring)
+
+#49 CheckSpecifiedIndicator (lines 3641-3821)
+    PURPOSE: Walk all controls, check by attribute — return pass/fail + labels
+    STATUS: *** GAP ***
+    WHAT: No generic walk-controls-by-attribute validation engine.
+    EFFORT: Medium (30-40 lines)
+    NOTE: #48 and #49 are one feature — the required-field gate.
+
+#63 SetRequiredIndicator (lines 6307-6361)
+    PURPOSE: Show/hide asterisk + bold label for required fields
+    STATUS: DONE
+    POC FILE: src/features/frame/components/static-renderer.tsx
+    HOW: MUI required prop renders asterisk declaratively.
+
+#71 OnKeyPressHandler (lines 7277-7349)
+    PURPOSE: On keystroke — recompute indicators if empty/non-empty flipped
+    STATUS: *** GAP ***
+    WHAT: No keystroke-to-indicator recompute. No additionalKeyHandler dispatch.
+    EFFORT: Medium (depends on #48 being built first)
+
+#72 OnKeyUpHandler (lines 7352-7414)
+    PURPOSE: Same as #71 but without server call
+    STATUS: *** GAP ***
+    NOTE: In React, #71 and #72 collapse into a single onChange handler.
+          Treat as part of the same feature.
+
+
+================================================================================
+CONTROLS (10 routines)
+================================================================================
+
+#52 FillComboList (lines 5100-5169)
+    PURPOSE: Populate combo dropdown from XML items
+    STATUS: DONE
+    POC FILES: src/stores/combo-options-store.ts
+             + command.ts handles LOAD_COMBO/ADD_LISTITEM/CLEAR_COMBO
+
+#53 FillSelectList (lines 5172-5303)
+    PURPOSE: Fill multi-select + coverage dual-list filter
+    STATUS: PARTIAL
+    POC: Select rendering works. Coverage dual-list (available-vs-selected
+         with multiselect/covcode limits) NOT built.
+    EFFORT: Medium-Large (60-80 lines for dual-list renderer)
+
+#54 FocusFirstControl (lines 5307-5347)
+    PURPOSE: On page load, focus first enabled control
+    STATUS: DONE
+    POC FILE: src/stores/focus-store.ts (26 lines)
+    HOW: focus-store tracks pendingFocus. Renderer auto-focuses first field.
+
+#55 SelectControlFocus (lines 5350-5418)
+    PURPOSE: Set focus + capture baseline value for dirty tracking
+    STATUS: PARTIAL
+    POC FILE: src/stores/focus-store.ts
+    GAP: Baseline value capture (mvntInitialValue) not wired.
+    EFFORT: Small (15-20 lines — store snapshot on focus)
+
+#56 GetControlAttribute (lines 5422-5557)
+    PURPOSE: Generic getter for control visible/disabled state
+    STATUS: N/A
+    REASON: Controls are data (ControlDef.visible/disabled). No DOM probe.
+
+#57 GetControlValue (lines 5560-5695)
+    PURPOSE: Generic getter for control value (per tagName)
+    STATUS: N/A
+    REASON: ControlDef.value is the single source. No per-tag extraction.
+
+#62 GetXMLData (lines 5763-6304, ~540 lines)
+    PURPOSE: Main page hydration — walk XML controls, set data/options/attrs
+    STATUS: DONE
+    POC FILES: src/utils/schema-merger.ts (113 lines)
+             + src/utils/layout-tree-builder.ts (272 lines)
+    HOW: Schema merger + layout tree builder replace the XML walk.
+         Parallel fetch: schema + pageLayout + component + handler.
+
+#78 SetControlAttribute (lines 7984-8482)
+    PURPOSE: Central routine to set visible/disabled/required/readonly
+    STATUS: DONE
+    POC FILE: src/handlers/common/command.ts
+    HOW: SET_DISABLED, SET_VISIBLE, SET_REQUIRED, SET_READONLY verbs
+         write to runtime-override-store.ts.
+    GAP: Label color/calendar button ripple effects not built.
+
+#80 SetControlValue (lines 8618-8884)
+    PURPOSE: Central routine to write a value into any control
+    STATUS: DONE
+    POC FILE: src/handlers/common/command.ts
+    HOW: SET_TEXT, SET_VALUE, SET_LABELTEXT verbs update stores.
+
+#81 BuildTab (lines 8888-8977)
+    PURPOSE: Lazy tab content — XSLT transform on first click
+    STATUS: *** GAP ***
+    WHAT: No lazy per-tab rendering. All tabs render at once.
+    EFFORT: Medium (20-30 lines — conditional mount + one-time load)
+
+#83 ShowZeroText (lines 8986-9022)
+    PURPOSE: Derive combo empty-option label from showzero attribute
+    STATUS: *** GAP ***
+    WHAT: No showzero handling in combo rendering.
+    EFFORT: Small (15 lines — utility + combo renderer prop)
+
+
+================================================================================
+SERVER PAYLOAD (2 routines)
+================================================================================
+
+#77 SetInitialValueData (lines 7886-7981)
+    PURPOSE: Capture pristine value for change detection
+    STATUS: *** GAP ***
+    WHAT: No pristine snapshot / baseline capture in stores.
+    EFFORT: Medium (20-30 lines — store snapshot on load + dirty derivation)
+
+#79 SetControlFocus (lines 8485-8615)
+    PURPOSE: Focus control by matchcode — switch tab first
+    STATUS: PARTIAL
+    POC FILE: src/stores/focus-store.ts
+    GAP: Tab-switching-before-focus not wired. data-matchcode query
+         not built.
+    EFFORT: Small (15-20 lines)
+
+
+================================================================================
+UTILITIES (2 routines)
+================================================================================
+
+#40 ProgressBarTime_SetValue (lines 3098-3111)
+    PURPOSE: Developer timing display in debug window
+    STATUS: N/A (browser devtools / console.debug)
+
+#82 UnEscapeTextValueForXML (lines 8979-8983)
+    PURPOSE: Reverse #httpNN; XML encoding
+    STATUS: N/A (JSON transport, no XML encoding)
+
+
+================================================================================
+INDICATORS (1 more)
+================================================================================
+
+#42 ShowUserMessage (lines 3134-3145)
+    PURPOSE: Message/confirm dialog — returns user's button choice
+    STATUS: DONE
+    POC FILES: src/stores/modal-store.ts (86 lines)
+             + src/components/dialog/dialog.tsx (58 lines)
+    HOW: DISPLAY_MESSAGE/ERROR/QUESTION commands open MUI Dialog.
+
+#41 UpdateActionMenuItems (lines 3114-3131)
+    PURPOSE: Tell toolbar frame to rebuild action dropdown
+    STATUS: N/A
+    REASON: React toolbar subscribes to store — no imperative refresh.
+
+
+================================================================================
+SUMMARY: COMPLETE MAIN_ISLLSYS GAPS
+================================================================================
+
+STATUS        COUNT  ROUTINES
+-----------  ------  --------
+DONE           25    #1,2,3,16,21,27,28,42,44,46,50,52,54,62,63,69,73,76,78,80,85
+PARTIAL        10    #15,29,35,39,53,55,67,70,75,79
+GAP            31    #4,7,8,10,11,17,18,19,20,23,25,30,34,36,37,38,43,45,48,49,
+                      58-61,64,65,66,68,71,72,74,77,81,83,84
+N/A            19    #5,6,9,12-14,22,24,26,31-33,40,41,47,51,56,57,82
+
+NOTE: Security #45,58-61 = ONE feature (5 routines → 1 resolver, ~50-80 lines)
+      Indicators #48,49,71,72 = ONE feature (4 routines → 1 gate, ~50-60 lines)
+
+
+================================================================================
+PRIORITIZED GAP LIST (grouped by feature)
+================================================================================
+
+PRIORITY 1 — Core edit loop (blocks real editing)
+─────────────────────────────────────────────────
+GAP                              EFFORT    ROUTINES  WHAT TO BUILD
+OnFocusHandler (post/pre)        Large     #70,74    Focus-driven server calls
+Required-field gate              Medium    #48,49    Aggregate check + OK/Next toggle
+Keystroke indicators             Medium    #71,72    onChange → recompute gate
+Dirty tracking (pristine snap)   Medium    #77,55    Baseline capture + isDirty
+Beforeunload dirty guard         Medium    #38       beforeunload + useBlocker
+TOTAL PRIORITY 1: ~250-300 lines
+
+PRIORITY 2 — Feature completeness
+─────────────────────────────────
+Security per-control resolver    Med-Lge   #45,58-61 lob→page→object vis/dis lookup
+Delete action                    Large     #19       Confirm + server + tree update
+Grid actions (CRUD + NEXT)       Medium    #66,67,68 Grid toolbar + confirm + loop
+Info/lookup button               Medium    #65       Handler + calltype branching
+Note/attachment button           Large     #64       Modal + service + wiring
+Batch edits modal                Medium    #10       Modal component
+Conversion report modal          Medium    #11       Modal component
+SetNextAction (deferred nav)     Small     #43       Store field + modal-close drain
+TOTAL PRIORITY 2: ~350-450 lines
+
+PRIORITY 3 — Polish / secondary features
+─────────────────────────────────────────
+Document title (SetFrameTitle)   Small     #17       useEffect hook
+Breadcrumb / PathDescription     Medium    #30       Ancestor walk + component
+Tree refresh + validation        Medium    #18,34    Refetch + isValid check
+Tree select + icon               Small     #35,84    Store actions
+Toolbar component                Medium    #25       Reactive toolbar
+Logout                           Small     #7,8      Store resets
+WIP queue refresh                Medium    #37       Grid invalidation
+ClearActionMenus                 Small     #4        Menu-store invalidation
+SetExpiredNumber                 Tiny      #36       5-line utility
+GetActionMenuNameException       Small     #23       10-line utility
+Async process check              Small     #20       Service call + flag
+BuildTab (lazy tabs)             Medium    #81       Conditional mount
+ShowZeroText                     Small     #83       Combo empty-option label
+Back to search                   Small     #15       navigate('/search')
+RunXMLBrowserProcedures          Small     #75       Wire calls-by-type dispatch
+Dual-list (FillSelectList)       Med-Lge   #53       Available-vs-selected renderer
+TOTAL PRIORITY 3: ~300-400 lines
+
+
+================================================================================
+GRAND TOTAL
+================================================================================
+
+DONE:     25 routines  (29%)  — core framework is solid
+PARTIAL:  10 routines  (12%)  — mechanisms exist, logic incomplete
+GAP:      31 routines  (36%)  — need implementation
+N/A:      19 routines  (22%)  — eliminated (SPA/frames/ActiveX)
+
+ESTIMATED NEW CODE:  ~900-1150 lines across ~15-20 files
+                     (P1: ~250-300, P2: ~350-450, P3: ~300-400)
+
+VERDICT: The actual POC covers the framework well — routing, stores, command
+dispatch, payload building, and page hydration are all working. The main gaps
+are in the EDIT LOOP (focus-driven server calls, dirty tracking, required-field
+gate) and FEATURE-SPECIFIC handlers (delete, grid CRUD, notes, info lookup,
+security resolver). The shell lifecycle (login→menu→tree→page chain) is
+essentially complete.
