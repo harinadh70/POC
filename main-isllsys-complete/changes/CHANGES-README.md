@@ -8,13 +8,27 @@ module exports **both named and default**, store access is **defensive**
 tiny marked merge points.
 
 Folder layout:
-- `src/` — 27 NEW files (copy as-is, nothing existing is touched)
+- `src/` — 32 NEW files (copy as-is, nothing existing is touched):
+  the window_onload set (Eebrowser GAPs) + the Main_ISLLSYS shell set
 - `modified-reference/` — COMPLETE versions of the 4 safely-replaceable
   existing files (static-renderer, dynamic-renderer, tab-layout, header),
   change blocks marked `>>> GAP`. See its README for the 4 files that must
   stay merge-only and why.
 
-## File map (27 new files → routines)
+This folder is THE single location for all changes — the old
+`aqs-web-ui-impl/` folder has been merged in here and removed.
+
+## File map — window_onload set (5 files → Eebrowser gaps)
+
+| File | Gap | What it does |
+|---|---|---|
+| `src/utils/page-init-rules.ts` | E-GAP 1, 2 | dataChanged init by action mode; ShowNextOnEdit disable/hide dtaNEXT |
+| `src/hooks/use-page-init.ts` | E-GAP 1, 2 | Hook running both rules per page (schema identity as pageKey) |
+| `src/components/breadcrumb.tsx` | E-GAP 3, shell #30 | Tree-ancestry breadcrumb; store-subscribed so it appears when the async tree lands |
+| `src/hooks/use-page-load-timing.ts` | E-GAP 7 | Navigation start→idle timing for the header display |
+| `src/services/umbrella-status.ts` | Main w_onload | Umbrella mapping check stub (policyId ≠ "0") |
+
+## File map — shell set (27 new files → routines)
 
 ### Priority 1 — Core edit loop
 

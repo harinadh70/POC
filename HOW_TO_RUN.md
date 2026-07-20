@@ -34,10 +34,10 @@ The complete app only runs there because it needs the real TMNAS.Advantage.API b
    git checkout -b window-onload-gaps
    ```
 
-2. From this POC repo, copy the **5 new files** from `aqs-web-ui-impl/src/` into the
+2. From this POC repo, copy the **5 new files** from `main-isllsys-complete/changes/src/` into the
    same paths under the real repo's `src/`:
 
-   | Copy from `aqs-web-ui-impl/src/` | To real repo `src/` |
+   | Copy from `main-isllsys-complete/changes/src/` | To real repo `src/` |
    |---|---|
    | `utils/page-init-rules.ts` | `utils/page-init-rules.ts` |
    | `hooks/use-page-init.ts` | `hooks/use-page-init.ts` |
@@ -53,7 +53,7 @@ The complete app only runs there because it needs the real TMNAS.Advantage.API b
    - `layouts/tab-layout.tsx` — add `initialTab` / `onTabClick` props + init effect
    - `components/header.tsx` — add the timing display
 
-   See `aqs-web-ui-impl/README.md` for what each change does.
+   See `main-isllsys-complete/changes/CHANGES-README.md` for what each change does.
 
 4. Install & verify (no new dependencies are added, so `npm install` only matters on a fresh clone):
    ```
@@ -96,7 +96,7 @@ Open http://localhost:5173.
 
 **What will NOT run standalone — and why:**
 - `aqs-web-ui-v1/` — reconstruction of the real app from photos; has unphotographed gaps, will not build.
-- `aqs-web-ui-impl/` — drop-in change set only (no package.json); it executes as part of the real repo per Path A.
+- `main-isllsys-complete/changes/` — drop-in change set only (no package.json); it executes as part of the real repo per Path A.
 
 ---
 
@@ -106,6 +106,6 @@ Open http://localhost:5173.
 |---|---|---|
 | `aqs-web-ui-poc-v1/` | Best-practices scaffold POC (mock data) | YES — npm install && npm run dev |
 | `aqs-web-ui-v1/` | Photo-reconstruction of real app + study docs | No (photo gaps) |
-| `aqs-web-ui-impl/` | window_onload gap change set | No — integrate via Path A |
+| `main-isllsys-complete/changes/` | ALL change sets (window_onload + shell) | No — integrate via Path A |
 | `actual-poc-gap-analysis/` | Gap analysis docs (VBS → React) | Docs only |
 | `fulcrum-react-conversion/`, `fiddler2bruno/` | Docs / tooling | — |

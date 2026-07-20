@@ -9,7 +9,7 @@ migration in one place.
 |---|------|-----------|
 | 1 | `1_ANALYSIS_all_85_routines.txt` | Complete gap analysis — every routine scored against the actual POC: **25 DONE, 10 PARTIAL, 31 GAP, 19 N/A** |
 | 2 | `2_CHANGES_implementation_plan.txt` | The changes to make — all 41 GAP/PARTIAL routines mapped to ~15 features with new-file designs, merge points, build order, and delivery rules for the client branch |
-| 3 | `changes/src/` | **The actual code** — 27 new implementation files covering all 41 routines, written for the client repo (`@/stores` imports, dual exports, defensive access). See `changes/CHANGES-README.md` for the file map + integration steps |
+| 3 | `changes/src/` | **The actual code** — 32 new implementation files: the window_onload set (5) + the shell set (27), written for the client repo (`@/stores` imports, dual exports, defensive access). See `changes/CHANGES-README.md` for the file map + integration steps |
 | 4 | `changes/modified-reference/` | Complete ready versions of the 4 safely-replaceable existing files (static-renderer, dynamic-renderer, tab-layout, header) with `>>> GAP` markers |
 
 ## Headline numbers
@@ -29,5 +29,5 @@ migration in one place.
 - `aqs-web-ui-v1/_study/main-isllsys-vbs/` — the reconstructed VBS source itself
   (`Main_ISLLSYS_20010101.reconstructed.vbs`) and the all-85-routines
   explanation (`Main_ISLLSYS_full_routine_reference.txt` / `.docx`)
-- `aqs-web-ui-impl/` — the window_onload change set already implemented
-  (also delivers 3 of this file's P3 items: breadcrumb, lazy tabs, umbrella stub)
+- The window_onload change set now lives HERE under `changes/src/`
+  (formerly the separate `aqs-web-ui-impl/` folder, since removed)

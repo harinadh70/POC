@@ -14,27 +14,21 @@ git checkout -b window-onload-and-shell-gaps
 
 ---
 
-## STEP 1 — Copy NEW files (31 files, zero risk — nothing existing is touched)
+## STEP 1 — Copy NEW files (32 files, zero risk — nothing existing is touched)
 
-### 1a. From `POC/aqs-web-ui-impl/src/` → client repo `src/` (window_onload set)
+### 1a. ALL new files live in ONE place now:
+### `POC/main-isllsys-complete/changes/src/` → client repo `src/`
 
-| Copy | To |
-|---|---|
-| `utils/page-init-rules.ts` | `src/utils/` |
-| `hooks/use-page-init.ts` | `src/hooks/` |
-| `hooks/use-page-load-timing.ts` | `src/hooks/` |
-| `components/breadcrumb.tsx` | `src/components/` |
-| `services/umbrella-status.ts` | `src/services/` |
-
-### 1b. From `POC/main-isllsys-complete/changes/src/` → client repo `src/` (shell set)
-
-Copy the WHOLE `src/` tree — 26 files: `stores/` (focus-store v2, pristine-store),
-`hooks/` (use-edit-loop, use-dirty-guard, use-focus-roundtrip, use-document-title,
-use-unload-cancel), `utils/` (required-gate, confirm, security-resolver, node-key,
-tree-actions, refresh-actions, app-logout, deferred-navigation, show-zero-text),
-`services/` (ee-call, async-check), `handlers/common/` (info-button,
-isllsys-handlers), `components/` (action-toolbar, ui/dual-list), `features/`
-(tree/delete-action, grid/grid-actions, modals/×2, notes/).
+Copy the WHOLE `src/` tree — 32 files (window_onload set + shell set):
+`stores/` (focus-store v2, pristine-store), `hooks/` (use-page-init,
+use-page-load-timing, use-edit-loop, use-dirty-guard, use-focus-roundtrip,
+use-document-title, use-unload-cancel), `utils/` (page-init-rules,
+required-gate, confirm, security-resolver, node-key, tree-actions,
+refresh-actions, app-logout, deferred-navigation, show-zero-text),
+`services/` (ee-call, async-check, umbrella-status), `components/`
+(breadcrumb, action-toolbar, ui/dual-list), `handlers/common/` (info-button,
+isllsys-handlers), `features/` (tree/delete-action, grid/grid-actions,
+modals/×2, notes/).
 
 Notes:
 - `stores/focus-store.ts` (v2) — this CREATES the focus store the repo lacks
@@ -43,7 +37,7 @@ Notes:
   CHECK FIRST that both exist under `src/stores/` — if either is missing, HOLD this
   one file back and ask for paste-ready stores (like focus-store was provided).
 
-### 1c. The 4 replaceable existing files — complete versions available
+### 1b. The 4 replaceable existing files — complete versions available
 
 `POC/main-isllsys-complete/changes/modified-reference/` holds COMPLETE ready
 versions of `static-renderer.tsx`, `dynamic-renderer.tsx`, `tab-layout.tsx`,
@@ -55,15 +49,12 @@ versions of `static-renderer.tsx`, `dynamic-renderer.tsx`, `tab-layout.tsx`,
 If a wholesale replace throws (missing import your branch doesn't have),
 fall back to lifting the GAP blocks — same content, zero risk.
 
-Note: do NOT copy these 4 from `aqs-web-ui-impl/` — those are the older
-reference copies; `modified-reference/` is the current set.
-
 ---
 
 ## STEP 2 — Merge points in EXISTING files
 
 2a/2b/2c/2g are ALREADY DONE if you used the complete files from
-`modified-reference/` in STEP 1c — skip to 2d/2e/2f/2h in that case.
+`modified-reference/` in STEP 1b — skip to 2d/2e/2f/2h in that case.
 The snippets below remain for the lift-only-the-blocks route.
 
 ### 2a. `src/components/header.tsx` — 3 additions (GAP 7 timing)
@@ -224,5 +215,5 @@ Feature tests once running:
 8. document.title shows windowtitle + policy + insured
 
 ## Minimum viable subset (if time-boxed)
-Step 1a (5 files) + focus-store v2 + merge points 2a/2b/2c → that alone
+The 5 window_onload files (page-init-rules, use-page-init, use-page-load-timing, breadcrumb, umbrella-status) + focus-store v2 from changes/src/ + merge points 2a/2b/2c → that alone
 delivers the complete window_onload behavior. Everything else can land after.
