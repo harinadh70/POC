@@ -1,55 +1,28 @@
 import { postRaw } from '@/services/ee-call';
 import { SessionStoreApi } from '@/stores/session-store';
-import { confirmDialog } from '@utils/confirm';
+import { confirmDialog } from '@/utils/confirm';
 
 // VBS: Main_ISLLSYS #66 ListButtonClick        (lines 6553-6590)
-//    + #67 XMLListonItemSelected (lines 6594-6605)
 //    + #68 ListButtonOnClick     (lines 6609-6708)
-// Grid action flow: row selection stages the row's key value; a toolbar
-// action posts it (confirm first for DELETE); NEXT loops over every
-// selected row.
 //
-// Module-local staging keeps this independent of the client branch's
-// grid-store shape (R4). If the branch's grid-store exposes selection,
-// wire it in at the merge point instead.
+// REVISED after team commit 885a1365:
+// - Row click handling + mstrSelectedRow stamping → now in data-grid.tsx
+// - LOAD_GRID / CLEAR_GRID → now in command.ts + form-action-executor.ts
+// - Row selection staging → team's grid-store.setRows/clearRows
+//
+// This file now ONLY contains: DELETE confirm + NEXT loop (toolbar actions
+// that the team's commit does not yet cover).
 
 export type GridAction = 'ADD' | 'EDIT' | 'DELETE' | 'NEXT';
 
-export interface StagedRow {
-    id: string;
-    /** Value posted to the server (legacy: the row's key column value). */
-    keyValue: string;
-    label?: string;
-}
-
-const staged = new Map<string, StagedRow[]>(); // gridId -> selected rows
-
-/** Row (de)selection — call from the grid's onRowSelectionChange. */
-export function stageRowSelection(gridId: string, rows: StagedRow[]): void {
-    staged.set(gridId, rows);
-}
-
-export function getStagedRows(gridId: string): StagedRow[] {
-    return staged.get(gridId) ?? [];
-}
-
-export function clearStagedRows(gridId: string): void {
-    staged.delete(gridId);
-}
-
 type RunCommands = (commands: unknown[]) => void | Promise<void>;
 
-/**
- * Toolbar action processor. DELETE confirms first; NEXT posts each staged
- * row in sequence (the legacy NEXT loop).
- */
 export async function executeGridAction(
     gridId: string,
     action: GridAction,
+    rows: Array<{ id: string; keyValue: string }>,
     opts: { listName?: string; runCommands?: RunCommands } = {},
 ): Promise<void> {
-    const rows = getStagedRows(gridId);
-
     if (action === 'DELETE') {
         const count = rows.length;
         if (count === 0) return;
@@ -61,8 +34,7 @@ export async function executeGridAction(
         if (!ok) return;
     }
 
-    const targets: (StagedRow | null)[] =
-        action === 'NEXT' ? rows : [rows[0] ?? null];
+    const targets = action === 'NEXT' ? rows : [rows[0]].filter(Boolean);
 
     for (const row of targets) {
         const session = SessionStoreApi.getState();
@@ -73,15 +45,13 @@ export async function executeGridAction(
             listValue: row?.keyValue ?? '',
         };
         const response = await postRaw(payload);
-        if (response === null) return; // ee-call not configured
+        if (response === null) return;
 
         const commands = (response as { commands?: unknown[] })?.commands;
         if (Array.isArray(commands) && opts.runCommands) {
             await opts.runCommands(commands);
         }
     }
-
-    if (action === 'DELETE') clearStagedRows(gridId);
 }
 
 export default executeGridAction;

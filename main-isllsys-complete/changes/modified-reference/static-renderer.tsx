@@ -1,8 +1,8 @@
 // COMPLETE REFERENCE — src/features/frame/components/static-renderer.tsx
-// Contains ALL changes: usePageInit (GAP 1+2), Breadcrumb (GAP 3),
-// pristine captureAll (shell #77). Change blocks are marked >>> GAP.
-// If your branch's renderer has extra logic not shown here, lift the
-// marked blocks into YOUR file instead of replacing wholesale.
+// REBASED on team commit 885a1365 (isFirstRender guard for onUpdate).
+// Contains team's change + our additions: usePageInit (GAP 1+2),
+// Breadcrumb (GAP 3), pristine captureAll (shell #77).
+// Change blocks are marked >>> GAP / >>> TEAM.
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useLoaderData } from 'react-router';
@@ -120,6 +120,7 @@ function SchemaRenderer() {
     }, [schema]);
 
     // Lifecycle: onUpdate
+    // >>> TEAM (885a1365): skip initial mount — onMount handles it
     useEffect(() => {
         const onUpdate = schema?.lifecycle?.onUpdate;
         if (onUpdate) {
@@ -134,6 +135,7 @@ function SchemaRenderer() {
             });
         }
     }, [schema, loaderData.context]);
+    // <<< TEAM
 
     const { mergedFields } = useMemo(
         () => mergeSchemaWithLayout(schema, controls),

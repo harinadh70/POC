@@ -96,13 +96,27 @@ This folder is THE single location for all changes — the old
    | tab-layout.tsx | subscribe `usePendingTab()` → switch tab, then clearTab() — small block |
 4. `npx tsc --noEmit` → fix any drift → `npm run dev`.
 
-## Store dependencies
+## Store dependencies — Updated after team commit 885a1365
 
-Confirmed present on the client branch (imports resolved during the
-window_onload integration): session, tree, global-vars, runtime-override,
-focus (pasted). **Not yet confirmed:** `menu-store`, `grid-store` (used by
-`refresh-actions.ts` and nothing else critical). If either is missing,
-ask — a paste-ready file will be provided, same as focus-store was.
+All confirmed present: session, tree, global-vars, runtime-override,
+browser-cmd, modal, navigation.
+
+**Newly created by team (885a1365):** focus-store, combo-options-store.
+**Confirmed exists (team imports GridRow from it):** grid-store.
+**Still unconfirmed:** menu-store (used only by `refresh-actions.ts`).
+
+## Team commit 885a1365 impact
+
+See `3_TEAM_COMMIT_ANALYSIS.md` for full details. Summary:
+- focus-store, combo-options-store now exist on branch (created by team)
+- grid-store confirmed to exist (team imports GridRow)
+- runtime-override-store now has `readOnly` + `required` fields
+- command.ts has SET_READONLY/SET_REQUIRED/SET_FOCUS/LOAD_GRID/CLEAR_GRID verbs
+- form-action-executor.ts handles onComboUpdate, onSetAttribute (readonly/required), onLoadGrid/onClearGrid/onSetFocus
+- field-renderer.tsx has focus management + combo options + onFocus bindings
+- static-renderer.tsx has isFirstRender guard for onUpdate lifecycle
+- Our `grid-actions.ts` REVISED: row-click removed (team has it), only DELETE confirm + NEXT loop remains
+- Our `focus-store.ts` is now an ADDITIVE PATCH: adds pendingTab to team's version
 
 ## Verify-at-integration list (photo-reconstruction caveats)
 
