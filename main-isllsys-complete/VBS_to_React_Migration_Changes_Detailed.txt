@@ -1,0 +1,639 @@
+================================================================================
+                          AQS ADVANTAGE WEB UI
+                        VBS TO REACT MIGRATION
+              Complete Changes Reference & Technical Walkthrough
+================================================================================
+
+Legacy Source: Main_ISLLSYS_20010101.vbs
+  ~9,090 lines | 85 routines | 1 monolithic VBScript file
+
+Target: aqs-web-ui (React 19 + Vite + TypeScript + Zustand + MUI 7)
+
+Date: July 2026
+
+================================================================================
+  1. EXECUTIVE SUMMARY
+================================================================================
+
+The legacy Fulcrum / AQS Advantage application uses a single 9,090-line
+VBScript file (Main_ISLLSYS_20010101.vbs) as its "shell controller" -- it runs
+once when the application opens and provides ALL shared services to every content
+page: navigation, command processing, security, focus management, dirty
+tracking, and UI lifecycle.
+
+The React migration (aqs-web-ui) has already rebuilt the framework: routing,
+stores, schema-driven rendering, and server communication. What remains is
+implementing the BEHAVIORAL logic that the VBScript file controlled -- the rules
+that make the application actually work for underwriters.
+
+This document covers 31 new React files to create + 8 existing files to modify
++ 1 startup configuration = 40 total files touched.
+
+Coverage Numbers:
+  +-------------------------------------+----------+----------------------------+
+  | Category                            | Count    | Status                     |
+  +-------------------------------------+----------+----------------------------+
+  | Total VBS routines                  | 85       | Fully analyzed             |
+  | Already done by POC framework       | 25 (29%) | Routes, stores, auth, etc  |
+  | Eliminated by SPA architecture      | 19 (22%) | Frames, ActiveX, VBS-only  |
+  | Remaining to implement              | 41 (49%) | This document covers these |
+  +-------------------------------------+----------+----------------------------+
+
+Team's Recent Commit (885a1365):
+  On July 18, 2026, the team committed 11 file changes that add infrastructure
+  our changes build on: combo-options-store, focus-store (basic version),
+  SET_READONLY/SET_REQUIRED/SET_FOCUS/LOAD_GRID/CLEAR_GRID command verbs, and
+  onFocus bindings in field-renderer. Our change set accounts for this -- 3
+  files were revised to avoid overlap, 0 files were dropped.
+
+
+================================================================================
+  2. THE BIG PICTURE -- HOW LEGACY EDITING WORKS
+================================================================================
+
+To understand WHY these changes are needed, you need to understand the legacy
+editing loop. Every single data entry page in Fulcrum follows this exact cycle:
+
+------------------------------------------------------------------------
+STEP 1: Page Opens (window_onload)
+------------------------------------------------------------------------
+
+  What happens:
+    The VBS captures every field's initial value as a "pristine baseline." It
+    checks the action mode (ADD/EDIT/INQUIRY) and sets the dirty flag
+    accordingly. If ShowNextOnEdit is configured, it disables or hides the Next
+    button. It resolves security permissions to hide/disable controls the user
+    shouldn't see. It builds the breadcrumb from the tree ancestry.
+
+  React equivalent:
+    pristine-store.ts captures baseline values. page-init-rules.ts handles the
+    dirty flag and Next button. security-resolver.ts applies permissions.
+    breadcrumb.tsx renders the path. use-page-init.ts orchestrates all of this
+    per page load.
+
+------------------------------------------------------------------------
+STEP 2: User Edits Fields (the edit loop)
+------------------------------------------------------------------------
+
+  What happens:
+    On every keystroke, the VBS checks: did a required field go from empty to
+    non-empty (or vice versa)? If so, it re-evaluates whether OK/Next should be
+    enabled. If ANY field value changes, it latches the dirty flag to true
+    (one-way -- never goes back to false until save).
+
+  React equivalent:
+    use-edit-loop.ts watches form values via react-hook-form's useWatch. On
+    empty<->non-empty flips, it calls runRequiredGate() from required-gate.ts.
+    On any change, it sets dataChanged=true via GlobalVarsStore.
+
+------------------------------------------------------------------------
+STEP 3: User Tabs Out of a Field (focus exit)
+------------------------------------------------------------------------
+
+  What happens:
+    This is the HEART of the legacy behavior. When the user tabs out of a field
+    (blur/LostFocus), the VBS checks: did the value change from the pristine
+    baseline? If yes AND the field has a "post-process action" configured in the
+    schema, it makes a SERVER CALL. The server returns commands (SET_TEXT,
+    SET_VALUE, NAVIGATE, DISPLAY_ERROR, etc.) that the VBS executes. This is how
+    calculated fields update, validations run, and cascading changes happen --
+    all triggered by tabbing out of a field.
+
+  React equivalent:
+    use-focus-roundtrip.ts provides onFieldBlur and onFieldFocus. On blur:
+    compares current value vs pristine baseline, if dirty + has
+    postProcessAction -> calls postEECall() via the ee-call.ts bridge -> runs
+    returned commands via handlerForBrowserCommands. On focus: captures new
+    baseline + runs pre-process if configured.
+
+------------------------------------------------------------------------
+STEP 4: User Tries to Leave (dirty guard)
+------------------------------------------------------------------------
+
+  What happens:
+    If the user tries to navigate away or close the browser while dataChanged
+    is true, the VBS intercepts with "You have unsaved changes. Are you sure?"
+    If they confirm, it optionally sends a CANCEL beacon to the server to
+    discard the pending transaction.
+
+  React equivalent:
+    use-dirty-guard.ts handles beforeunload + React Router useBlocker.
+    use-unload-cancel.ts sends the CANCEL beacon via navigator.sendBeacon on
+    pagehide.
+
+------------------------------------------------------------------------
+
+This 4-step cycle is the CORE of the application. Without it, the React app can
+render pages but cannot actually DO data entry. Priority 1 delivers this cycle.
+
+
+================================================================================
+  3. PRIORITY 1 -- CORE EDIT LOOP (6 new files)
+================================================================================
+
+These 6 files deliver the complete editing cycle described above. Without these,
+the React app can display pages but cannot do real data entry.
+Estimated ~250-300 lines total.
+
+------------------------------------------------------------------------
+3.1  pristine-store.ts
+------------------------------------------------------------------------
+
+  React file:     src/stores/pristine-store.ts
+  VBS routine:    #77 SetInitialValueData (line 8292)
+                  + #55 SelectControlFocus (line 4903)
+  Lines of code:  ~40
+
+  What the Legacy VBS Does:
+    When a page loads, SetInitialValueData loops through every control on the
+    form and stores its current value in an array called mvntInitialValue. This
+    is the "pristine snapshot" -- the original values before the user touches
+    anything. Later, when the user tabs out of a field, SelectControlFocus
+    compares the current value against this snapshot to determine if the field
+    is "dirty" (changed). This is how the application knows whether to fire a
+    server call on blur.
+
+  What the React File Does:
+    A Zustand store with four actions: captureAll(values) stores every field's
+    value at page load. capture(matchcode, value) updates a single field's
+    baseline on focus. isDirty(matchcode, currentValue) returns true if the
+    field changed. clear() resets on page unload. The static-renderer and
+    dynamic-renderer call captureAll after computing default values.
+
+  Why It Matters:
+    Without pristine tracking, the app cannot know which fields changed. The
+    focus roundtrip (blur -> server call) would fire on EVERY blur, not just
+    when a value actually changed. This would flood the server with unnecessary
+    calls and break the editing experience.
+
+------------------------------------------------------------------------
+3.2  required-gate.ts
+------------------------------------------------------------------------
+
+  React file:     src/utils/required-gate.ts
+  VBS routine:    #48 SetRequiredControl (line 4217)
+                  + #49 CheckAllRequiredControls (line 4261)
+  Lines of code:  ~45
+
+  What the Legacy VBS Does:
+    CheckAllRequiredControls loops through every control that has required=true
+    in its schema definition. For each one, it checks: is the value empty? If
+    ANY required field is empty, it sets the OK button and NEXT button to
+    disabled. The moment ALL required fields have values, it enables them. This
+    runs on every keystroke via ControlInputCheck.
+
+  What the React File Does:
+    Three functions: evaluateRequiredGate(fields, getValues) returns true/false.
+    applyRequiredGate(fields, getValues) sets the disabled override on
+    dtaOK/dtaNEXT via RuntimeOverrideStoreApi. runRequiredGate() combines both.
+    Note: this only touches the "disabled" property -- never "visible" -- so it
+    composes cleanly with ShowNextOnEdit rules that control visibility.
+
+  Why It Matters:
+    This prevents users from saving incomplete records. In the legacy app, if
+    you leave a required field blank, the OK button stays greyed out. Users rely
+    on this visual feedback. Without the required gate, users could submit
+    incomplete forms.
+
+------------------------------------------------------------------------
+3.3  use-edit-loop.ts
+------------------------------------------------------------------------
+
+  React file:     src/hooks/use-edit-loop.ts
+  VBS routine:    #71 ControlInputCheck (line 7197)
+                  + #72 ControlInputChange (line 7267)
+  Lines of code:  ~60
+
+  What the Legacy VBS Does:
+    ControlInputCheck fires on every keystroke (KeyUp event). It does two
+    things: (1) If the field that changed is a required field AND it just went
+    from empty to non-empty (or vice versa), it re-runs
+    CheckAllRequiredControls to update the OK/Next button state. (2) It sets
+    mblnDataChanged = True -- this is a one-way latch. Once any field changes,
+    the dirty flag stays true until the page is saved or abandoned.
+
+  What the React File Does:
+    A React hook that uses react-hook-form's useWatch to subscribe to all field
+    values. It maintains a map of "was this field empty last time I checked?"
+    When a required field flips between empty and non-empty, it calls
+    runRequiredGate(). When ANY field changes value, it sets dataChanged=true.
+    Exports an <EditLoopBridge fields={mergedFields} /> component that you mount
+    with one line inside the FormProvider.
+
+  Why It Matters:
+    This is the real-time responsiveness of the edit form. As the user types,
+    buttons enable/disable, and the dirty flag latches. Without this, the form
+    feels static -- users can't tell whether they've filled in enough fields to
+    save.
+
+------------------------------------------------------------------------
+3.4  use-dirty-guard.ts
+------------------------------------------------------------------------
+
+  React file:     src/hooks/use-dirty-guard.ts
+  VBS routine:    #38 window_onbeforeunload (line 2876)
+  Lines of code:  ~30
+
+  What the Legacy VBS Does:
+    window_onbeforeunload is an IE event that fires when the user tries to
+    close the browser or navigate away. The VBS checks: is mblnDataChanged
+    true? Are there open child windows? If either is true, it shows "You have
+    unsaved changes" and blocks navigation if the user clicks Cancel.
+
+  What the React File Does:
+    Combines two mechanisms: (1) beforeunload event listener for browser
+    close/tab close, and (2) React Router's useBlocker() for in-app navigation.
+    Both read dataChanged from GlobalVarsStore. Shows window.confirm() dialog.
+    If the user confirms leaving, clears the dirty flag. Mount once in the root
+    layout.
+
+  Why It Matters:
+    Data loss prevention. Without this, users can navigate away from a
+    half-edited policy and lose all their work with no warning. This is a
+    critical business requirement.
+
+------------------------------------------------------------------------
+3.5  use-focus-roundtrip.ts
+------------------------------------------------------------------------
+
+  React file:     src/hooks/use-focus-roundtrip.ts
+  VBS routine:    #70 SelectControlFocus (line 7085)
+                  + #74 SelectControlExit (line 7477)
+  Lines of code:  ~70
+
+  What the Legacy VBS Does:
+    This is the HEART of the legacy editing system. SelectControlFocus fires
+    when a user clicks into a field (GotFocus). It captures the field's current
+    value as a new baseline. SelectControlExit fires when the user tabs/clicks
+    out of a field (LostFocus). It compares the current value against the
+    baseline. If different AND the field's schema declares a postProcessAction,
+    it makes a server call (xmlServerCall). The server can return commands:
+    SET_TEXT (update another field), SET_VALUE, DISPLAY_ERROR, NAVIGATE, etc.
+    This is how calculated premiums update, address validation runs, and
+    cascading field updates work.
+
+  What the React File Does:
+    A hook returning { onFieldFocus, onFieldBlur }. onFieldFocus(matchcode,
+    value): captures pristine baseline via PristineStoreApi.capture(), runs
+    pre-process binding if schema declares one. onFieldBlur(matchcode, value):
+    checks isDirty vs baseline, if dirty AND field has postProcessAction ->
+    calls postEECall() from the ee-call bridge -> runs returned commands via
+    handlerForBrowserCommands. Wire onto field-renderer's input onFocus/onBlur
+    events.
+
+  Why It Matters:
+    This is what makes "tab out of a field and something happens" work. Premium
+    calculations, field validations, cascading updates -- all of these depend on
+    the focus roundtrip. Without it, the application is a static form that
+    cannot validate or calculate anything until the user hits Save.
+
+------------------------------------------------------------------------
+3.6  ee-call.ts
+------------------------------------------------------------------------
+
+  React file:     src/services/ee-call.ts
+  VBS routine:    Infrastructure (xmlServerCall / handlerForEEData)
+  Lines of code:  ~35
+
+  What the Legacy VBS Does:
+    In the legacy app, every server communication goes through two functions:
+    handlerForEEData (builds the XML payload from the current form state) and
+    xmlServerCall (posts it to the server and returns the response). These are
+    deeply coupled to the VBScript runtime.
+
+  What the React File Does:
+    A configurable bridge with ZERO coupling to the client branch's internals.
+    You call configureEECall({ post, buildPayload }) once at app startup,
+    passing the repo's real xmlServerCall and handlerForEEData functions. After
+    that, postEECall(args) and postRaw(payload) work everywhere. Until
+    configured, they warn in the console and no-op -- the app still runs, just
+    without server calls.
+
+  Why It Matters:
+    This is the zero-risk bridge pattern. All 31 new files that need server
+    calls go through this bridge. If the client branch's server communication
+    functions have different signatures than what we expected from the photos,
+    you only need to change the configure call in ONE place, not in 15 different
+    files.
+
+
+================================================================================
+  4. PRIORITY 2 -- FEATURES (8 new files)
+================================================================================
+
+These deliver specific business features: security, delete operations, grid
+toolbar actions, modals, and the info button.
+Estimated ~350-450 lines total.
+
+------------------------------------------------------------------------
+4.1  security-resolver.ts
+------------------------------------------------------------------------
+
+  React file:     src/utils/security-resolver.ts
+  VBS routine:    #45 SetControlAttributes (line 3830)
+                  + #58-61 GetSecurity* (line 5250+)
+
+  What VBS does:
+    At page load, walks the permission tree for the current LOB/page. For each
+    control, resolves visible/disabled/readonly from the permission node. Two
+    modes: "allow" (missing node = fully allowed) and "deny" (missing =
+    hidden+disabled).
+
+  What React does:
+    resolveControlSecurity() returns { visible, disabled, readOnly } per
+    control. applySecurityPolicy() loops all fields and sets
+    RuntimeOverrideStore. Handles both flat-array and nested-object permission
+    shapes.
+
+    NOTE: This is different from the team's SET_READONLY/SET_REQUIRED commands
+    -- those are per-field from server responses; this is bulk permission
+    resolution at page load.
+
+------------------------------------------------------------------------
+4.2  delete-action.ts
+------------------------------------------------------------------------
+
+  React file:     src/features/tree/delete-action.ts
+  VBS routine:    #19 tree_onDelete (line 1114)
+
+  What VBS does:
+    User clicks Delete on a tree node: shows confirm dialog -> posts DELETE to
+    server -> removes node from tree -> refreshes parent branch -> navigates to
+    parent.
+
+  What React does:
+    executeDeleteAction(nodeKey, { navigate }): confirmDialog() -> postEECall
+    -> TreeStoreApi.removeNode -> refetch parent branch -> navigate to parent
+    route.
+
+------------------------------------------------------------------------
+4.3  grid-actions.ts (REVISED)
+------------------------------------------------------------------------
+
+  React file:     src/features/grid/grid-actions.ts
+  VBS routine:    #66 ListButtonClick + #68 ListButtonOnClick
+
+  What VBS does:
+    Grid toolbar actions: DELETE confirms first, NEXT loops over every selected
+    row posting each to the server.
+
+  What React does:
+    REVISED after team commit: row-click handling removed (team has it). Only
+    executeGridAction() remains: DELETE -> confirm -> post each row; NEXT ->
+    post each selected row in sequence; runs returned commands after each.
+
+------------------------------------------------------------------------
+4.4  info-button.ts
+------------------------------------------------------------------------
+
+  React file:     src/handlers/common/info-button.ts
+  VBS routine:    #65 InfoButtonClick (line 6510)
+
+  What VBS does:
+    Info/lookup button: reads calltype from button schema, posts to server,
+    runs returned commands.
+
+  What React does:
+    handlerForInfoButton(calltype, context): posts via postEECall, runs
+    returned commands via handlerForBrowserCommands.
+
+------------------------------------------------------------------------
+4.5  deferred-navigation.ts
+------------------------------------------------------------------------
+
+  React file:     src/utils/deferred-navigation.ts
+  VBS routine:    #43 SetNextAction (line 3392)
+
+  What VBS does:
+    Stashes a "next action" (navigation target) before a modal opens so it can
+    execute AFTER the modal closes.
+
+  What React does:
+    Self-contained micro-store: setNextAction(action, nodeKey) stashes,
+    drainNextAction() returns and clears. Called from CLOSE_MODAL handler.
+
+------------------------------------------------------------------------
+4.6 - 4.8  Modals (3 files)
+------------------------------------------------------------------------
+
+  +---------------------------------------------+----------------------------+------------------------------+
+  | React File                                  | VBS Routine                | Purpose                      |
+  +---------------------------------------------+----------------------------+------------------------------+
+  | features/modals/batch-edits-modal.tsx        | #10 BatchEdits (line 574)  | Batch edit dialog            |
+  | features/modals/conversion-report-modal.tsx  | #11 ConversionReport (618) | Conversion report, show-once |
+  | features/notes/notes-modal.tsx               | #64 NotesButton (6445)     | Notes list + add (stub)      |
+  +---------------------------------------------+----------------------------+------------------------------+
+
+
+================================================================================
+  5. PRIORITY 3 -- POLISH (12 new files)
+================================================================================
+
+These handle supporting functionality: document title, tree operations, toolbar,
+logout, and utility functions.
+Estimated ~300-400 lines total.
+
+  +------------------------------------------+--------------------------+--------------------------------------------------+
+  | React File                               | VBS Routine              | What It Does                                     |
+  +------------------------------------------+--------------------------+--------------------------------------------------+
+  | hooks/use-document-title.ts              | #17 SetFrameTitle        | document.title = windowtitle - policy - insured   |
+  | utils/node-key.ts                        | #36 + #23                | Replace "EXPIRED" in nodeKey; extract LOB code    |
+  | utils/tree-actions.ts                    | #18, #34, #35, #84       | hasNode, selectNode, updateIcon, refetchBranch    |
+  | utils/refresh-actions.ts                 | #4, #37                  | clearActionMenus + refreshSearchPageLists         |
+  | utils/app-logout.ts                      | #7, #8                   | resetAllStores on logout                          |
+  | services/async-check.ts                  | #20 CheckForAsyncProcess  | Pre-flight: is background process running?        |
+  | utils/show-zero-text.ts                  | #83 ShowZeroLabel         | Combo empty-option label rule                     |
+  | utils/confirm.ts                         | #42 (reused)             | Awaitable confirm wrapper                         |
+  | components/action-toolbar.tsx            | #25, #41                 | Reactive toolbar subscribing to overrides         |
+  | components/ui/dual-list.tsx              | #53 SelectionList        | Available <-> Selected transfer list              |
+  | handlers/common/isllsys-handlers.ts      | #15, #75, #43            | backToSearch, runProcedures, onModalClosed         |
+  | hooks/use-unload-cancel.ts               | #39 CancelChanges        | sendBeacon CANCEL on pagehide when dirty          |
+  +------------------------------------------+--------------------------+--------------------------------------------------+
+
+
+================================================================================
+  6. WINDOW_ONLOAD SET (5 new files)
+================================================================================
+
+These 5 files implement the Eebrowser.vbs window_onload gaps -- the per-page
+initialization that runs every time a content page loads.
+
+  +-------------------------------+-----------+------------------------------------------------------+
+  | React File                    | Gap       | What It Does                                         |
+  +-------------------------------+-----------+------------------------------------------------------+
+  | utils/page-init-rules.ts      | E-GAP 1+2 | initDataChangedFlag(action): ADD->dirty=true,        |
+  |                               |           | EDIT/INQUIRY->false. applyNextButtonRules: "T"->     |
+  |                               |           | disable Next, "F"->hide Next.                        |
+  | hooks/use-page-init.ts        | E-GAP 1+2 | Hook calling both rules per page load. Uses schema   |
+  |                               |           | object identity as pageKey for re-fire on navigate.  |
+  | components/breadcrumb.tsx     | E-GAP 3   | Tree-ancestry breadcrumb: Root > Branch > Current.   |
+  |                               |           | Subscribes to TreeStore so it appears when async     |
+  |                               |           | tree data loads.                                     |
+  | hooks/use-page-load-timing.ts | E-GAP 7   | Measures navigation start -> idle. Returns ms for    |
+  |                               |           | display next to Logout in header.                    |
+  | services/umbrella-status.ts   | Main gap  | Umbrella mapping status check stub (returns early    |
+  |                               |           | if policyId is "0").                                 |
+  +-------------------------------+-----------+------------------------------------------------------+
+
+
+================================================================================
+  7. CHANGES TO EXISTING FILES (8 files)
+================================================================================
+
+These are small, marked additions to files that already exist in the client
+repo. Each change is tagged with >>> GAP markers so you can find it in the
+reference files.
+
+------------------------------------------------------------------------
+7.1  Focus-store -- Additive Patch
+------------------------------------------------------------------------
+
+  The team created focus-store.ts in commit 885a1365 with basic pendingFocus
+  support. We ADD pendingTab to it -- needed for VBS routine #79
+  (SetControlFocus) where SET_FOCUS targets a control on a DIFFERENT tab. The
+  tab must switch first, then the field gets focus.
+
+------------------------------------------------------------------------
+7.2  static-renderer.tsx
+------------------------------------------------------------------------
+
+  Add usePageInit(showNextOnEdit, schema) call, <Breadcrumb /> component above
+  the form, and PristineStoreApi.captureAll(defaultValues) after default values
+  are computed.
+
+  NOTE: Team already added isFirstRender guard (885a1365) -- keep it, add ours
+  alongside.
+
+------------------------------------------------------------------------
+7.3  dynamic-renderer.tsx
+------------------------------------------------------------------------
+
+  Same as static-renderer minus the Breadcrumb: add usePageInit and captureAll.
+
+------------------------------------------------------------------------
+7.4  tab-layout.tsx
+------------------------------------------------------------------------
+
+  Add initialTab/onTabClick props for tab preselection, Cancel focus on mount,
+  and usePendingTab() subscriber to switch tab before focus.
+
+------------------------------------------------------------------------
+7.5  header.tsx
+------------------------------------------------------------------------
+
+  Add usePageLoadTiming() hook and display "{timing}ms" next to the Logout
+  button.
+
+------------------------------------------------------------------------
+7.6  form-renderer.tsx
+------------------------------------------------------------------------
+
+  Mount <EditLoopBridge fields={mergedFields} /> inside the FormProvider.
+  One line.
+
+------------------------------------------------------------------------
+7.7  Root layout
+------------------------------------------------------------------------
+
+  Add three hook calls at the top of the component:
+    useDirtyGuard();
+    useDocumentTitle();
+    useUnloadCancel();
+
+------------------------------------------------------------------------
+7.8  field-renderer.tsx
+------------------------------------------------------------------------
+
+  Wire onFieldFocus/onFieldBlur from use-focus-roundtrip.ts onto the input's
+  onFocus and onBlur events.
+
+------------------------------------------------------------------------
+7.9  command.ts
+------------------------------------------------------------------------
+
+  Add two merge points:
+    - In CLOSE_MODAL branch, call onModalClosed() to execute deferred
+      navigation.
+    - Add a DELETE verb case that calls executeDeleteAction().
+
+
+================================================================================
+  8. ONE-TIME STARTUP CONFIGURATION
+================================================================================
+
+In main.tsx (or root loader), configure the server communication bridge:
+
+  configureEECall({ post: xmlServerCall, buildPayload: handlerForEEData });
+
+Until configured, all server-dependent features warn in console and no-op --
+the app runs either way. This means you can deploy the 31 new files
+immediately. The server calls only activate when you wire the bridge.
+
+
+================================================================================
+  9. INTEGRATION STRATEGY
+================================================================================
+
+Each priority tier is independently deployable:
+
+------------------------------------------------------------------------
+Tier 1: Window_onload (5 files)
+------------------------------------------------------------------------
+  Zero risk. All new files, no conflicts with team's work. Delivers:
+  breadcrumb, page timing, init rules. Can be deployed and tested TODAY.
+
+------------------------------------------------------------------------
+Tier 2: Core Edit Loop (6 files)
+------------------------------------------------------------------------
+  Medium effort. The 6 new files plus 4 merge points (renderers,
+  form-renderer, field-renderer). Delivers: dirty tracking, required gate,
+  focus roundtrip, dirty guard. Needs configureEECall wired to activate
+  server calls.
+
+------------------------------------------------------------------------
+Tier 3: Features + Polish (20 files)
+------------------------------------------------------------------------
+  Can be done one file at a time in any order. Each feature is self-contained.
+  Delete action, grid toolbar, modals, security, etc.
+
+------------------------------------------------------------------------
+Testing Checklist
+------------------------------------------------------------------------
+
+  +----------------------------------------------+--------------------------------------------+
+  | Test                                         | Expected Result                            |
+  +----------------------------------------------+--------------------------------------------+
+  | Open an ADD-mode page                        | Dirty flag = true; EDIT/INQUIRY = false    |
+  | EDIT page with ShowNextOnEdit="T"            | Next button disabled                       |
+  | EDIT page with ShowNextOnEdit="F"            | Next button hidden                         |
+  | Page with pathstart/pathend in schema        | Breadcrumb appears above form              |
+  | Leave a required field empty                 | OK and Next buttons greyed out             |
+  | Fill all required fields                     | OK and Next buttons enable                 |
+  | Change a field and tab out                   | Server call fires (after configureEECall)  |
+  | Navigate away from dirty page               | Confirm dialog: "You have unsaved changes" |
+  | Navigate between pages                       | Millisecond timing appears next to Logout  |
+  | Check browser tab title                      | Shows: windowtitle - policy - insuredName  |
+  +----------------------------------------------+--------------------------------------------+
+
+
+================================================================================
+  10. FILE LOCATION
+================================================================================
+
+All files are in the GitHub repo (harinadh70/POC):
+
+  main-isllsys-complete/changes/src/
+    31 new files (copy to client repo src/ at same paths)
+
+  main-isllsys-complete/changes/modified-reference/
+    4 complete reference files with >>> GAP markers
+
+  main-isllsys-complete/4_COMPLETE_CHANGES_REFERENCE.md
+    Single-file quick reference (table format)
+
+  main-isllsys-complete/3_TEAM_COMMIT_ANALYSIS.md
+    Analysis of team commit 885a1365 impact
+
+================================================================================
+  END OF DOCUMENT
+================================================================================
