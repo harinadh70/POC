@@ -1,0 +1,690 @@
+================================================================================
+                          AQS ADVANTAGE WEB UI
+                    VBS TO REACT MIGRATION -- DEVELOPER TASKS
+================================================================================
+
+  40 file changes broken into 12 developer tasks across 4 weeks.
+  Each task is one pull request. Dependencies are listed -- don't start
+  a task until its "Depends on" tasks are merged.
+
+  Total estimate: 12-16 developer days (~3-4 weeks for one developer)
+
+================================================================================
+  OVERVIEW
+================================================================================
+
+  WEEK 1 -- Foundation (no server calls needed, zero risk)
+    Task 1:  Page initialization + breadcrumb          ~4 hrs    [5 new + 3 merge]
+    Task 2:  Pristine store + dirty tracking           ~4 hrs    [3 new + 3 merge]
+    Task 3:  Utility files (standalone)                ~3 hrs    [6 new]
+
+  WEEK 2 -- Core Edit Loop (the big one)
+    Task 4:  Server communication bridge               ~2 hrs    [1 new + 1 config]
+    Task 5:  Required gate + edit loop                 ~5 hrs    [2 new + 1 merge]
+    Task 6:  Focus roundtrip (blur -> server call)     ~5 hrs    [1 new + 1 merge]
+
+  WEEK 3 -- Features
+    Task 7:  Focus store patch + tab support           ~3 hrs    [1 patch + 1 merge]
+    Task 8:  Security resolver                         ~4 hrs    [1 new]
+    Task 9:  Tree operations + delete                  ~4 hrs    [3 new + 1 merge]
+    Task 10: Grid toolbar actions                      ~3 hrs    [1 new]
+
+  WEEK 4 -- Modals, Handlers & Polish
+    Task 11: Modals + deferred navigation              ~5 hrs    [4 new + 1 merge]
+    Task 12: Handlers + UI components + doc title      ~4 hrs    [4 new + 1 merge]
+
+
+================================================================================
+  DEPENDENCY CHART
+================================================================================
+
+  Task 1 ----+
+             |
+  Task 2 ----+---> Task 5 ---> Task 6 ---> (edit loop complete)
+             |        |
+  Task 3     |        |
+             |        v
+  Task 4 ----+---> Task 9 ---> Task 10
+                      |
+  Task 7              |
+                      v
+  Task 8         Task 11 ---> Task 12 ---> (ALL DONE)
+
+  Read: Task 5 depends on Task 1 + Task 2 + Task 4
+        Task 6 depends on Task 5
+        Task 9 depends on Task 4
+        Task 10 depends on Task 9
+        Task 11 depends on Task 9
+        Task 12 depends on Task 11
+
+  Tasks 1, 2, 3, 4, 7, 8 have NO dependencies -- can start immediately.
+  Tasks 1+2+3+4 can all run in PARALLEL (different developers or same dev).
+
+
+================================================================================
+  WEEK 1 -- FOUNDATION
+================================================================================
+
+------------------------------------------------------------------------
+TASK 1: Page Initialization + Breadcrumb
+------------------------------------------------------------------------
+
+  Depends on:  nothing (start immediately)
+  Estimate:    4 hours
+  Risk:        ZERO -- all new files, no existing code touched except 3
+               small marked merge points
+
+  FILES TO CREATE (5 new):
+    1. src/utils/page-init-rules.ts
+       - initDataChangedFlag(action): ADD->dirty=true, others->false
+       - applyNextButtonRules(showNextOnEdit): "T"->disable, "F"->hide
+
+    2. src/hooks/use-page-init.ts
+       - Hook that calls both rule functions per page load
+       - Uses schema object identity as pageKey for re-fire
+
+    3. src/components/breadcrumb.tsx
+       - Tree-ancestry breadcrumb: Root > Branch > Current
+       - Subscribes to TreeStore (appears when async tree loads)
+
+    4. src/hooks/use-page-load-timing.ts
+       - Measures navigation start -> idle
+       - Returns millisecond number for header display
+
+    5. src/services/umbrella-status.ts
+       - Umbrella mapping check stub
+       - Returns early if policyId is "0"
+
+  FILES TO MERGE INTO (3 existing -- small changes):
+    1. static-renderer.tsx
+       - Add: usePageInit(showNextOnEdit, schema) call
+       - Add: <Breadcrumb /> component above the form
+       - Look for >>> GAP markers in reference file
+
+    2. dynamic-renderer.tsx
+       - Add: usePageInit(showNextOnEdit, schema) call
+       - Same as static minus the Breadcrumb
+
+    3. header.tsx
+       - Add: usePageLoadTiming() hook call
+       - Add: display "{timing}ms" next to Logout button
+
+  HOW TO TEST:
+    - Open any page -> breadcrumb should show tree path above form
+    - Open ADD mode page -> dirty flag should be true
+    - Open EDIT mode page with ShowNextOnEdit="T" -> Next button disabled
+    - Open EDIT mode page with ShowNextOnEdit="F" -> Next button hidden
+    - Navigate between pages -> ms timing appears next to Logout
+    - npx tsc --noEmit -> no type errors
+
+  DONE WHEN:
+    [ ] All 5 new files copied to client repo
+    [ ] 3 merge points applied (static-renderer, dynamic-renderer, header)
+    [ ] Breadcrumb renders on schema-driven pages
+    [ ] Page timing shows in header
+    [ ] TypeScript compiles clean
+
+------------------------------------------------------------------------
+TASK 2: Pristine Store + Dirty Tracking
+------------------------------------------------------------------------
+
+  Depends on:  nothing (start immediately, can run parallel with Task 1)
+  Estimate:    4 hours
+  Risk:        LOW -- new store + 2 hooks, small merge into renderers
+
+  FILES TO CREATE (3 new):
+    1. src/stores/pristine-store.ts
+       - Zustand store: captureAll, capture, isDirty, clear
+       - This is the "pristine baseline" -- original values before edits
+
+    2. src/hooks/use-dirty-guard.ts
+       - beforeunload listener (browser close)
+       - React Router useBlocker (in-app navigation)
+       - Reads dataChanged from GlobalVarsStore
+       - Shows "You have unsaved changes" confirm dialog
+
+    3. src/hooks/use-unload-cancel.ts
+       - navigator.sendBeacon CANCEL on pagehide when dirty
+       - Server discards pending transaction
+
+  FILES TO MERGE INTO (3 existing):
+    1. static-renderer.tsx
+       - Add: PristineStoreApi.getState().actions.captureAll(defaultValues)
+       - Goes after the defaultValues useMemo
+
+    2. dynamic-renderer.tsx
+       - Same captureAll line as static-renderer
+
+    3. Root layout (e.g., app-layout.tsx or root.tsx)
+       - Add: useDirtyGuard();
+       - Add: useUnloadCancel();
+
+  HOW TO TEST:
+    - Open a page -> check that pristine store has captured values
+    - Change a field -> navigate away -> confirm dialog should appear
+    - Click Cancel -> stay on page
+    - Click OK -> navigate away, dirty flag cleared
+    - Close browser tab with unsaved changes -> browser "Leave site?" dialog
+    - npx tsc --noEmit -> no type errors
+
+  DONE WHEN:
+    [ ] Pristine store captures all field values on page load
+    [ ] "Unsaved changes" dialog blocks navigation when dirty
+    [ ] CANCEL beacon fires on browser close when dirty
+    [ ] TypeScript compiles clean
+
+------------------------------------------------------------------------
+TASK 3: Standalone Utility Files
+------------------------------------------------------------------------
+
+  Depends on:  nothing (start immediately)
+  Estimate:    3 hours
+  Risk:        ZERO -- all standalone, no merge points, no dependencies
+
+  FILES TO CREATE (6 new):
+    1. src/utils/node-key.ts
+       - replaceExpiredNumber(nodeKey): swaps "EXPIRED" segment
+       - lobFromNodeKey(nodeKey): extracts LOB code (BOP uses 4th/5th)
+
+    2. src/utils/show-zero-text.ts
+       - showZeroLabel(flag): "F"->null, "T"->"", else->the string
+       - Combo box empty-option label rule
+
+    3. src/utils/confirm.ts
+       - confirmDialog(message): returns Promise<boolean>
+       - Uses window.confirm now; swappable to modal-store later
+
+    4. src/utils/app-logout.ts
+       - resetAllStores(): clears session, global-vars, pristine, tree
+       - Call after the repo's existing auth logout
+
+    5. src/utils/refresh-actions.ts
+       - clearActionMenus(): resets menu store state
+       - refreshSearchPageLists(): refreshes search results
+
+    6. src/services/async-check.ts
+       - checkForAsyncProcess(): pre-flight server check
+       - Returns boolean: is a background process running?
+
+  HOW TO TEST:
+    - Unit test each function with sample inputs
+    - lobFromNodeKey("POL|123|456") -> "POL"
+    - lobFromNodeKey("BOP|1|2|3|XX") -> "XX" (BOP exception)
+    - showZeroLabel("F") -> null
+    - showZeroLabel("T") -> ""
+    - npx tsc --noEmit -> no type errors
+
+  DONE WHEN:
+    [ ] All 6 files copied, types compile clean
+    [ ] Each function works with test inputs
+    [ ] No import errors from other files that reference these
+
+
+================================================================================
+  WEEK 2 -- CORE EDIT LOOP
+================================================================================
+
+------------------------------------------------------------------------
+TASK 4: Server Communication Bridge (ee-call)
+------------------------------------------------------------------------
+
+  Depends on:  nothing (start immediately)
+  Estimate:    2 hours
+  Risk:        LOW -- one file + one config line
+
+  WHY THIS MATTERS:
+    This is the BRIDGE between our new files and the repo's existing
+    xmlServerCall / handlerForEEData functions. Every file that makes a
+    server call goes through this. Configure it once; everything works.
+
+  FILES TO CREATE (1 new):
+    1. src/services/ee-call.ts
+       - configureEECall({ post, buildPayload })
+       - postEECall(args): builds payload + posts via configured function
+       - postRaw(payload): posts raw payload directly
+       - Until configured: console.warn + no-op (app still runs)
+
+  STARTUP CONFIG (1 change):
+    In main.tsx or root loader, add ONE line:
+      configureEECall({ post: xmlServerCall, buildPayload: handlerForEEData });
+
+    NOTE: xmlServerCall and handlerForEEData are the repo's EXISTING
+    functions. Check their exact names/signatures in the client repo. If
+    they differ from what the photos showed, adjust this ONE line only.
+
+  HOW TO TEST:
+    - Before configuring: server-dependent features should warn in console
+      but app should still run
+    - After configuring: postEECall should successfully call xmlServerCall
+    - npx tsc --noEmit -> no type errors
+
+  DONE WHEN:
+    [ ] ee-call.ts copied
+    [ ] configureEECall wired in startup
+    [ ] Console shows no errors
+    [ ] Can verify postEECall reaches the server (check Network tab)
+
+------------------------------------------------------------------------
+TASK 5: Required Gate + Edit Loop
+------------------------------------------------------------------------
+
+  Depends on:  Task 2 (pristine store) + Task 4 (ee-call bridge)
+  Estimate:    5 hours
+  Risk:        MEDIUM -- this changes how buttons enable/disable in real-time
+
+  WHY THIS MATTERS:
+    This is what makes the OK/Next buttons grey out when required fields
+    are empty, and latch the dirty flag on any keystroke. Without this, the
+    form feels static.
+
+  FILES TO CREATE (2 new):
+    1. src/utils/required-gate.ts
+       - evaluateRequiredGate(fields, getValues): returns true/false
+       - applyRequiredGate(fields, getValues): sets disabled override on
+         dtaOK/dtaNEXT via RuntimeOverrideStoreApi
+       - runRequiredGate(): combines both
+       - Only touches "disabled", never "visible" (composes with
+         ShowNextOnEdit rules from Task 1)
+
+    2. src/hooks/use-edit-loop.ts
+       - useWatch on all field values
+       - Tracks "was this field empty?" map
+       - On required field empty<->non-empty flip: calls runRequiredGate()
+       - On ANY field change: sets dataChanged=true (one-way latch)
+       - Exports <EditLoopBridge fields={mergedFields} />
+
+  FILES TO MERGE INTO (1 existing):
+    1. form-renderer.tsx
+       - Inside the FormProvider, add ONE line:
+         <EditLoopBridge fields={mergedFields} />
+
+  HOW TO TEST:
+    - Open a page with required fields
+    - Leave a required field empty -> OK and Next should be greyed out
+    - Fill all required fields -> OK and Next should enable
+    - Clear a required field -> buttons grey out again
+    - Change any field -> check GlobalVarsStore.dataChanged is true
+    - Verify: changing a NON-required field does NOT trigger gate recompute
+    - npx tsc --noEmit -> no type errors
+
+  DONE WHEN:
+    [ ] Required gate enables/disables OK+Next correctly
+    [ ] Dirty flag latches on any field change
+    [ ] EditLoopBridge mounted in form-renderer
+    [ ] No performance issues (useWatch not causing re-render storms)
+
+------------------------------------------------------------------------
+TASK 6: Focus Roundtrip (blur -> server call -> run commands)
+------------------------------------------------------------------------
+
+  Depends on:  Task 5 (required gate + edit loop)
+  Estimate:    5 hours
+  Risk:        HIGH -- this is the HEART of the editing system.
+               If it breaks, calculated fields, validations, and
+               cascading updates stop working.
+
+  WHY THIS MATTERS:
+    When a user tabs out of a field and the value changed, the app makes a
+    server call. The server returns commands (SET_TEXT, SET_VALUE, etc.)
+    that update other fields. This is how premium calculations, address
+    validation, and cascading updates work. This is THE most critical
+    behavior in the entire application.
+
+  FILES TO CREATE (1 new):
+    1. src/hooks/use-focus-roundtrip.ts
+       - Returns { onFieldFocus, onFieldBlur }
+       - onFieldFocus(matchcode, value):
+           * Captures pristine baseline via PristineStoreApi.capture()
+           * Runs pre-process binding if schema declares one
+           * Stamps mstrCurrentField in GlobalVarsStore
+       - onFieldBlur(matchcode, value):
+           * Checks isDirty vs pristine baseline
+           * If dirty AND field has postProcessAction in schema:
+             -> calls postEECall() from ee-call bridge
+             -> runs returned commands via handlerForBrowserCommands
+           * If not dirty: no server call (saves bandwidth)
+
+  FILES TO MERGE INTO (1 existing):
+    1. field-renderer.tsx
+       - Wire onFieldFocus onto input's onFocus event
+       - Wire onFieldBlur onto input's onBlur event
+       - Pass matchcode and current value to each
+
+  HOW TO TEST:
+    - Open a page with a field that has postProcessAction in schema
+    - Change the field value and tab out -> Network tab should show server
+      call firing
+    - Check that returned commands execute (e.g., another field updates)
+    - Tab out WITHOUT changing value -> NO server call should fire
+    - Tab out of a field WITHOUT postProcessAction -> NO server call
+    - Open DevTools console -> no errors
+    - Test with multiple field types: text, combo, date
+
+  DONE WHEN:
+    [ ] Tab out of changed field -> server call fires
+    [ ] Tab out of unchanged field -> no server call
+    [ ] Returned commands execute correctly
+    [ ] Pre-process bindings fire on focus
+    [ ] No regressions in existing field behavior
+    [ ] THE EDIT LOOP IS COMPLETE (Task 1-6 together deliver full cycle)
+
+
+================================================================================
+  WEEK 3 -- FEATURES
+================================================================================
+
+------------------------------------------------------------------------
+TASK 7: Focus Store Patch + Tab Support
+------------------------------------------------------------------------
+
+  Depends on:  nothing (can start anytime)
+  Estimate:    3 hours
+  Risk:        LOW -- additive patch to team's existing store
+
+  FILES TO PATCH (1 existing):
+    1. src/stores/focus-store.ts
+       - Team created this in commit 885a1365 with pendingFocus
+       - ADD: pendingTab (number | null) + requestFocus with tabIndex
+       - ADD: clearTab() action
+       - DO NOT remove team's existing pendingFocus logic
+
+  FILES TO MERGE INTO (1 existing):
+    1. tab-layout.tsx
+       - Add usePendingTab() subscriber
+       - When pendingTab is set: switch to that tab, then clearTab()
+       - This handles SET_FOCUS targeting a control on a DIFFERENT tab
+
+  HOW TO TEST:
+    - Trigger a SET_FOCUS command targeting a field on tab 2
+    - Tab should switch to tab 2 automatically, then field gets focus
+    - Normal tab switching should still work
+    - Team's existing pendingFocus should still work unchanged
+
+  DONE WHEN:
+    [ ] focus-store has pendingTab + clearTab
+    [ ] tab-layout switches tab on pendingTab
+    [ ] Team's existing focus behavior unbroken
+
+------------------------------------------------------------------------
+TASK 8: Security Resolver
+------------------------------------------------------------------------
+
+  Depends on:  nothing (can start anytime)
+  Estimate:    4 hours
+  Risk:        MEDIUM -- affects which controls users can see/edit
+
+  FILES TO CREATE (1 new):
+    1. src/utils/security-resolver.ts
+       - resolveControlSecurity(controlId, permissions, mode):
+           returns { visible, disabled, readOnly }
+       - applySecurityPolicy(fields, permissions):
+           loops all fields, sets RuntimeOverrideStore
+       - Handles "allow" mode (missing = allowed) and "deny" mode
+         (missing = hidden+disabled)
+       - Handles both flat-array AND nested-object permission shapes
+
+  IMPORTANT NOTE:
+    This is DIFFERENT from the team's SET_READONLY/SET_REQUIRED commands.
+    Those are per-field commands from server responses (runtime).
+    This is BULK permission resolution at PAGE LOAD (static).
+    Both coexist -- they write to the same RuntimeOverrideStore but at
+    different times and for different reasons.
+
+  VERIFY AT INTEGRATION:
+    - Check the actual permissions JSON shape from the API
+    - The photos showed two possible formats -- confirm which one the
+      server actually returns
+    - readNode path may differ per LOB
+
+  HOW TO TEST:
+    - Page with "allow" mode permissions -> controls without permission
+      nodes should be fully visible/enabled
+    - Page with "deny" mode permissions -> controls without permission
+      nodes should be hidden+disabled
+    - Permission with disabled=true -> control visible but greyed out
+    - Permission with visible=false -> control completely hidden
+
+  DONE WHEN:
+    [ ] Security resolver correctly hides/disables controls
+    [ ] Both permission modes work
+    [ ] RuntimeOverrideStore values set correctly
+    [ ] No conflicts with team's SET_READONLY/SET_REQUIRED
+
+------------------------------------------------------------------------
+TASK 9: Tree Operations + Delete Action
+------------------------------------------------------------------------
+
+  Depends on:  Task 4 (ee-call bridge -- delete needs server call)
+  Estimate:    4 hours
+  Risk:        MEDIUM -- delete is destructive, needs confirm dialog
+
+  FILES TO CREATE (3 new):
+    1. src/utils/tree-actions.ts
+       - hasNode(nodeKey): checks if node exists in TreeStore
+       - selectNodeAndNavigate(nodeKey): selects node + navigates
+       - updateNodeIcon(nodeKey, icon): changes node image
+       - refetchBranch(branchKey): re-fetches tree branch from server
+
+    2. src/features/tree/delete-action.ts
+       - executeDeleteAction(nodeKey, { navigate }):
+           confirmDialog("Delete this item?")
+           -> postEECall DELETE
+           -> TreeStoreApi.removeNode
+           -> refetchBranch(parentKey)
+           -> navigate to parent route
+
+    3. src/utils/node-key.ts  (if not already done in Task 3)
+
+  FILES TO MERGE INTO (1 existing):
+    1. command.ts
+       - Add DELETE verb case that calls executeDeleteAction()
+
+  VERIFY AT INTEGRATION:
+    - Check TreeStore action names: removeNode, addNodes, updateNodeImage
+      (these are the names we assumed from photos -- confirm in code)
+    - Check the tree service's branch-fetch function signature
+
+  HOW TO TEST:
+    - Click Delete on a tree node -> confirm dialog appears
+    - Click Cancel -> nothing happens
+    - Click OK -> server call fires, node disappears from tree,
+      parent branch refreshes, navigates to parent
+    - Try delete with no node selected -> should do nothing
+    - Check tree re-renders correctly after delete
+
+  DONE WHEN:
+    [ ] Delete confirm + server call works end-to-end
+    [ ] Tree updates after delete (node removed, branch refreshed)
+    [ ] Navigation goes to parent after delete
+    [ ] command.ts DELETE verb wired
+
+------------------------------------------------------------------------
+TASK 10: Grid Toolbar Actions
+------------------------------------------------------------------------
+
+  Depends on:  Task 9 (shares confirm utility + command patterns)
+  Estimate:    3 hours
+  Risk:        LOW -- team already handles row-click; this is toolbar only
+
+  FILES TO CREATE (1 new):
+    1. src/features/grid/grid-actions.ts
+       - executeGridAction(gridId, action, rows, opts)
+       - DELETE: confirm dialog -> post each row -> run commands
+       - NEXT: loop over all selected rows, post each sequentially,
+         run returned commands after each
+       - ADD/EDIT: post single row
+
+  NOTE ON TEAM'S COMMIT:
+    The team (885a1365) already handles:
+      - Row click -> mstrSelectedRow stamping (data-grid.tsx)
+      - LOAD_GRID / CLEAR_GRID commands
+      - Grid store with setRows/clearRows
+    Our file ONLY adds toolbar actions (DELETE confirm + NEXT loop).
+    No overlap.
+
+  HOW TO TEST:
+    - Select a grid row and click Delete toolbar button -> confirm appears
+    - Confirm -> server call fires, grid refreshes
+    - Select multiple rows and click Next -> each row posts sequentially
+    - Verify returned commands execute after each row
+
+  DONE WHEN:
+    [ ] Grid DELETE with confirm works
+    [ ] Grid NEXT loops through selected rows
+    [ ] No conflict with team's grid handling
+
+
+================================================================================
+  WEEK 4 -- MODALS, HANDLERS & POLISH
+================================================================================
+
+------------------------------------------------------------------------
+TASK 11: Modals + Deferred Navigation
+------------------------------------------------------------------------
+
+  Depends on:  Task 9 (deferred nav uses command.ts merge point)
+  Estimate:    5 hours
+  Risk:        LOW-MEDIUM -- modals are self-contained UI
+
+  FILES TO CREATE (4 new):
+    1. src/utils/deferred-navigation.ts
+       - setNextAction(action, nodeKey): stashes navigation target
+       - drainNextAction(): returns stashed action + clears it
+       - Used when a modal must open BEFORE navigating
+
+    2. src/features/modals/batch-edits-modal.tsx
+       - Table showing batch edit rows
+       - Opens from menu action
+       - Posts to server on confirm
+
+    3. src/features/modals/conversion-report-modal.tsx
+       - Conversion report display
+       - Show-once per session (sessionStorage flag)
+
+    4. src/features/notes/notes-modal.tsx
+       - Notes list + add new note
+       - STUB level -- needs NOTES calltype shape confirmed
+
+  FILES TO MERGE INTO (1 existing):
+    1. command.ts
+       - In CLOSE_MODAL branch: call drainNextAction()
+       - If there's a stashed action, execute it after modal closes
+
+  VERIFY AT INTEGRATION:
+    - Confirm the NOTES calltype request/response shape with the API
+
+  HOW TO TEST:
+    - Open batch edits modal -> data displays in table
+    - Open conversion report -> shows once, doesn't reappear
+    - Test deferred nav: action that opens modal then navigates after close
+    - Notes modal: list displays, add note posts to server (stub level)
+
+  DONE WHEN:
+    [ ] All 3 modals render correctly
+    [ ] Deferred navigation executes after modal close
+    [ ] Conversion report show-once flag works
+
+------------------------------------------------------------------------
+TASK 12: Handlers + UI Components + Document Title
+------------------------------------------------------------------------
+
+  Depends on:  Task 11 (handlers reference deferred-navigation)
+  Estimate:    4 hours
+  Risk:        LOW -- mix of standalone files
+
+  FILES TO CREATE (4 new):
+    1. src/handlers/common/isllsys-handlers.ts
+       - navigateBackToSearch(): returns to search results page
+       - runXmlBrowserProcedures(calls): runs procedure calls by type
+       - onModalClosed(execute): drains deferred nav + runs callback
+
+    2. src/handlers/common/info-button.ts
+       - handlerForInfoButton(calltype, context):
+         reads calltype from button schema -> postEECall -> run commands
+
+    3. src/components/action-toolbar.tsx
+       - Reactive toolbar component
+       - Buttons subscribe to RuntimeOverrideStore for enable/disable/hide
+       - Button state updates in real-time as overrides change
+
+    4. src/components/ui/dual-list.tsx
+       - Available <-> Selected transfer list
+       - Move items between lists with arrow buttons
+       - Supports maxSelected limit
+
+  FILES TO MERGE INTO (1 existing):
+    1. Root layout
+       - Add: useDocumentTitle();
+       - (use-dirty-guard and use-unload-cancel already added in Task 2)
+
+  ALSO CREATE (if not already done):
+    - src/hooks/use-document-title.ts
+       - Sets document.title = "windowtitle - policyNumber - insuredName"
+       - Subscribes to SessionStore for policy/insured changes
+
+  HOW TO TEST:
+    - Check browser tab title shows: windowtitle - policy - insured
+    - Click info button -> server call fires, commands run
+    - Action toolbar buttons enable/disable based on runtime overrides
+    - Dual list: move items left<->right, max limit enforced
+
+  DONE WHEN:
+    [ ] Document title updates on navigation
+    [ ] Info button handler works
+    [ ] Toolbar reacts to overrides
+    [ ] Dual list transfers items correctly
+    [ ] ALL 40 FILE CHANGES COMPLETE
+
+
+================================================================================
+  SUMMARY -- QUICK REFERENCE
+================================================================================
+
+  +------+-------------------------------------------+------+----------+----------+
+  | Task | Description                               | New  | Merge    | Estimate |
+  +------+-------------------------------------------+------+----------+----------+
+  |  1   | Page init + breadcrumb                    |  5   |  3       |  4 hrs   |
+  |  2   | Pristine store + dirty tracking           |  3   |  3       |  4 hrs   |
+  |  3   | Standalone utilities                      |  6   |  0       |  3 hrs   |
+  |  4   | Server bridge (ee-call)                   |  1   |  1 cfg   |  2 hrs   |
+  |  5   | Required gate + edit loop                 |  2   |  1       |  5 hrs   |
+  |  6   | Focus roundtrip                           |  1   |  1       |  5 hrs   |
+  |  7   | Focus store patch + tab                   |  0+1 |  1       |  3 hrs   |
+  |  8   | Security resolver                         |  1   |  0       |  4 hrs   |
+  |  9   | Tree ops + delete                         |  3   |  1       |  4 hrs   |
+  | 10   | Grid toolbar actions                      |  1   |  0       |  3 hrs   |
+  | 11   | Modals + deferred nav                     |  4   |  1       |  5 hrs   |
+  | 12   | Handlers + UI + doc title                 |  4   |  1       |  4 hrs   |
+  +------+-------------------------------------------+------+----------+----------+
+  |      | TOTAL                                     | 31   |  8+1 cfg | ~46 hrs  |
+  +------+-------------------------------------------+------+----------+----------+
+
+  Parallel tracks (for 2+ developers):
+    Developer A: Task 1 -> 5 -> 6 -> 11 -> 12     (edit loop + modals)
+    Developer B: Task 2 -> 3 -> 4 -> 7 -> 8 -> 9 -> 10  (foundation + features)
+
+
+================================================================================
+  VERIFY AT INTEGRATION (confirm these before starting)
+================================================================================
+
+  These items were derived from phone photos. Confirm in actual code:
+
+  1. Permissions JSON shape -- security-resolver readNode path
+     (Task 8)
+
+  2. BOP nodeKey element positions -- lobFromNodeKey uses 4th/5th
+     (Task 3 or 9)
+
+  3. NOTES calltype request/response shape
+     (Task 11)
+
+  4. TreeStore action names: removeNode, addNodes, updateNodeImage
+     (Task 9)
+
+  5. xmlServerCall + handlerForEEData exact function signatures
+     (Task 4 -- check BEFORE configuring the bridge)
+
+================================================================================
+  END OF TASKS
+================================================================================
