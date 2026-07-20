@@ -75,3 +75,5 @@ export function runRequiredGate(
     applyRequiredGate(result);
     return result;
 }
+
+export default runRequiredGate;

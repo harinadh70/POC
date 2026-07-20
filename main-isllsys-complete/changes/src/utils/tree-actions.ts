@@ -53,3 +53,11 @@ export async function refetchBranch(branchKey: string): Promise<void> {
     const actions = TreeStoreApi.getState()?.actions as TreeActionsShape | undefined;
     actions?.addNodes?.(branchKey, nodes);
 }
+
+export default {
+    configureTreeFetch,
+    hasNode,
+    selectNodeAndNavigate,
+    updateNodeIcon,
+    refetchBranch,
+};

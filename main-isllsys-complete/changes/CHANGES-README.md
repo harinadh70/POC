@@ -3,11 +3,18 @@
 These are the implementation files for the 41 GAP/PARTIAL routines from the
 analysis. Written for the client repo (`aqs-web-ui`) with the lessons from the
 window_onload integration built in: **all imports use `@/stores/...`**, every
-component exports **both named and default**, store access is **defensive**
+module exports **both named and default**, store access is **defensive**
 (optional chaining), and everything is **additive** — existing files get only
 tiny marked merge points.
 
-## File map (20 files → routines)
+Folder layout:
+- `src/` — 27 NEW files (copy as-is, nothing existing is touched)
+- `modified-reference/` — COMPLETE versions of the 4 safely-replaceable
+  existing files (static-renderer, dynamic-renderer, tab-layout, header),
+  change blocks marked `>>> GAP`. See its README for the 4 files that must
+  stay merge-only and why.
+
+## File map (27 new files → routines)
 
 ### Priority 1 — Core edit loop
 
@@ -53,8 +60,10 @@ tiny marked merge points.
 
 ## Integration steps (in order)
 
-1. **Copy all files** into the client repo's `src/`, same relative paths.
+1. **Copy all `src/` files** into the client repo's `src/`, same relative paths.
    `focus-store.ts` intentionally REPLACES the v1 file from the window_onload session.
+   Then apply the 4 complete files from `modified-reference/` (or lift their
+   `>>> GAP` blocks into your branch's versions if yours differ).
 2. **Configure the bridges once** (app startup, e.g. main.tsx or root loader):
    ```ts
    configureEECall({ post: xmlServerCall, buildPayload: handlerForEEData });  // repo's real fns

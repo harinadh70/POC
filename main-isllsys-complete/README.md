@@ -9,7 +9,8 @@ migration in one place.
 |---|------|-----------|
 | 1 | `1_ANALYSIS_all_85_routines.txt` | Complete gap analysis — every routine scored against the actual POC: **25 DONE, 10 PARTIAL, 31 GAP, 19 N/A** |
 | 2 | `2_CHANGES_implementation_plan.txt` | The changes to make — all 41 GAP/PARTIAL routines mapped to ~15 features with new-file designs, merge points, build order, and delivery rules for the client branch |
-| 3 | `changes/` | **The actual code** — 20 implementation files covering all 41 routines, written for the client repo (`@/stores` imports, dual exports, defensive access). See `changes/CHANGES-README.md` for the file map + integration steps |
+| 3 | `changes/src/` | **The actual code** — 27 new implementation files covering all 41 routines, written for the client repo (`@/stores` imports, dual exports, defensive access). See `changes/CHANGES-README.md` for the file map + integration steps |
+| 4 | `changes/modified-reference/` | Complete ready versions of the 4 safely-replaceable existing files (static-renderer, dynamic-renderer, tab-layout, header) with `>>> GAP` markers |
 
 ## Headline numbers
 

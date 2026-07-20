@@ -36,3 +36,5 @@ export function refreshSearchPageLists(gridId = 'wipQueue'): void {
     if (actions?.invalidate) actions.invalidate(gridId);
     else actions?.clearGrid?.(gridId);
 }
+
+export default { clearActionMenus, refreshSearchPageLists };

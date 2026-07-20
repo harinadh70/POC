@@ -113,3 +113,5 @@ export function applySecurityPolicy(
         }
     }
 }
+
+export default applySecurityPolicy;

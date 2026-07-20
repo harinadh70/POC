@@ -43,14 +43,28 @@ Notes:
   CHECK FIRST that both exist under `src/stores/` — if either is missing, HOLD this
   one file back and ask for paste-ready stores (like focus-store was provided).
 
-### DO NOT wholesale-copy these from aqs-web-ui-impl (reference only):
-`static-renderer.tsx`, `dynamic-renderer.tsx`, `tab-layout.tsx`, `header.tsx` —
-your branch's versions differ from the reconstruction (this is what caused the
-header export error last time). Use the merge snippets in STEP 2 instead.
+### 1c. The 4 replaceable existing files — complete versions available
+
+`POC/main-isllsys-complete/changes/modified-reference/` holds COMPLETE ready
+versions of `static-renderer.tsx`, `dynamic-renderer.tsx`, `tab-layout.tsx`,
+`header.tsx` with every change marked `>>> GAP`. Either:
+- **replace** your branch's file with the reference version (dual exports +
+  defensive access are built in), or
+- **lift only the `>>> GAP` blocks** into your file if yours has extra logic.
+
+If a wholesale replace throws (missing import your branch doesn't have),
+fall back to lifting the GAP blocks — same content, zero risk.
+
+Note: do NOT copy these 4 from `aqs-web-ui-impl/` — those are the older
+reference copies; `modified-reference/` is the current set.
 
 ---
 
-## STEP 2 — Merge points in EXISTING files (8 files, snippets only)
+## STEP 2 — Merge points in EXISTING files
+
+2a/2b/2c/2g are ALREADY DONE if you used the complete files from
+`modified-reference/` in STEP 1c — skip to 2d/2e/2f/2h in that case.
+The snippets below remain for the lift-only-the-blocks route.
 
 ### 2a. `src/components/header.tsx` — 3 additions (GAP 7 timing)
 ```tsx

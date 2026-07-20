@@ -70,3 +70,5 @@ export async function postRaw(payload: unknown): Promise<unknown | null> {
 export function isEECallConfigured(): boolean {
     return typeof config.post === 'function';
 }
+
+export default postEECall;

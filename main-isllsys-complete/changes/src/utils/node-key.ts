@@ -29,3 +29,5 @@ export function lobFromNodeKey(nodeKey: string): string {
     }
     return lob;
 }
+
+export default { replaceExpiredNumber, lobFromNodeKey };
