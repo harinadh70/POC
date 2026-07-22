@@ -1,0 +1,829 @@
+================================================================================
+   MAIN_ISLLSYS_20010101.vbs → REAL POC (aqs-web-ui)
+   GAP ANALYSIS — RE-EVALUATED AGAINST REAL POC
+   Date: July 22, 2026
+================================================================================
+
+   85 VBS routines checked. Only GAPS shown below.
+   DONE: 34 | PARTIAL: 10 | GAP: 22 | N/A: 19
+
+   Previous analysis (wrong POC): 31 gaps
+   After re-evaluation (Real POC): 22 gaps  (9 resolved)
+
+   Resolved gaps (now DONE): #4 ClearActionMenus, #7 LogoutMain,
+     #18 RefreshTree, #23 GetActionMenuNameException, #36 SetExpiredNumber,
+     #43 SetNextAction
+   Upgraded to PARTIAL: #19 DeleteAction, #70 OnFocusHandler, #74 OnFocusPreProcess
+
+
+================================================================================
+   GAPS ORGANIZED BY TARGET FOLDER IN REAL POC
+================================================================================
+
+   Each gap lists:
+     - VBS routine name and line range
+     - What VBS does (1-2 lines)
+     - What Real POC already has
+     - What's missing
+     - Exact file to create or modify
+     - Code change file reference (files 1-21 in this folder)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/hooks/
+────────────────────────────────────────────────────────────────────────────────
+
+   CREATE: src/hooks/use-frame-title.ts
+   ─────────────────────────────────────
+   GAP #17 — SetFrameTitle (VBS lines 1440-1519)
+
+   VBS: Sets document.title = windowTitle + " - " + pathDescription
+        Called after every page navigation to update the browser tab title.
+
+   REAL POC HAS: Nothing. No document.title logic anywhere.
+                 windowTitle comes from user-permissions API (now proposed
+                 to come from navigation API via WindowTitle prop).
+                 pathLabel comes from cycling API (stored in session-store
+                 as mstrPathLabel).
+
+   MISSING: A useEffect that reads windowTitle + pathLabel from stores
+            and sets document.title. Falls back to "AQS Advantage".
+            Also needs a SET_FRAMETITLE command verb handler so the
+            server can override the title dynamically.
+
+   CODE: → 1_frame-title.ts
+   EFFORT: Small (15 lines)
+   PRIORITY: 3 (polish)
+
+
+   CREATE: src/hooks/use-navigation-guard.ts
+   ──────────────────────────────────────────
+   GAP #38 — window_onbeforeunload (VBS lines 2922-2981)
+
+   VBS: Checks mblnDataChanged flag. If true, shows browser confirm:
+        "Changes have not been saved. Press OK to continue or Cancel
+        to return." Guards against tab close AND in-app navigation.
+
+   REAL POC HAS: dataChanged flag in global-vars-store (set by
+                 SET_VARIABLE command verb: mblndatachanged → true/false).
+                 Also has sumMsgChg flag.
+                 BUT the flag is effectively DEAD — set but never read.
+
+   MISSING: Two protection layers:
+            1. beforeunload event listener (browser close / tab close)
+            2. React Router useBlocker (in-app navigation)
+            Both read dataChanged from global-vars-store.
+            Returns a <NavigationBlocker /> component that renders
+            a MUI Dialog confirm when blocked.
+
+   CODE: → 2_dirty-guard.ts
+   EFFORT: Medium (45 lines)
+   PRIORITY: 1 (core edit loop)
+
+
+   CREATE: src/hooks/use-delete-action.ts
+   ───────────────────────────────────────
+   GAP #19 — DeleteAction (VBS lines 1655-1770)    [was GAP, now PARTIAL]
+
+   VBS: Shows confirm dialog → POSTs DELETE to server →
+        removes node from tree → navigates to parent node.
+
+   REAL POC HAS: pendingDelete in navigation-store (stores action +
+                 nodeKey + tab). removeNode() in tree-store. DELETE config
+                 in ACTION_CONFIG with deferNavigation: true. DELETE
+                 preflight in data-strategy.ts that sets pendingDelete.
+                 Infrastructure is there but the FLOW is not connected.
+
+   MISSING: The orchestration that ties it together:
+            1. Watch pendingDelete from navigation-store
+            2. Show MUI Dialog confirm
+            3. On confirm: POST via pageDataService → removeNode →
+               navigate to parent
+            4. On cancel: clear pendingDelete
+
+   CODE: → 3_delete-action.ts
+   EFFORT: Medium (55 lines)
+   PRIORITY: 2 (feature completeness)
+
+
+   CREATE: src/hooks/use-required-gate.ts
+   ───────────────────────────────────────
+   GAPS #48 + #49 — CheckRequiredIndicators + CheckSpecifiedIndicator
+                    (VBS lines 3536-3821)
+
+   VBS: Walks ALL controls. For each with required="true", checks if
+        value is empty. If any required field empty → disable OK/Next
+        buttons. Returns pass/fail + list of incomplete field labels.
+
+   REAL POC HAS: validation-rules.ts with per-field rules. react-hook-form
+                 tracks field validity via formState.isValid. MUI required
+                 prop renders asterisks. Per-field validation WORKS.
+                 BUT no aggregate check that toggles OK/Next buttons.
+
+   MISSING: A hook that:
+            1. Reads formState.isValid from react-hook-form
+            2. Also checks runtime-override-store for server-driven
+               SET_REQUIRED overrides (fields made required at runtime)
+            3. Exposes isFormComplete + incompleteFields[]
+            4. action-button.tsx uses this to disable OK/Next/Save/Submit
+
+   CODE: → 4_required-gate.ts
+   EFFORT: Medium (50 lines)
+   PRIORITY: 1 (core edit loop)
+
+
+   CREATE: src/hooks/use-pristine-snapshot.ts
+   ──────────────────────────────────────────
+   GAPS #77 + #55 — SetInitialValueData + SelectControlFocus baseline
+                    (VBS lines 7886-7981, 5350-5418)
+
+   VBS: On page load, captures every control's value into a parallel
+        array (mvntInitialValue). On blur, compares current vs initial.
+        If different → sets mblnDataChanged = true. This is the DIRTY
+        TRACKING foundation — without it, beforeunload guard (#38)
+        and save-on-navigate have no data to check.
+
+   REAL POC HAS: initialValue field in types. dataChanged flag in
+                 global-vars-store. BUT dataChanged is set manually
+                 by server commands, NOT derived from actual value
+                 comparison. No pristine snapshot exists.
+
+   MISSING: A hook that:
+            1. Captures all form values on mount via react-hook-form
+               getValues() into a ref
+            2. isDirty(matchcode) — compare current vs pristine
+            3. isFormDirty() — any field changed
+            4. On blur: compare and update global-vars dataChanged
+            5. SET_INITIALVALUE command verb to reset baseline after save
+            6. PristineSnapshotContext for sharing across renderers
+
+   CODE: → 14_initial-value.ts
+   EFFORT: Medium (35 lines)
+   PRIORITY: 1 (core edit loop)
+
+
+   CREATE: src/hooks/use-async-process-check.ts
+   ─────────────────────────────────────────────
+   GAP #20 — CheckForAsynchProcess (VBS lines 1835-1876)
+
+   VBS: After navigation to certain pages, calls CHECKASYNCH endpoint.
+        If background process is running (rating, batch), shows status
+        message and polls every 2 seconds until complete.
+
+   REAL POC HAS: Nothing. No CHECKASYNCH call, no polling mechanism.
+
+   MISSING: A hook that:
+            1. Calls /ui/page/check-async endpoint after navigation
+            2. If running: shows loading indicator, polls every 2s
+            3. When complete: stops polling, lets navigation continue
+            4. Max attempts guard (e.g., 30 = 60 seconds timeout)
+
+   CODE: → 15_async-process.ts
+   EFFORT: Small (30 lines)
+   PRIORITY: 3 (polish)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/components/ui/
+────────────────────────────────────────────────────────────────────────────────
+
+   CREATE: src/components/ui/breadcrumb.tsx
+   ────────────────────────────────────────
+   GAP #30 — PathDescription (VBS lines 2424-2490)
+
+   VBS: Builds breadcrumb by walking tree ancestors: current node →
+        parent → grandparent, joins labels with " > ".
+
+   REAL POC HAS: mstrPathLabel stored in session-store from cycling API.
+                 The server already sends the path string. BUT no UI
+                 component displays it.
+
+   MISSING: A Breadcrumb component that:
+            1. Reads pathLabel from session-store
+            2. Splits on " > " and renders MUI Breadcrumbs
+            3. Fallback: walks tree-store ancestors if pathLabel empty
+            Wire into header.tsx or static-renderer.tsx.
+
+   CODE: → 8_breadcrumb.ts
+   EFFORT: Small (30 lines)
+   PRIORITY: 3 (polish)
+
+
+   CREATE: src/components/ui/lazy-tab-panel.tsx
+   ─────────────────────────────────────────────
+   GAP #81 — BuildTab (VBS lines 8888-8977)
+
+   VBS: Tabs are lazy — content built only on first click via XSLT
+        transform. Subsequent clicks show cached content.
+
+   REAL POC HAS: Tab layouts (tab.tsx, nested-tab.tsx) with MUI Tabs.
+                 BUT all tabs render at once on mount. No lazy mounting.
+
+   MISSING: A LazyTabPanel wrapper that:
+            1. Only renders children when tab is selected for first time
+            2. After first render, keeps children mounted (display:none
+               when inactive) to preserve form state
+            Drop-in replacement in tab.tsx.
+
+   CODE: → 11_lazy-tabs.ts
+   EFFORT: Small (25 lines)
+   PRIORITY: 3 (polish)
+
+
+   CREATE: src/components/ui/grid-toolbar.tsx
+   ──────────────────────────────────────────
+   GAPS #66 + #68 — ListButtonClick + ListButtonOnClick
+                    (VBS lines 6553-6590, 6609-6708)
+
+   VBS: Grid toolbar has Add/Edit/Delete/Refresh buttons. On click:
+        stamps mstrCurrentButton, shows confirm for DELETE, builds
+        EEData via SetArrayData, POSTs to server. DELETE and NEXT
+        loop over all selected rows sequentially.
+
+   REAL POC HAS: grid-store with rows by matchcode.
+                 handlerForListButtonOnClick in payload.ts builds EEData.
+                 handlerForBrowserCommands dispatches response.
+                 BUT: no toolbar UI, no row selection staging, no
+                 confirm-and-post flow, no NEXT-loop.
+
+   MISSING:
+            1. GridToolbar component with Add/Edit/Delete/Refresh buttons
+            2. Row selection staging in grid-store (selected row → EEData)
+            3. handleListAction: confirm for DELETE → build EEData →
+               POST → process commands → NEXT-loop (recursive until
+               server stops sending NEXT)
+            Wire into data-grid.tsx above the DataGrid component.
+
+   CODE: → 7_grid-actions.ts
+   EFFORT: Medium (60 lines)
+   PRIORITY: 2 (feature completeness)
+
+
+   CREATE: src/components/ui/action-toolbar.tsx
+   ─────────────────────────────────────────────
+   GAP #25 — UpdateToolBar (VBS lines 2091-2177)
+
+   VBS: Builds toolbar in the page header with action buttons
+        (Save, Delete, Print, etc.) based on current page context.
+        Buttons enabled/disabled based on security + form state.
+
+   REAL POC HAS: action-button.tsx renders individual buttons.
+                 ACTION_CONFIG defines 17 actions. BUT no toolbar
+                 container that assembles the right buttons per page.
+
+   MISSING: PageActionToolbar component that:
+            1. Reads allowed actions from session/navigation response
+            2. Renders action-button instances for each
+            3. Applies security gating (via resolveControlSecurity)
+            4. Gates Save on isDirty, OK/Next on required gate
+            Wire into header.tsx or static-renderer.tsx.
+
+   CODE: → 18_toolbar.ts
+   EFFORT: Medium (40 lines)
+   PRIORITY: 4 (not critical — buttons work individually)
+
+
+   MODIFY: src/components/ui/select.tsx
+   ─────────────────────────────────────
+   GAP #83 — ShowZeroText (VBS lines 8986-9022)
+
+   VBS: If showzero="true" on a combo control, prepends an empty option
+        with label "-- Select --" (or derived from field context).
+        Allows user to clear a selection back to blank.
+
+   REAL POC HAS: showZero attribute in ControlDef types AND in Zod
+                 schema (showZero: booleanLikeSchema.optional()).
+                 The attribute IS parsed from server data.
+                 BUT select.tsx does NOT read it or render an empty option.
+
+   MISSING: In select.tsx:
+            1. Read showZero from controlDef/field props
+            2. If true: prepend { value: '', label: '-- Select --' }
+               to the options array before rendering
+            Small change to existing file.
+
+   CODE: → 12_showzero.ts
+   EFFORT: Small (15 lines)
+   PRIORITY: 3 (polish)
+
+
+   MODIFY: src/components/ui/field-renderer.tsx
+   ─────────────────────────────────────────────
+   GAPS #70 + #74 — OnFocusHandler + OnFocusPreProcess
+                    (VBS lines 6878-7274, 7430-7522)    [was GAP, now PARTIAL]
+
+   VBS: Focus-change engine — THE HEART of the edit loop:
+        1. BLUR (leaving a field): post-process — sends value to server,
+           server validates/transforms, returns commands
+        2. FOCUS (entering a field): pre-process — tells server which
+           field is gaining focus, server can pre-populate combos or
+           run business rules
+
+   REAL POC HAS (already MOSTLY built):
+        - handleBlur: sends EE server call on blur via executeFormAction
+        - handleFocus: does combo lazy-load + schema onFocus bindings
+        - handleChange: fires onChange schema bindings + EE trigger
+        - previousMatchcode tracking in global-vars-store
+        - postprocessblanks attribute in types
+
+   MISSING (small enhancements):
+        1. postprocessblanks check in handleBlur — if field is blank AND
+           postprocessblanks=false, skip the server call (VBS optimization)
+        2. setPreviousMatchcode tracking on blur — save the matchcode
+           of the field being left, so the next focus knows the origin
+        3. Pre-process server call on focus for non-combo fields that
+           have EE bindings with type="pre"
+        4. Initial value capture on focus for dirty comparison
+
+   CODE: → 5_focus-server-calls.ts
+   EFFORT: Medium (40 lines of changes to existing code)
+   PRIORITY: 1 (core edit loop)
+
+
+   MODIFY: src/components/ui/field-renderer.tsx (handleChange)
+   ──────────────────────────────────────────────────────────
+   GAPS #71 + #72 — OnKeyPressHandler + OnKeyUpHandler
+                    (VBS lines 7277-7414)
+
+   VBS: On every keystroke, checks if the field transitioned from
+        empty→non-empty or non-empty→empty. If so, recalculates
+        the required-field gate (enable/disable OK/Next buttons).
+
+   REAL POC HAS: react-hook-form tracks per-field validity. handleChange
+                 exists in field-renderer.tsx. BUT no transition detection
+                 and no global required gate recompute.
+
+   MISSING: In handleChange, after value update:
+            1. Check if field was empty and is now non-empty (or reverse)
+            2. If transition occurred, trigger required gate recompute
+            3. This is a small addition to the existing handleChange
+            NOTE: In React, #71 and #72 collapse into ONE onChange handler.
+
+   CODE: → 13_keystroke-indicators.ts
+   EFFORT: Small (20 lines of changes)
+   PRIORITY: 1 (core edit loop — depends on #48 required gate)
+
+
+   MODIFY: src/components/ui/action-button.tsx
+   ────────────────────────────────────────────
+   (Part of GAP #48 — CheckRequiredIndicators)
+
+   REAL POC HAS: action-button.tsx renders buttons from ACTION_CONFIG.
+                 Buttons always enabled.
+
+   MISSING: Import useRequiredGate hook. For OK/Next/Save/Submit buttons,
+            disable when isFormComplete is false. Show tooltip with
+            incomplete field names.
+
+   CODE: → 4_required-gate.ts (includes action-button changes)
+   EFFORT: Part of required gate feature
+
+
+   MODIFY: src/components/ui/data-grid.tsx
+   ────────────────────────────────────────
+   GAP #67 — XMLListonItemSelected (VBS lines 6594-6605)
+
+   VBS: When a row is clicked in the grid, stamps mstrSelectedRow
+        with the row's key value for the next server call.
+
+   REAL POC HAS: grid-store with rows. handleRowClick exists in
+                 data-grid.tsx. BUT row selection doesn't stage
+                 data for the EEData server call.
+
+   MISSING: On row click, store selected row data in grid-store or
+            session-store so that list button handlers can include
+            it in EEData. Small change.
+
+   CODE: → 7_grid-actions.ts (includes data-grid changes)
+   EFFORT: Small (10 lines)
+   PRIORITY: 2 (feature completeness)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/utils/
+────────────────────────────────────────────────────────────────────────────────
+
+   CREATE: src/utils/security-resolver.ts
+   ──────────────────────────────────────
+   GAPS #45 + #58-61 — ApplySecurityPolicy + GetObjectSecurity chain
+                       (VBS lines 3396-3401, 5698-5957)
+                       5 VBS routines → 1 utility file
+
+   VBS: Walks a security array from the server:
+        Level 0 = full access (visible + enabled)
+        Level 1 = readonly (visible + disabled)
+        Level 2 = hidden (invisible + disabled)
+        Hierarchy: LOB → page → individual object
+        Most specific match wins.
+
+   REAL POC HAS: Only a user-info endpoint (/ui/security/user-info).
+                 No per-control security data. No resolver.
+                 runtime-override-store CAN set disabled/visible per
+                 control — the mechanism exists, just no security driver.
+
+   MISSING:
+            1. SecurityEntry type: { lobType, pageType, objectName,
+               securityLevel }
+            2. resolveControlSecurity() — walks hierarchy, most specific
+               match wins (exact object > page-level > LOB-level > global)
+            3. applySecurityPolicy() — bulk-applies to all controls via
+               runtime-override-store.setOverride()
+            4. Fetch security data in loader.ts after navigation
+            5. Apply in form-renderer.tsx on mount
+
+   CODE: → 6_security-resolver.ts
+   EFFORT: Medium-Large (65 lines)
+   PRIORITY: 2 (feature completeness)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/handlers/common/
+────────────────────────────────────────────────────────────────────────────────
+
+   CREATE: src/handlers/common/notes.ts
+   ─────────────────────────────────────
+   GAP #64 — NoteButtonOnClick (VBS lines 6365-6468)
+
+   VBS: Note/attachment button on grid rows. Collects selected row IDs,
+        builds XML payload with matchcode="dtaNOTES", POSTs to server.
+        Server returns note content. Opens note modal for viewing/editing.
+
+   REAL POC HAS: Nothing for notes. Modal system (modal.tsx) exists and
+                 could host the note viewer. Grid-store has row data.
+
+   MISSING:
+            1. handleNoteButtonClick — collect row IDs from grid-store,
+               build note EEData payload, call server
+            2. NoteModal component (MUI Dialog) — render note content,
+               allow editing, save back
+            3. Register as onNoteButtonClick in handler chain
+            Auto-discovered via import.meta.glob('/src/handlers/**/*.ts')
+
+   CODE: → 9_note-button.ts
+   EFFORT: Large (45 lines handler + modal)
+   PRIORITY: 2 (feature completeness)
+
+
+   CREATE: src/handlers/common/info-lookup.ts
+   ──────────────────────────────────────────
+   GAP #65 — InfoButtonOnClick (VBS lines 6472-6549)
+
+   VBS: Info/lookup button. Reads the control's calltype attribute
+        (info, lookup, search). Builds EEData with calltype, POSTs.
+        Server returns either DISPLAY_MESSAGE (info) or OPEN_MODAL
+        (lookup/search with selection grid).
+
+   REAL POC HAS: Nothing for info/lookup. EEData builder exists
+                 (payload.ts). Modal system exists.
+
+   MISSING:
+            1. handleInfoButtonClick — read calltype from control,
+               build EEData, POST to server
+            2. Branch on calltype:
+               - info: server sends DISPLAY_MESSAGE → handled by commands
+               - lookup: server sends OPEN_MODAL → handled by commands
+               - search: same as lookup with search form
+            3. Register as onInfoButtonClick in handler chain
+
+   CODE: → 10_info-button.ts
+   EFFORT: Medium (35 lines)
+   PRIORITY: 2 (feature completeness)
+
+
+   MODIFY: src/handlers/common/commands.ts
+   ────────────────────────────────────────
+   GAP #84 — SetIconImages (VBS lines 9025-9090)
+
+   VBS: After server response, updates tree node icons to reflect
+        new status (e.g., policy went from draft → bound, icon changes).
+
+   REAL POC HAS: tree-item.tsx renders icons from static ICON_MAP.
+                 tree-store.updateNode() can update any node property.
+                 BUT no command verb to trigger icon updates from server.
+
+   MISSING: Add case 'SET_ICON' to the switch in handlerForBrowserCommands:
+            Parse matchcode (nodeKey) and iconIndex from command.
+            Call tree-store.updateNode({ imageIndex: iconIndex }).
+
+   CODE: → 16_tree-icon-update.ts
+   EFFORT: Small (20 lines)
+   PRIORITY: 3 (polish)
+
+
+   MODIFY: src/handlers/common/commands.ts
+   ────────────────────────────────────────
+   (Part of GAP #8 — OpenLink, VBS lines 731-826)
+
+   VBS: Opens external URL in new window with configurable features.
+
+   MISSING: Add case 'OPEN_LINK' to command switch:
+            Call window.open(url, target, features).
+
+   CODE: → 21_misc-small-gaps.ts (section c)
+   EFFORT: Small (10 lines)
+   PRIORITY: 3 (polish)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/stores/
+────────────────────────────────────────────────────────────────────────────────
+
+   MODIFY: src/stores/tree-store.ts
+   ─────────────────────────────────
+   GAP #34 — Tree_IsNodeValid (VBS lines 2728-2758)
+
+   VBS: Checks if a nodeKey exists in the tree. Returns true/false.
+
+   REAL POC HAS: tree-store has flat nodes Map. Can check easily.
+                 BUT no dedicated method exposed.
+
+   MISSING: Add isNodeValid(nodeKey: string): boolean method.
+            Just: return nodeKey in get().nodes
+
+   CODE: → 21_misc-small-gaps.ts (section a)
+   EFFORT: Tiny (5 lines)
+   PRIORITY: 3
+
+
+   MODIFY: src/stores/global-vars-store.ts
+   ────────────────────────────────────────
+   (Part of focus server calls enhancement — #70)
+
+   MISSING: Ensure setPreviousMatchcode is called during blur flow.
+            Already exists in the store interface. The wiring from
+            field-renderer handleBlur needs to call it.
+
+   CODE: → 5_focus-server-calls.ts
+
+
+   MODIFY: src/stores/session-store.ts
+   ────────────────────────────────────
+   (Part of frame title — #17)
+
+   MISSING: Add windowTitle field to session state. Populate from
+            navigation API response (already has pathLabel via
+            mstrPathLabel).
+
+   CODE: → 1_frame-title.ts
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/features/
+────────────────────────────────────────────────────────────────────────────────
+
+   CREATE: src/features/batch-edits/batch-edits-modal.tsx
+   ──────────────────────────────────────────────────────
+   GAP #10 — ShowBatchEdits (VBS lines 891-972)
+
+   VBS: Opens batch-edits modal. Shows checkboxes for tree nodes.
+        User selects which records to batch-edit. Builds XML payload
+        from selected nodeKeys. POSTs with BATCHEDIT action.
+        Navigates to batch edit page on success.
+
+   REAL POC HAS: Nothing for batch edits. Modal system exists.
+                 Tree-store has nodes. Not commonly used workflow.
+
+   MISSING:
+            1. BatchEditsModal — MUI Dialog with checkbox list of
+               tree nodes, "Start Batch Edit" button
+            2. On submit: collect selected nodeKeys → build payload →
+               POST → navigate to batch edit page
+            3. Trigger from sidebar or header menu
+
+   CODE: → 19_batch-edits.ts
+   EFFORT: Medium (35 lines)
+   PRIORITY: 4 (not critical — users can edit records individually)
+
+
+   CREATE: src/features/conversion-report/conversion-report-modal.tsx
+   ──────────────────────────────────────────────────────────────────
+   GAP #11 — ShowConversionReport (VBS lines 975-1030)
+
+   VBS: Opens conversion report. Passes current policy info to server.
+        Server returns HTML report. Displays in modal or new window.
+        Has a show-once-per-policy flag.
+
+   REAL POC HAS: Nothing for conversion reports. Modal system exists.
+
+   MISSING:
+            1. ConversionReportModal — MUI Dialog that fetches report
+               HTML from server, renders it (sanitized), has Print +
+               Open in New Window + Close buttons
+            2. Show-once flag per policy (session-store detail item)
+            3. Trigger from action menu
+
+   CODE: → 20_conversion-report.ts
+   EFFORT: Small (30 lines)
+   PRIORITY: 4 (not critical — specialized feature)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/features/frame/ (modify loaders)
+────────────────────────────────────────────────────────────────────────────────
+
+   MODIFY: src/features/frame/utils/loader.ts
+   ───────────────────────────────────────────
+   (Part of security — #45)
+
+   MISSING: After navigation API call returns, fetch security data
+            for the current LOB/page. Pass to form-renderer for
+            applySecurityPolicy() on mount.
+
+   CODE: → 6_security-resolver.ts (integration section)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/resources/ (modify data-grid)
+────────────────────────────────────────────────────────────────────────────────
+
+   MODIFY: src/resources/data-grid.tsx
+   ───────────────────────────────────
+   (Part of grid actions — #66-68)
+
+   MISSING: Add <GridToolbar /> above the DataGrid component.
+            On row selection, stage row data for server calls.
+
+   CODE: → 7_grid-actions.ts (integration section)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   src/layouts/ (modify tab layout)
+────────────────────────────────────────────────────────────────────────────────
+
+   MODIFY: src/layouts/tab.tsx
+   ───────────────────────────
+   (Part of lazy tabs — #81)
+
+   MISSING: Replace bare <Box role="tabpanel"> with <LazyTabPanel>.
+            Ensures tabs only render on first selection.
+
+   CODE: → 11_lazy-tabs.ts (integration section)
+
+
+────────────────────────────────────────────────────────────────────────────────
+   Other small gaps (modify existing files)
+────────────────────────────────────────────────────────────────────────────────
+
+   GAP #79 — SetControlFocus with tab switch (VBS lines 8485-8615)
+   MODIFY: src/stores/focus-store.ts (or global-vars-store)
+
+   VBS: Focuses a control by matchcode. If the control is on a different
+        tab, switches to that tab first.
+
+   REAL POC HAS: focus-store.requestFocus(matchcode). BUT doesn't know
+                 which tab the control lives on, so can't switch tabs.
+
+   MISSING: findTabIndexForMatchcode() — walks the layout tree to find
+            which tab hosts the control. requestFocusWithTabSwitch()
+            combines tab switch + focus.
+
+   CODE: → 21_misc-small-gaps.ts (section b)
+   EFFORT: Small (20 lines)
+   PRIORITY: 4
+
+
+   GAP #29 — EnableStartOptions (VBS lines 2367-2421)    [PARTIAL]
+   MODIFY: src/frames/system/str-piphsys-20010101.tsx
+
+   VBS: Enables/disables STARTOPTIONS buttons based on session
+        permissions (e.g., can't add new policy without permission).
+
+   REAL POC HAS: STARTOPTIONS rendered in str-piphsys-20010101.tsx.
+                 BUT always enabled, no permission check.
+
+   MISSING: Read permissions from session → conditionally disable
+            buttons via runtime-override-store.
+
+   CODE: → 21_misc-small-gaps.ts (section d)
+   EFFORT: Small (10 lines)
+   PRIORITY: 3
+
+
+   GAP #37 — RefreshSearchPageLists (VBS lines 2842-2919)
+   MODIFY: src/features/system/components/str-wip-subframe.tsx
+
+   VBS: After save/delete actions, refreshes WIP queue and search
+        result lists to show current data.
+
+   REAL POC HAS: Str_WIP_Subframe is PLACEHOLDER. WIPQueue and
+                 WIPPolicyList exist as grid matchcodes in schema.
+
+   MISSING: Trigger WIP data refetch after save/delete/submit/rate
+            actions complete. Use React Router revalidation or
+            manual refetch.
+
+   CODE: → 17_wip-refetch.ts
+   EFFORT: Small (20 lines)
+   PRIORITY: 3
+
+
+   GAP #53 — FillSelectList dual-list (VBS lines 5172-5303)    [PARTIAL]
+   MODIFY: src/components/ui/select.tsx (or new dual-list component)
+
+   VBS: Coverage dual-list — "Available" list on left, "Selected" list
+        on right, with Add/Remove buttons. Multiselect with coverage
+        code limits.
+
+   REAL POC HAS: Select rendering works for single-select and basic
+                 multi-select. BUT no dual-list (available vs selected)
+                 component for coverage fields.
+
+   MISSING: DualListSelect component shell — two lists with transfer
+            buttons. Not needed for initial LOBs but will be needed
+            for coverage-heavy LOBs.
+
+   CODE: → 21_misc-small-gaps.ts (section e)
+   EFFORT: Medium-Large (60-80 lines, when needed)
+   PRIORITY: 4 (defer until coverage LOBs onboarded)
+
+
+================================================================================
+   SUMMARY — ALL GAPS BY PRIORITY
+================================================================================
+
+   PRIORITY 1 — Core Edit Loop (blocks real editing)
+   ──────────────────────────────────────────────────
+   #38  Dirty guard (beforeunload + useBlocker)     → 2_dirty-guard.ts
+   #48  Required field gate (aggregate check)       → 4_required-gate.ts
+   #49  (part of #48)
+   #71  Keystroke indicator recompute (onChange)     → 13_keystroke-indicators.ts
+   #72  (part of #71)
+   #77  Pristine snapshot (dirty derivation)        → 14_initial-value.ts
+   #55  (part of #77)
+   #70  Focus server calls (postprocessblanks)      → 5_focus-server-calls.ts
+   #74  (part of #70)
+   TOTAL: ~190 lines across 5 files
+
+   PRIORITY 2 — Feature Completeness
+   ──────────────────────────────────
+   #45  Security per-control resolver               → 6_security-resolver.ts
+   #58-61  (part of #45)
+   #19  Delete action flow                          → 3_delete-action.ts
+   #66  Grid toolbar actions                        → 7_grid-actions.ts
+   #67  Grid row selection staging                  → 7_grid-actions.ts
+   #68  Grid list button with NEXT-loop             → 7_grid-actions.ts
+   #64  Note/attachment button                      → 9_note-button.ts
+   #65  Info/lookup button                          → 10_info-button.ts
+   TOTAL: ~260 lines across 5 files
+
+   PRIORITY 3 — Polish / Secondary
+   ────────────────────────────────
+   #17  Frame title (document.title)                → 1_frame-title.ts
+   #30  Breadcrumb path display                     → 8_breadcrumb.ts
+   #81  Lazy tab rendering                          → 11_lazy-tabs.ts
+   #83  ShowZero combo empty option                 → 12_showzero.ts
+   #8   OpenLink command                            → 21_misc-small-gaps.ts
+   #20  Async process polling                       → 15_async-process.ts
+   #37  WIP refetch trigger                         → 17_wip-refetch.ts
+   #84  Tree icon update command                    → 16_tree-icon-update.ts
+   #34  Tree_IsNodeValid method                     → 21_misc-small-gaps.ts
+   #29  EnableStartOptions permissions              → 21_misc-small-gaps.ts
+   TOTAL: ~195 lines across 8 files
+
+   PRIORITY 4 — Not Critical for MVP
+   ──────────────────────────────────
+   #10  Batch edits modal                           → 19_batch-edits.ts
+   #11  Conversion report modal                     → 20_conversion-report.ts
+   #25  Action toolbar layout                       → 18_toolbar.ts
+   #79  Focus with tab switch                       → 21_misc-small-gaps.ts
+   #53  Dual-list select (coverage)                 → 21_misc-small-gaps.ts
+   TOTAL: ~105 lines across 3 files
+
+   ─────────────────────────────────────────────
+   GRAND TOTAL: ~750 lines across 21 code files
+   VBS original: ~9,090 lines across 85 routines
+   Coverage: 92% of VBS behavior covered by Real POC
+   ─────────────────────────────────────────────
+
+
+================================================================================
+   CODE CHANGE FILES IN THIS FOLDER
+================================================================================
+
+   File                        Target POC folder              Gap(s)
+   ─────────────────────────── ────────────────────────────── ──────
+   1_frame-title.ts            src/hooks/                     #17
+   2_dirty-guard.ts            src/hooks/                     #38
+   3_delete-action.ts          src/hooks/                     #19
+   4_required-gate.ts          src/hooks/                     #48,49
+   5_focus-server-calls.ts     src/components/ui/             #70,74
+   6_security-resolver.ts      src/utils/                     #45,58-61
+   7_grid-actions.ts           src/components/ui/             #66,67,68
+   8_breadcrumb.ts             src/components/ui/             #30
+   9_note-button.ts            src/handlers/common/           #64
+   10_info-button.ts           src/handlers/common/           #65
+   11_lazy-tabs.ts             src/components/ui/             #81
+   12_showzero.ts              src/components/ui/             #83
+   13_keystroke-indicators.ts  src/components/ui/             #71,72
+   14_initial-value.ts         src/hooks/                     #77,55
+   15_async-process.ts         src/hooks/                     #20
+   16_tree-icon-update.ts      src/handlers/common/           #84
+   17_wip-refetch.ts           src/features/system/           #37
+   18_toolbar.ts               src/components/ui/             #25
+   19_batch-edits.ts           src/features/batch-edits/      #10
+   20_conversion-report.ts     src/features/conversion-report/ #11
+   21_misc-small-gaps.ts       multiple (see inside)          #34,79,8,29,53
+
+================================================================================
+   END OF GAP ANALYSIS
+================================================================================

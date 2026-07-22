@@ -1,0 +1,569 @@
+================================================================================
+   REAL POC (aqs-web-ui) - COMPREHENSIVE CODEBASE ANALYSIS
+   Source: 361 phone photos (IMG_5336 through IMG_5696)
+   Analyzed: July 22, 2026
+================================================================================
+
+Stack: React 19 + Vite + TypeScript + Tailwind CSS + MUI (Material UI)
+       + react-hook-form + React Router v7 + Zustand + Zod v4 + dayjs
+Branch: experimental
+Turbo: v3.27.0
+
+
+================================================================================
+SECTION 1: COMPLETE FILE INVENTORY (75+ files captured)
+================================================================================
+
+src/
+├── assets/
+│   ├── css/global.css                    Tailwind imports, CSS variables
+│   ├── images/brand-logo.png             Philadelphia Insurance logo
+│   └── svgs/                             icon1-4.svg, policy-Start-Icon.svg,
+│                                         sidebar-menu-left/right-icon.svg
+│
+├── components/
+│   ├── dialog/dialog.tsx           (67)  MUI Dialog wrapper, Ok/Cancel
+│   ├── tree-view/tree-item.tsx     (45)  CustomTreeItem with ICON_MAP
+│   ├── ui/
+│   │   ├── checkbox.tsx           (100)  MUI Checkbox + EE onBlur
+│   │   ├── date.tsx                (99)  MUI DatePicker + dayjs
+│   │   ├── field-renderer.tsx     (623)  *** CENTRAL FILE ***
+│   │   ├── form-field.tsx          (89)  FormControl wrapper
+│   │   ├── form-renderer.tsx      (104)  FormProvider + 5 layout types
+│   │   ├── loading-overlay.tsx     (31)  Backdrop + CircularProgress
+│   │   ├── radio.tsx              (131)  RadioGroup with OptionItem[]
+│   │   ├── select.tsx             (171)  Select + Autocomplete fallback
+│   │   ├── spinner.tsx             (24)  Simple spinner
+│   │   ├── text.tsx               (135)  TextField wrapper
+│   │   └── textarea.tsx           (142)  Multi-line text wrapper
+│   ├── action-button.tsx           (96)  Button with FormActionContext
+│   ├── error-boundary.tsx            ?   Error boundary (referenced)
+│   ├── footer.tsx                  (12)  "Powered by AQS/advantage"
+│   ├── header.tsx                  (88)  Logo, Menus, Login/Logout
+│   └── layout-renderer.tsx         (52)  Dispatch: section/tab/control/grid
+│
+├── configs/
+│   ├── action-config.ts            (53)  getActionConfig, getButtonConfig
+│   └── theme-config.ts           (695)  Full MUI theme from tokens
+│
+├── constants/
+│   ├── common.ts                  (327)  ACTION_CONFIG (17 actions),
+│   │                                     DEFAULT_ACTION_BUTTONS, EEDATA_FALLBACK,
+│   │                                     INLINE_DISPLAY_VERBS, NAV_BUTTON_MATCHCODES
+│   ├── error.ts                    (19)  HTTP_ERROR_MESSAGES, retry codes
+│   ├── field-registry.ts           (34)  9 lazy-loaded field types + FIELD_META
+│   └── tokens.ts                 (220+)  Design tokens: color, spacing, radius,
+│                                         typography, elevation, zIndex, dataGrid
+│
+├── features/
+│   ├── auth/utils/
+│   │   ├── action.ts               (63)  clientLoginAction, clientLogoutAction
+│   │   └── loader.ts               (50)  clientLoginLoader with SSO support
+│   ├── frame/
+│   │   ├── components/
+│   │   │   ├── dynamic-renderer.tsx (53)  Lazy component loader
+│   │   │   ├── index.ts             (3)  Barrel exports
+│   │   │   ├── schema-renderer.tsx  (~)  JSON schema form renderer
+│   │   │   └── static-renderer.tsx (79)  Main page renderer + fallback
+│   │   ├── hooks/
+│   │   │   └── use-register-handlers.ts (28) window.frameHandlerRegistry
+│   │   └── utils/
+│   │       └── loader.ts          (157)  clientStaticLoader, clientDynamicLoader
+│   │                                     (parallel Promise.all, ADD-mode flag)
+│   ├── root/utils/
+│   │   ├── loader.ts               (37)  clientRootLoader with auth routing
+│   │   └── middleware.ts           (25)  React Router auth middleware
+│   └── system/components/
+│       ├── index.ts                 (5)  Barrel exports
+│       ├── sidebar.tsx             (95)  Tab nav: Home/WIP/AllPol/Print
+│       ├── str-all-policies-subframe.tsx (16) Placeholder
+│       ├── str-home-subframe.tsx  (139)  QuickActionItem grid, Welcome
+│       └── str-wip-subframe.tsx    (16)  Placeholder
+│
+├── frames/
+│   └── system/
+│       └── str-piphsys-20010101.tsx (82) Main system frame, STARTOPTIONS
+│
+├── handlers/
+│   ├── common/
+│   │   ├── commands.ts           (~290)  handlerForBrowserCommands (25+ verbs)
+│   │   ├── payload.ts             (297)  EEData builder: handlerForEEData,
+│   │   │                                 handlerForInitialValue,
+│   │   │                                 handlerForButtonOnClick,
+│   │   │                                 handlerForListButtonOnClick
+│   │   └── shared.ts             (123)  9 common handlers
+│   └── pol/
+│       └── pol-piphpol-20150801.ts (74) Page-specific overrides
+│
+├── hooks/
+│   ├── use-browser-commands.ts     (48)  Process BrowserCommand[] once
+│   ├── use-command-handlers.ts    (175)  Stable CommandHandlers via useMemo
+│   ├── use-deferred-navigation.ts  (59)  Replay nextAction on modal close
+│   ├── use-derived-fields.ts       (79)  useWatch + DependencyRule[]
+│   ├── use-is-mounted.ts           (31)  Returns () => boolean
+│   ├── use-pathname-ref.ts         (24)  Ref-based pathname tracking
+│   ├── use-toggle.ts               (40)  Boolean toggle
+│   └── use-unmount.ts              (33)  Cleanup on unmount
+│
+├── layouts/
+│   ├── flat.tsx                    (34)  Sequential column flex
+│   ├── form-grid.tsx               (37)  Sections + grids split
+│   ├── grid.tsx                    (32)  Full-height single grid
+│   ├── nested-tab.tsx              (34)  Outer tabs with inner tabs
+│   ├── root.tsx                     (~)  Outlet + Modal + LoadingOverlay
+│   ├── section.tsx                  (~)  CSS Grid with col/row placement
+│   └── tab.tsx                      (~)  MUI Tabs with lazy-mount
+│
+├── pages/
+│   ├── dynamic.tsx                  (~)  DynamicRenderer + ErrorBoundary
+│   ├── login.tsx                    (~)  Login form + TimedAlert
+│   ├── root.tsx                     (~)  Header + Outlet + Footer
+│   └── static.tsx                   (~)  StaticRenderer + ErrorBoundary
+│
+├── providers/
+│   ├── derived-fields-provider.tsx   (~) DerivedFieldsContext + tree walker
+│   ├── form-renderer-provider.tsx    (~) FormRendererContext
+│   ├── handlers-provider.tsx         (~) HandlersContext + useHandlers
+│   ├── layout-provider.tsx           (~) LayoutRendererContext
+│   └── theme-provider.tsx            (~) MUI ThemeProvider wrapper
+│
+├── resources/
+│   ├── data-grid.tsx                 (~) MUI DataGrid + row click + EE
+│   ├── menu.tsx                      (~) Fetcher-based menu + policyId
+│   ├── modal.tsx                  (474)  *** CRITICAL ***
+│   │                                     clientModalLoader, clientModalAction,
+│   │                                     Modal component (fetcher pattern)
+│   └── tree.tsx                    (87)  clientTreeAction + Tree component
+│
+├── routes/
+│   ├── context.ts                  (29)  NavigationRouterContext
+│   └── routes.tsx                 (153)  Full route config with middleware
+│
+├── schemas/
+│   ├── pol/pol-piphpol-20150801.json (271) Policy Information schema
+│   └── system/str-piphsys-20010101.json (73) System start page schema
+│
+├── services/
+│   ├── auth.ts                    (139)  login/logout with Zod schemas
+│   ├── events.ts                  (116)  logActivity, logError
+│   ├── load-document.ts            (91)  POST /ui/page/load-document
+│   ├── lob-action-menu.ts         (109)  POST /api/lobActionMenu
+│   ├── page-data.ts                (96)  POST /ui/page/data (EE calls)
+│   ├── page-layout.ts            (106)  POST /ui/page/layout
+│   ├── page-navigation.ts        (183)  POST /ui/page/navigation
+│   ├── tree.ts                    (220)  loadTree + normalizeTreeNodes
+│   └── user-info.ts                (52)  GET /ui/security/user-info
+│
+├── stores/
+│   ├── auth-store.ts               (68)  setUser/clearUser/hydrate
+│   ├── global-vars-store.ts       (333)  UNIFIED: domain flags + combo
+│   │                                     + focus + browser-cmd
+│   ├── grid-store.ts               (45)  Grid rows by matchcode
+│   ├── loading-store.ts            (47)  Reference-counted busy
+│   ├── menu-store.ts               (51)  Menus + NavigationStore sync
+│   ├── modal-store.ts             (134)  Modal open/close/alert/deferred
+│   ├── navigation-store.ts        (143)  Frame load, cycling, deferred nav
+│   ├── runtime-override-store.ts   (51)  Per-field disabled/visible/etc.
+│   ├── session-store.ts           (192)  Session + xmlDetail CRUD
+│   └── tree-store.ts              (326)  Flat node map + CRUD + expand
+│
+├── types/ (not photographed but referenced)
+│   ├── common.ts                         BrowserCommand, EEData, Session, etc.
+│   ├── form.ts                           OptionItem
+│   ├── handler.ts                        HandlerModuleSchema
+│   ├── layout.ts                         LayoutNode union
+│   └── tree.ts                           TreeNode, TreeNodeRaw
+│
+└── utils/ (not photographed but referenced)
+    ├── asp-file.ts                       stripAspExtension
+    ├── cn.ts                             className merger (clsx/tailwind)
+    ├── common.ts                         parseGridRows
+    ├── file-resolver.ts                  schema/component/handler resolvers
+    ├── http-instance.ts                  baseQuery (Axios wrapper)
+    ├── xml-parser.ts                     xmlParser for xmlDetail
+    └── zod.ts                            coerceToArray utility
+
+
+================================================================================
+SECTION 2: ARCHITECTURE DEEP DIVE
+================================================================================
+
+2.1  DATA FLOW: SERVER CALL LIFECYCLE
+-------------------------------------
+
+  User Action (blur/change/click)
+       |
+       v
+  field-renderer.tsx (handleBlur/handleChange/handleClick)
+       |
+       v
+  payload.ts (handlerForEEData) -- builds EEData object
+       |
+       v
+  page-data.ts (pageData service) -- POST /ui/page/data
+       |
+       v
+  Server Response: { sessionInformation, eeData, listItems, browserCtl }
+       |
+       v
+  session-store.ts (updateSessionFromArray) -- updates session
+       |
+       v
+  commands.ts (handlerForBrowserCommands) -- processes browserCtl.call[]
+       |
+       v
+  25+ verb handlers: NAVIGATE, SET_TEXT, SET_VALUE, SET_ATTRIBUTE,
+  SET_DISABLED, SET_READONLY, SET_REQUIRED, SET_FOCUS, SET_VARIABLE,
+  LOAD_COMBO, ADD_LISTITEM, CLEAR_COMBO, OPEN_MODAL, CLOSE_MODAL,
+  DISPLAY_ERROR, DISPLAY_QUESTION, DISPLAY_INFORMATION, DISPLAY_MESSAGE,
+  BUSINESS_ERROR, CALL_SERVER, REFRESH_TREE, REFRESH_MENU,
+  CLEAR_ACTIONMENU, CLEAR_SESSIONXML_ITEM, LOAD_GRID, CLEAR_GRID,
+  NAVIGATE_CYCLING
+
+
+2.2  NAVIGATION LIFECYCLE
+--------------------------
+
+  Tree click / Menu click / Button click
+       |
+       v
+  page-navigation.ts (pageNavigation service) -- POST /ui/page/navigation
+       |
+       v
+  Response: { nodeKey, action, url, xmlFile, frame, modal*, xmlDetail, ... }
+       |
+       v
+  Session store update (updateSessionFromResponse)
+       |
+       v
+  Frame routing:
+    - frame="MAIN"      -> React Router navigate to /static/{folder}/{file}
+    - frame="MODAL"     -> ModalStoreApi.open() -> modal.tsx loader
+    - frame="NEWWINDOW" -> window.open()
+
+
+2.3  MODAL LIFECYCLE
+--------------------
+
+  onOpenModal(action, nodeKey, height, width)
+       |
+       v
+  ModalStoreApi.open({ action, nodeKey, width, height })
+       |
+       v
+  NavigationStoreApi.setDeferred(true) -- blocks main-frame navigation
+       |
+       v
+  modal.tsx: clientModalLoader fires
+       -> pageNavigation(action, nodeKey) -- gets XML/layout info
+       -> pageLayout(xmlFile)            -- gets controls/buttons
+       -> Returns: { controls, buttons, title, xmlFile }
+       |
+       v
+  Modal renders form fields from controls
+       |
+       v
+  User edits + clicks OK/Submit
+       -> clientModalAction fires
+       -> pageData(ZENTEDTCTL, eeData) -- commits changes
+       -> Processes returned browser commands
+       -> extractReturnValue(commands) -- captures SET_VARIABLE returns
+       |
+       v
+  ModalStoreApi.close()
+       -> NavigationStoreApi.setDeferred(false)
+       -> use-deferred-navigation.ts replays nextAction
+
+
+2.4  HANDLER AUTO-DISCOVERY
+----------------------------
+
+  import.meta.glob('/src/handlers/**/*.ts')
+       |
+       v
+  Merge: common handlers (shared.ts) + page-specific overrides
+       |
+       v
+  Example: pol-piphpol-20150801.ts overrides closeModal, adds
+           logEffectiveDateChange, openStartOptionsModal
+       |
+       v
+  Registered on window.frameHandlerRegistry via useRegisterHandlers
+
+
+2.5  STORE ARCHITECTURE (10 Zustand Stores)
+--------------------------------------------
+
+  Store                    | Concern                  | Key Actions
+  -------------------------|--------------------------|---------------------------
+  auth-store               | Authentication           | setUser, clearUser, hydrate
+  session-store            | Session state + xmlDetail | updateSessionFromArray,
+                           |                          | setXmlDetailItem, toPayload
+  global-vars-store        | UNIFIED: domain flags,   | setPolicyRated, setOptions,
+                           | combo options, focus,     | requestFocus, setCommands
+                           | browser-cmd execution    | Enabled, setExecuting
+  navigation-store         | Nav lifecycle, deferred   | setDeferred, setNextAction,
+                           | nav, cycling depth       | incrementDepth, markFrame
+  modal-store              | Modal state + alerts      | open, close, setReturnValue
+  tree-store               | Policy tree CRUD          | loadTree, addNode, selectNode
+  menu-store               | Menu items                | setMenus (syncs nav store)
+  grid-store               | Grid rows by matchcode    | setRows, clearRows
+  loading-store            | Reference-counted busy    | begin, end, reset
+  runtime-override-store   | Per-field overrides        | setOverride (disabled etc.)
+
+
+2.6  FIELD REGISTRY & EE METADATA
+-----------------------------------
+
+  Registry Key  | Component    | EE Trigger | Trigger Event
+  --------------|--------------|------------|---------------
+  textbox       | Text         | Yes        | onBlur
+  numeric       | Text         | Yes        | onBlur
+  textarea      | Textarea     | Yes        | onBlur
+  date          | DateField    | Yes        | onBlur
+  combo         | Select       | Yes        | onChange
+  radiobutton   | Radio        | Yes        | onChange
+  checkbox      | Checkbox     | Yes        | onChange
+  button        | ActionButton | No         | --
+  xmllist       | DataGrid     | No         | --
+
+
+2.7  JSON SCHEMA SYSTEM
+------------------------
+
+  Schema files define page layouts declaratively:
+  - Layout type: flat | tabbed | form+grid | grid | nested-tabs
+  - Controls: matchcode, controltype, ctrlabel, visible, disabled, required
+  - Events: onClick bindings with handler references
+  - Tabs: nested tab groups with control assignments
+  - Grids: xmllist columns with header/width/matchcode
+
+  Example: pol-piphpol-20150801.json (271 lines)
+  - 5 tabs: Policy, Policy Detail, Billing/Misc, Insured Detail, Agent Detail
+  - 19 controls on Policy tab (textbox, combo, checkbox, radiobutton, numeric)
+  - xmllist on Insured Detail tab with 6 grid columns
+  - Footer: Start Options, OK, Cancel buttons with onClick handlers
+
+
+2.8  ROUTE CONFIGURATION
+--------------------------
+
+  /                     -> Root (Header + Outlet + Footer)
+  /login                -> Login page (no auth middleware)
+  /logout               -> Logout action
+  /frame                -> Frame layout (with menu, tree, modal children)
+    /menu               -> Menu resource route (clientMenuAction)
+    /tree               -> Tree resource route (clientTreeAction)
+    /modal              -> Modal resource route (clientModalLoader/Action)
+    /static/:folder/:file -> StaticRenderer (clientStaticLoader)
+    /dynamic/:folder/:file -> DynamicRenderer (clientDynamicLoader)
+
+
+================================================================================
+SECTION 3: API ENDPOINTS
+================================================================================
+
+  Method  Endpoint                          Service File        Purpose
+  ------  --------------------------------  ------------------  -----------------
+  POST    /api/v1/ui/login                  auth.ts             Login
+  POST    /api/v1/ui/logout                 auth.ts             Logout
+  POST    /api/v1/ui/sso-login              auth loader         SSO auto-login
+  GET     /ui/security/user-info            user-info.ts        User details
+  POST    /ui/page/navigation               page-navigation.ts  Navigate/cycling
+  POST    /ui/page/layout                   page-layout.ts      Get page controls
+  POST    /ui/page/data                     page-data.ts        EE calls (blur etc)
+  POST    /ui/page/load-document            load-document.ts    Menu structure
+  POST    /api/lobActionMenu                lob-action-menu.ts  LOB action items
+  POST    /ui/application-events/log-activity events.ts         Activity logging
+  POST    /ui/application-events/log-error   events.ts          Error logging
+  POST    /ui/page/data (POLICYTREE)        tree.ts             Load tree nodes
+
+
+================================================================================
+SECTION 4: WHAT THE REAL POC ALREADY HANDLES (vs Legacy VBScript)
+================================================================================
+
+LEGACY VBS FUNCTION/FEATURE               REAL POC IMPLEMENTATION             STATUS
+--------------------------------------    ----------------------------------  --------
+window_onload (Main_ISLLSYS)              clientStaticLoader + frame loader   DONE
+second_window_onload                       clientStaticLoader ADD-mode flag    DONE
+XMLServerCall (EE calls)                   pageData service + commands.ts      DONE
+handlerForBrowserCommands                  commands.ts (25+ verbs)             DONE
+SetArrayData / SetInitialValueData         payload.ts (EEData builder)         DONE
+SetControlFocus / FillSelectList           global-vars-store (unified)         DONE
+OnFocusHandler                             field-renderer handleFocus          DONE
+DoBrowserCommands flag                     commandsEnabled in global-vars      DONE
+mblnDataChanged / mblnRatingDataChanged    dataChanged / ratingDataChanged     DONE
+mblnPolicyRated cascade                    setPolicyRated with cascade reset   DONE
+mblnDocumentsSelected cascade              setDocumentsSelected cascade        DONE
+mblnSumMsgChg cascade                      setSumMsgChg cascade                DONE
+mblnInquiryMode / mblnReadOnly             selectInquiryMode / selectReadOnly  DONE
+mstrPreviousMatchcode                      previousMatchcode in focus state    DONE
+NAVIGATE / NAVIGATE_CYCLING                onNavigate / onNavigateCycling      DONE
+OPEN_MODAL / CLOSE_MODAL                   modal.tsx full lifecycle            DONE
+SET_TEXT / SET_VALUE / SET_LABELTEXT        onSetFieldValue callback            DONE
+SET_ATTRIBUTE / SET_DISABLED / SET_READONLY onSetAttribute callback            DONE
+SET_REQUIRED                               onSetAttribute callback             DONE
+SET_FOCUS                                  requestFocus (imperative + async)   DONE
+SET_VARIABLE                               Typed global/session store map      DONE
+LOAD_COMBO / ADD_LISTITEM / CLEAR_COMBO    comboOptions in global-vars         DONE
+DISPLAY_ERROR / DISPLAY_QUESTION           onDisplayMessage + modal alert      DONE
+DISPLAY_INFORMATION / DISPLAY_MESSAGE      onDisplayMessage callback           DONE
+BUSINESS_ERROR                             Same as DISPLAY_ERROR               DONE
+CALL_SERVER                                onCallServer + re-entrant guard     DONE
+REFRESH_TREE / REFRESH_MENU                onRefresh callback                  DONE
+CLEAR_ACTIONMENU                           onRefresh('menu')                   DONE
+CLEAR_SESSIONXML_ITEM                      clearXmlDetailItem                  DONE
+LOAD_GRID / CLEAR_GRID                     grid-store setRows/clearRows        DONE
+Frameset (Menu/Tree/Main/Modal)            React Router nested routes          DONE
+Session state management                   session-store.ts (192 lines)        DONE
+Tree navigation (policy tree)              tree-store.ts (326 lines)           DONE
+Menu system                                menu.tsx + menu-store               DONE
+Modal form handling                        modal.tsx (474 lines, full cycle)   DONE
+Progress/loading overlay                   loading-store (ref-counted)         DONE
+Deferred navigation (modal blocks)         use-deferred-navigation.ts          DONE
+Error boundary                             error-boundary.tsx + logError       DONE
+Runtime field overrides                    runtime-override-store.ts           DONE
+Handler registration                       window.frameHandlerRegistry         DONE
+Per-page handler overrides                 import.meta.glob + per-page files   DONE
+Form validation (react-hook-form)          Controller + useFormContext          DONE
+Derived fields (show/hide/enable)          use-derived-fields.ts               DONE
+Conditional rendering (renderWhen)         shouldRender in field-renderer      DONE
+Schema-driven layout                       JSON schemas + layout dispatch      DONE
+Design token system                        tokens.ts -> theme-config.ts        DONE
+5 layout types                             flat/tabbed/form+grid/grid/nested   DONE
+DataGrid (xmllist)                         data-grid.tsx + grid-store          DONE
+Auth (login/logout/SSO)                    auth feature + auth-store           DONE
+HTTP error handling                        error.ts + retry codes              DONE
+Event logging                              events.ts (activity + error)        DONE
+LOB action menu                            lob-action-menu.ts                  DONE
+
+
+================================================================================
+SECTION 5: FILES/DIRECTORIES NOT YET PHOTOGRAPHED
+================================================================================
+
+These exist in the folder structure but have no photos:
+
+  src/types/          Type definitions (common.ts, layout.ts, handler.ts,
+                      tree.ts, form.ts) -- only inferred from imports
+
+  src/utils/          Utility functions (asp-file.ts, cn.ts, common.ts,
+                      file-resolver.ts, http-instance.ts, xml-parser.ts,
+                      zod.ts) -- only inferred from imports
+
+  .github/            CI/CD configuration
+
+  Root config files   vite.config.ts, tsconfig.json, package.json,
+                      tailwind.config.ts, etc.
+
+  src/services/       fetcher.ts (base HTTP client, referenced everywhere)
+
+
+================================================================================
+SECTION 6: COMPARISON WITH EARLIER "WRONG" POC
+================================================================================
+
+The earlier POC we analyzed (from photos IMG_4669-5278) was a DIFFERENT,
+OLDER version of the project. Key differences:
+
+  Earlier POC                          Real POC
+  -----------------------------------  ------------------------------------
+  Separate combo-options-store         Unified into global-vars-store
+  Separate focus-store                 Unified into global-vars-store
+  Separate browser-cmd-store           Unified into global-vars-store
+  No Zod validation                    Full Zod schemas on all services
+  Manual fetch/axios                   baseQuery with Zod safeParse
+  Incomplete modal lifecycle           Complete modal.tsx (474 lines)
+  Missing SSO support                  SSO auto-login in auth loader
+  No event logging                     events.ts (activity + error)
+  No LOB action menu                   lob-action-menu.ts service
+  Simpler command handler              25+ verbs with SET_VARIABLE mapping
+  No runtime field overrides           runtime-override-store.ts
+  No deferred navigation               use-deferred-navigation.ts + store
+  Separate stores for everything       Consolidated where appropriate
+  No JSON schema examples              2 complete schemas (pol + system)
+  No ref-counted loading               loading-store with begin/end/reset
+  Simpler tree store                   Full 326-line tree CRUD + flat map
+
+CONCLUSION: The "earlier POC" was an intermediate snapshot. The Real POC
+is production-grade with complete VBS-to-React coverage.
+
+
+================================================================================
+SECTION 7: IMPACT ON PREVIOUSLY WRITTEN CHANGE FILES
+================================================================================
+
+Our previous 32 change files and analysis documents were written against
+the EARLIER (wrong) POC. Here is the impact:
+
+  REDUNDANT (Real POC already has these):
+  - EEData payload builder          -> payload.ts exists and is complete
+  - Deferred navigation hook        -> use-deferred-navigation.ts exists
+  - Command handler system          -> commands.ts with 25+ verbs
+  - Handler auto-discovery          -> import.meta.glob already wired
+  - Focus management system         -> Unified in global-vars-store
+  - Combo options store             -> Unified in global-vars-store
+  - Runtime field overrides         -> runtime-override-store.ts
+  - Modal lifecycle                 -> modal.tsx (474 lines, complete)
+  - Tree store CRUD                 -> tree-store.ts (326 lines)
+  - Session state management        -> session-store.ts (192 lines)
+  - Loading indicator               -> loading-store.ts (ref-counted)
+  - Grid store                      -> grid-store.ts exists
+  - Error handling/logging          -> error.ts + events.ts
+  - Action config system            -> action-config.ts + common.ts
+  - Field registry + EE metadata    -> field-registry.ts exists
+
+  STILL POTENTIALLY NEEDED:
+  - Additional LOB page schemas (BOP, CAU, IRM, WRM, LIA, RMP)
+  - Additional handler override files for other LOBs
+  - Types files (common.ts, layout.ts, handler.ts, form.ts, tree.ts)
+  - Utility files (asp-file.ts, cn.ts, file-resolver.ts, etc.)
+  - Testing infrastructure (unit + integration tests)
+  - CI/CD pipeline configuration
+  - Performance optimization for large trees/grids
+  - Accessibility audit and WCAG compliance
+  - Dark mode theme (tokens have light/dark values but theme uses light)
+
+  NEEDS REVISION:
+  - 5_DEVELOPER_TASKS.txt task list was based on wrong POC
+  - VBS_to_React_Migration_Changes_Detailed.txt/docx based on wrong POC
+  - Any gap analysis documents referencing the earlier POC
+
+
+================================================================================
+SECTION 8: RECOMMENDED NEXT STEPS
+================================================================================
+
+1. PHOTOGRAPH MISSING FILES -- Request photos of:
+   - src/types/ (all files)
+   - src/utils/ (all files)
+   - Root config (package.json, vite.config.ts, tsconfig.json)
+   - src/services/fetcher.ts
+
+2. REVISE TASK BREAKDOWN -- Update 5_DEVELOPER_TASKS.txt to reflect
+   the Real POC's maturity. Many tasks are already complete.
+
+3. ADD LOB SCHEMAS -- Create JSON schemas for remaining LOBs:
+   BOP, CAU, IRM, WRM, LIA, RMP (only POL schema exists)
+
+4. ADD HANDLER OVERRIDES -- Create per-page handler files for
+   each LOB's policy page (like pol-piphpol-20150801.ts)
+
+5. IMPLEMENT PLACEHOLDER PAGES -- Fill in:
+   - Str_All_Policies_Subframe (search/filter + DataGrid)
+   - Str_WIP_Subframe (work-in-process queue)
+
+6. TESTING -- Add test coverage:
+   - Store unit tests (Zustand)
+   - Service integration tests (Zod schema validation)
+   - Component tests (field-renderer, modal, tree)
+   - E2E tests (login flow, policy creation, tree navigation)
+
+7. DARK MODE -- tokens.ts has light/dark values for dataGrid but
+   theme-config.ts only uses light mode. Wire up dark mode support.
+
+
+================================================================================
+END OF ANALYSIS
+================================================================================
