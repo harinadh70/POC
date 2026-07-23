@@ -51,7 +51,7 @@
             Also needs a SET_FRAMETITLE command verb handler so the
             server can override the title dynamically.
 
-   CODE: → 1_frame-title.ts
+   CODE: → src/hooks/use-frame-title.ts
    EFFORT: Small (15 lines)
    PRIORITY: 3 (polish)
 
@@ -76,7 +76,7 @@
             Returns a <NavigationBlocker /> component that renders
             a MUI Dialog confirm when blocked.
 
-   CODE: → 2_dirty-guard.ts
+   CODE: → src/hooks/use-navigation-guard.tsx
    EFFORT: Medium (45 lines)
    PRIORITY: 1 (core edit loop)
 
@@ -101,7 +101,7 @@
                navigate to parent
             4. On cancel: clear pendingDelete
 
-   CODE: → 3_delete-action.ts
+   CODE: → src/hooks/use-delete-action.tsx
    EFFORT: Medium (55 lines)
    PRIORITY: 2 (feature completeness)
 
@@ -127,7 +127,7 @@
             3. Exposes isFormComplete + incompleteFields[]
             4. action-button.tsx uses this to disable OK/Next/Save/Submit
 
-   CODE: → 4_required-gate.ts
+   CODE: → src/hooks/use-required-gate.ts
    EFFORT: Medium (50 lines)
    PRIORITY: 1 (core edit loop)
 
@@ -157,7 +157,7 @@
             5. SET_INITIALVALUE command verb to reset baseline after save
             6. PristineSnapshotContext for sharing across renderers
 
-   CODE: → 14_initial-value.ts
+   CODE: → src/hooks/use-pristine-snapshot.ts
    EFFORT: Medium (35 lines)
    PRIORITY: 1 (core edit loop)
 
@@ -178,7 +178,7 @@
             3. When complete: stops polling, lets navigation continue
             4. Max attempts guard (e.g., 30 = 60 seconds timeout)
 
-   CODE: → 15_async-process.ts
+   CODE: → src/hooks/use-async-process-check.ts
    EFFORT: Small (30 lines)
    PRIORITY: 3 (polish)
 
@@ -204,7 +204,7 @@
             3. Fallback: walks tree-store ancestors if pathLabel empty
             Wire into header.tsx or static-renderer.tsx.
 
-   CODE: → 8_breadcrumb.ts
+   CODE: → src/components/ui/breadcrumb.tsx
    EFFORT: Small (30 lines)
    PRIORITY: 3 (polish)
 
@@ -225,7 +225,7 @@
                when inactive) to preserve form state
             Drop-in replacement in tab.tsx.
 
-   CODE: → 11_lazy-tabs.ts
+   CODE: → src/components/ui/lazy-tab-panel.tsx + tab-layout.tsx
    EFFORT: Small (25 lines)
    PRIORITY: 3 (polish)
 
@@ -254,7 +254,7 @@
                server stops sending NEXT)
             Wire into data-grid.tsx above the DataGrid component.
 
-   CODE: → 7_grid-actions.ts
+   CODE: → src/components/ui/grid-toolbar.tsx + data-grid.tsx
    EFFORT: Medium (60 lines)
    PRIORITY: 2 (feature completeness)
 
@@ -278,7 +278,7 @@
             4. Gates Save on isDirty, OK/Next on required gate
             Wire into header.tsx or static-renderer.tsx.
 
-   CODE: → 18_toolbar.ts
+   CODE: → src/components/ui/action-toolbar.tsx
    EFFORT: Medium (40 lines)
    PRIORITY: 4 (not critical — buttons work individually)
 
@@ -302,7 +302,7 @@
                to the options array before rendering
             Small change to existing file.
 
-   CODE: → 12_showzero.ts
+   CODE: → src/components/ui/select.tsx
    EFFORT: Small (15 lines)
    PRIORITY: 3 (polish)
 
@@ -335,7 +335,7 @@
            have EE bindings with type="pre"
         4. Initial value capture on focus for dirty comparison
 
-   CODE: → 5_focus-server-calls.ts
+   CODE: → src/components/ui/field-renderer.tsx
    EFFORT: Medium (40 lines of changes to existing code)
    PRIORITY: 1 (core edit loop)
 
@@ -359,7 +359,7 @@
             3. This is a small addition to the existing handleChange
             NOTE: In React, #71 and #72 collapse into ONE onChange handler.
 
-   CODE: → 13_keystroke-indicators.ts
+   CODE: → src/components/ui/field-renderer.tsx
    EFFORT: Small (20 lines of changes)
    PRIORITY: 1 (core edit loop — depends on #48 required gate)
 
@@ -375,7 +375,7 @@
             disable when isFormComplete is false. Show tooltip with
             incomplete field names.
 
-   CODE: → 4_required-gate.ts (includes action-button changes)
+   CODE: → src/hooks/use-required-gate.ts (includes action-button changes)
    EFFORT: Part of required gate feature
 
 
@@ -394,7 +394,7 @@
             session-store so that list button handlers can include
             it in EEData. Small change.
 
-   CODE: → 7_grid-actions.ts (includes data-grid changes)
+   CODE: → src/components/ui/grid-toolbar.tsx + data-grid.tsx (includes data-grid changes)
    EFFORT: Small (10 lines)
    PRIORITY: 2 (feature completeness)
 
@@ -431,7 +431,7 @@
             4. Fetch security data in loader.ts after navigation
             5. Apply in form-renderer.tsx on mount
 
-   CODE: → 6_security-resolver.ts
+   CODE: → src/utils/security-resolver.ts
    EFFORT: Medium-Large (65 lines)
    PRIORITY: 2 (feature completeness)
 
@@ -459,7 +459,7 @@
             3. Register as onNoteButtonClick in handler chain
             Auto-discovered via import.meta.glob('/src/handlers/**/*.ts')
 
-   CODE: → 9_note-button.ts
+   CODE: → src/handlers/common/notes.ts + note-modal.tsx
    EFFORT: Large (45 lines handler + modal)
    PRIORITY: 2 (feature completeness)
 
@@ -485,7 +485,7 @@
                - search: same as lookup with search form
             3. Register as onInfoButtonClick in handler chain
 
-   CODE: → 10_info-button.ts
+   CODE: → src/handlers/common/info-lookup.ts
    EFFORT: Medium (35 lines)
    PRIORITY: 2 (feature completeness)
 
@@ -505,7 +505,7 @@
             Parse matchcode (nodeKey) and iconIndex from command.
             Call tree-store.updateNode({ imageIndex: iconIndex }).
 
-   CODE: → 16_tree-icon-update.ts
+   CODE: → src/handlers/common/command.ts
    EFFORT: Small (20 lines)
    PRIORITY: 3 (polish)
 
@@ -519,7 +519,7 @@
    MISSING: Add case 'OPEN_LINK' to command switch:
             Call window.open(url, target, features).
 
-   CODE: → 21_misc-small-gaps.ts (section c)
+   CODE: → src/handlers/common/command.ts
    EFFORT: Small (10 lines)
    PRIORITY: 3 (polish)
 
@@ -540,7 +540,7 @@
    MISSING: Add isNodeValid(nodeKey: string): boolean method.
             Just: return nodeKey in get().nodes
 
-   CODE: → 21_misc-small-gaps.ts (section a)
+   CODE: → src/stores/tree-store.ts
    EFFORT: Tiny (5 lines)
    PRIORITY: 3
 
@@ -553,7 +553,7 @@
             Already exists in the store interface. The wiring from
             field-renderer handleBlur needs to call it.
 
-   CODE: → 5_focus-server-calls.ts
+   CODE: → src/components/ui/field-renderer.tsx
 
 
    MODIFY: src/stores/session-store.ts
@@ -564,7 +564,7 @@
             navigation API response (already has pathLabel via
             mstrPathLabel).
 
-   CODE: → 1_frame-title.ts
+   CODE: → src/hooks/use-frame-title.ts
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@
                POST → navigate to batch edit page
             3. Trigger from sidebar or header menu
 
-   CODE: → 19_batch-edits.ts
+   CODE: → src/features/batch-edits/batch-edits-modal.tsx
    EFFORT: Medium (35 lines)
    PRIORITY: 4 (not critical — users can edit records individually)
 
@@ -612,7 +612,7 @@
             2. Show-once flag per policy (session-store detail item)
             3. Trigger from action menu
 
-   CODE: → 20_conversion-report.ts
+   CODE: → src/features/conversion-report/conversion-report-modal.tsx
    EFFORT: Small (30 lines)
    PRIORITY: 4 (not critical — specialized feature)
 
@@ -629,7 +629,7 @@
             for the current LOB/page. Pass to form-renderer for
             applySecurityPolicy() on mount.
 
-   CODE: → 6_security-resolver.ts (integration section)
+   CODE: → src/utils/security-resolver.ts (integration section)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -643,7 +643,7 @@
    MISSING: Add <GridToolbar /> above the DataGrid component.
             On row selection, stage row data for server calls.
 
-   CODE: → 7_grid-actions.ts (integration section)
+   CODE: → src/components/ui/grid-toolbar.tsx + data-grid.tsx (integration section)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -657,7 +657,7 @@
    MISSING: Replace bare <Box role="tabpanel"> with <LazyTabPanel>.
             Ensures tabs only render on first selection.
 
-   CODE: → 11_lazy-tabs.ts (integration section)
+   CODE: → src/components/ui/lazy-tab-panel.tsx + tab-layout.tsx (integration section)
 
 
 ────────────────────────────────────────────────────────────────────────────────
@@ -677,7 +677,7 @@
             which tab hosts the control. requestFocusWithTabSwitch()
             combines tab switch + focus.
 
-   CODE: → 21_misc-small-gaps.ts (section b)
+   CODE: → src/stores/focus-store.ts
    EFFORT: Small (20 lines)
    PRIORITY: 4
 
@@ -694,7 +694,7 @@
    MISSING: Read permissions from session → conditionally disable
             buttons via runtime-override-store.
 
-   CODE: → 21_misc-small-gaps.ts (section d)
+   CODE: → src/frames/system/str-piphsys-20010101.tsx
    EFFORT: Small (10 lines)
    PRIORITY: 3
 
@@ -712,7 +712,7 @@
             actions complete. Use React Router revalidation or
             manual refetch.
 
-   CODE: → 17_wip-refetch.ts
+   CODE: → src/features/system/components/str-wip-subframe.tsx
    EFFORT: Small (20 lines)
    PRIORITY: 3
 
@@ -732,7 +732,7 @@
             buttons. Not needed for initial LOBs but will be needed
             for coverage-heavy LOBs.
 
-   CODE: → 21_misc-small-gaps.ts (section e)
+   CODE: → src/components/ui/dual-list-select.tsx
    EFFORT: Medium-Large (60-80 lines, when needed)
    PRIORITY: 4 (defer until coverage LOBs onboarded)
 
@@ -743,50 +743,50 @@
 
    PRIORITY 1 — Core Edit Loop (blocks real editing)
    ──────────────────────────────────────────────────
-   #38  Dirty guard (beforeunload + useBlocker)     → 2_dirty-guard.ts
-   #48  Required field gate (aggregate check)       → 4_required-gate.ts
+   #38  Dirty guard (beforeunload + useBlocker)     → src/hooks/use-navigation-guard.tsx
+   #48  Required field gate (aggregate check)       → src/hooks/use-required-gate.ts
    #49  (part of #48)
-   #71  Keystroke indicator recompute (onChange)     → 13_keystroke-indicators.ts
+   #71  Keystroke indicator recompute (onChange)     → src/components/ui/field-renderer.tsx
    #72  (part of #71)
-   #77  Pristine snapshot (dirty derivation)        → 14_initial-value.ts
+   #77  Pristine snapshot (dirty derivation)        → src/hooks/use-pristine-snapshot.ts
    #55  (part of #77)
-   #70  Focus server calls (postprocessblanks)      → 5_focus-server-calls.ts
+   #70  Focus server calls (postprocessblanks)      → src/components/ui/field-renderer.tsx
    #74  (part of #70)
    TOTAL: ~190 lines across 5 files
 
    PRIORITY 2 — Feature Completeness
    ──────────────────────────────────
-   #45  Security per-control resolver               → 6_security-resolver.ts
+   #45  Security per-control resolver               → src/utils/security-resolver.ts
    #58-61  (part of #45)
-   #19  Delete action flow                          → 3_delete-action.ts
-   #66  Grid toolbar actions                        → 7_grid-actions.ts
-   #67  Grid row selection staging                  → 7_grid-actions.ts
-   #68  Grid list button with NEXT-loop             → 7_grid-actions.ts
-   #64  Note/attachment button                      → 9_note-button.ts
-   #65  Info/lookup button                          → 10_info-button.ts
+   #19  Delete action flow                          → src/hooks/use-delete-action.tsx
+   #66  Grid toolbar actions                        → src/components/ui/grid-toolbar.tsx + data-grid.tsx
+   #67  Grid row selection staging                  → src/components/ui/grid-toolbar.tsx + data-grid.tsx
+   #68  Grid list button with NEXT-loop             → src/components/ui/grid-toolbar.tsx + data-grid.tsx
+   #64  Note/attachment button                      → src/handlers/common/notes.ts + note-modal.tsx
+   #65  Info/lookup button                          → src/handlers/common/info-lookup.ts
    TOTAL: ~260 lines across 5 files
 
    PRIORITY 3 — Polish / Secondary
    ────────────────────────────────
-   #17  Frame title (document.title)                → 1_frame-title.ts
-   #30  Breadcrumb path display                     → 8_breadcrumb.ts
-   #81  Lazy tab rendering                          → 11_lazy-tabs.ts
-   #83  ShowZero combo empty option                 → 12_showzero.ts
-   #8   OpenLink command                            → 21_misc-small-gaps.ts
-   #20  Async process polling                       → 15_async-process.ts
-   #37  WIP refetch trigger                         → 17_wip-refetch.ts
-   #84  Tree icon update command                    → 16_tree-icon-update.ts
-   #34  Tree_IsNodeValid method                     → 21_misc-small-gaps.ts
-   #29  EnableStartOptions permissions              → 21_misc-small-gaps.ts
+   #17  Frame title (document.title)                → src/hooks/use-frame-title.ts
+   #30  Breadcrumb path display                     → src/components/ui/breadcrumb.tsx
+   #81  Lazy tab rendering                          → src/components/ui/lazy-tab-panel.tsx + tab-layout.tsx
+   #83  ShowZero combo empty option                 → src/components/ui/select.tsx
+   #8   OpenLink command                            → src/handlers/common/command.ts
+   #20  Async process polling                       → src/hooks/use-async-process-check.ts
+   #37  WIP refetch trigger                         → src/features/system/components/str-wip-subframe.tsx
+   #84  Tree icon update command                    → src/handlers/common/command.ts
+   #34  Tree_IsNodeValid method                     → src/stores/tree-store.ts
+   #29  EnableStartOptions permissions              → src/frames/system/str-piphsys-20010101.tsx
    TOTAL: ~195 lines across 8 files
 
    PRIORITY 4 — Not Critical for MVP
    ──────────────────────────────────
-   #10  Batch edits modal                           → 19_batch-edits.ts
-   #11  Conversion report modal                     → 20_conversion-report.ts
-   #25  Action toolbar layout                       → 18_toolbar.ts
-   #79  Focus with tab switch                       → 21_misc-small-gaps.ts
-   #53  Dual-list select (coverage)                 → 21_misc-small-gaps.ts
+   #10  Batch edits modal                           → src/features/batch-edits/batch-edits-modal.tsx
+   #11  Conversion report modal                     → src/features/conversion-report/conversion-report-modal.tsx
+   #25  Action toolbar layout                       → src/components/ui/action-toolbar.tsx
+   #79  Focus with tab switch                       → src/stores/focus-store.ts
+   #53  Dual-list select (coverage)                 → src/components/ui/dual-list-select.tsx
    TOTAL: ~105 lines across 3 files
 
    ─────────────────────────────────────────────
@@ -797,32 +797,69 @@
 
 
 ================================================================================
-   CODE CHANGE FILES IN THIS FOLDER
+   FILES IN THIS FOLDER — src/ MIRRORS THE REAL POC
 ================================================================================
 
-   File                        Target POC folder              Gap(s)
-   ─────────────────────────── ────────────────────────────── ──────
-   1_frame-title.ts            src/hooks/                     #17
-   2_dirty-guard.ts            src/hooks/                     #38
-   3_delete-action.ts          src/hooks/                     #19
-   4_required-gate.ts          src/hooks/                     #48,49
-   5_focus-server-calls.ts     src/components/ui/             #70,74
-   6_security-resolver.ts      src/utils/                     #45,58-61
-   7_grid-actions.ts           src/components/ui/             #66,67,68
-   8_breadcrumb.ts             src/components/ui/             #30
-   9_note-button.ts            src/handlers/common/           #64
-   10_info-button.ts           src/handlers/common/           #65
-   11_lazy-tabs.ts             src/components/ui/             #81
-   12_showzero.ts              src/components/ui/             #83
-   13_keystroke-indicators.ts  src/components/ui/             #71,72
-   14_initial-value.ts         src/hooks/                     #77,55
-   15_async-process.ts         src/hooks/                     #20
-   16_tree-icon-update.ts      src/handlers/common/           #84
-   17_wip-refetch.ts           src/features/system/           #37
-   18_toolbar.ts               src/components/ui/             #25
-   19_batch-edits.ts           src/features/batch-edits/      #10
-   20_conversion-report.ts     src/features/conversion-report/ #11
-   21_misc-small-gaps.ts       multiple (see inside)          #34,79,8,29,53
+   Every file below sits at the SAME path it belongs to in the Real POC.
+   To apply a change: copy the file to the same path in the POC repo.
+     NEW      = file does not exist in the POC yet — copy as-is
+     MODIFIED = full copy of the POC original with changes fenced in
+                // >>> GAP #NN ... // <<< GAP #NN markers — either copy
+                the whole file over, or merge just the fenced blocks
+
+   src/hooks/                                          Status     Gap(s)
+   ─────────────────────────────────────────────────── ────────── ──────
+   use-frame-title.ts                                  NEW        #17
+   use-navigation-guard.tsx                            NEW        #38
+   use-delete-action.tsx                               NEW        #19
+   use-required-gate.ts                                NEW        #48,49
+   use-pristine-snapshot.ts                            NEW        #77,55
+   use-async-process-check.ts                          NEW        #20
+
+   src/components/ui/
+   ─────────────────────────────────────────────────── ────────── ──────
+   field-renderer.tsx                                  MODIFIED   #70,74,71,72
+   select.tsx                                          MODIFIED   #83
+   action-button.tsx                                   MODIFIED   #48
+   data-grid.tsx                                       MODIFIED   #67,66
+   grid-toolbar.tsx                                    NEW        #66,68
+   breadcrumb.tsx                                      NEW        #30
+   lazy-tab-panel.tsx                                  NEW        #81
+   action-toolbar.tsx                                  NEW        #25
+   dual-list-select.tsx                                NEW        #53
+
+   src/layouts/
+   ─────────────────────────────────────────────────── ────────── ──────
+   tab-layout.tsx                                      MODIFIED   #81
+
+   src/utils/
+   ─────────────────────────────────────────────────── ────────── ──────
+   security-resolver.ts                                NEW        #45,58-61
+
+   src/handlers/common/
+   ─────────────────────────────────────────────────── ────────── ──────
+   command.ts                                          MODIFIED   #84,8
+   notes.ts                                            NEW        #64
+   info-lookup.ts                                      NEW        #65
+
+   src/stores/
+   ─────────────────────────────────────────────────── ────────── ──────
+   session-store.ts                                    MODIFIED   #17
+   tree-store.ts                                       MODIFIED   #34
+   focus-store.ts                                      MODIFIED   #79
+
+   src/features/
+   ─────────────────────────────────────────────────── ────────── ──────
+   batch-edits/batch-edits-modal.tsx                   NEW        #10
+   conversion-report/conversion-report-modal.tsx       NEW        #11
+   notes/note-modal.tsx                                NEW        #64
+   system/components/str-wip-subframe.tsx              MODIFIED   #37
+
+   src/frames/system/
+   ─────────────────────────────────────────────────── ────────── ──────
+   str-piphsys-20010101.tsx                            MODIFIED   #29
+
+   TOTAL: 28 files (17 NEW, 11 MODIFIED) — every remaining gap covered.
 
 ================================================================================
    END OF GAP ANALYSIS
