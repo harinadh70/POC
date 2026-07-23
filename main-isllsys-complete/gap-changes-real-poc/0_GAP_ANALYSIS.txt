@@ -1,3 +1,47 @@
+################################################################################
+#  READ ME FIRST - FILE STATUS KEY (added 2026-07-23)
+################################################################################
+#
+#  This 0_GAP_ANALYSIS.txt is the ORIGINAL pre-team-commit analysis. Its body
+#  still has CREATE:/MODIFY: blocks for files later REMOVED (team implemented
+#  them) or RENAMED. So some names below are intentionally NOT in changes/.
+#
+#  AUTHORITATIVE current status: docs/01_FUNCTION_MAP, docs/02_GAPS,
+#  docs/03_REQUIRED_CHANGES. Every file this doc names + its real status:
+#
+#   src/components/ui/action-button.tsx                         IN changes/            present
+#   src/components/ui/action-toolbar.tsx                        IN changes/            present
+#   src/components/ui/breadcrumb.tsx                            REMOVED-team built it  team built components/breadcrumb.tsx (b0b198da) - full component, rendered in static/dynamic-renderer (#30 DONE)
+#   src/components/ui/data-grid.tsx                             IN changes/            drop-in at changes/src/components/ui/data-grid.tsx (real POC path resources/data-grid.tsx)
+#   src/components/ui/field-renderer.tsx                        RENAMED                renamed -> changes/src/components/ui/field-renderer.patch.md (merge instructions, not a full file)
+#   src/components/ui/grid-toolbar.tsx                          IN changes/            present
+#   src/components/ui/lazy-tab-panel.tsx                        REMOVED-team built it  team's layouts/tab.tsx already lazy-mounts via mountedTabs (#81 DONE)
+#   src/components/ui/select.tsx                                IN changes/            present
+#   src/features/batch-edits/batch-edits-modal.tsx              IN changes/            present
+#   src/features/conversion-report/conversion-report-modal.tsx  IN changes/            present
+#   src/features/frame/utils/loader.ts                          POC target / n-a       POC file you edit in place (WIP refetch #37 wiring) - not a drop-in
+#   src/features/system/components/str-wip-subframe.tsx         IN changes/            present
+#   src/frames/system/str-piphsys-20010101.tsx                  IN changes/            present
+#   src/handlers/common/commands.ts                             IN changes/ (doc typo) drop-in is changes/src/handlers/common/command.ts (singular)
+#   src/handlers/common/info-lookup.ts                          IN changes/            present
+#   src/handlers/common/notes.ts                                IN changes/            present
+#   src/hooks/use-async-process-check.ts                        IN changes/            present
+#   src/hooks/use-delete-action.tsx                             IN changes/            present
+#   src/hooks/use-frame-title.ts                                IN changes/            present
+#   src/hooks/use-navigation-guard.tsx                          IN changes/            present
+#   src/hooks/use-pristine-snapshot.ts                          IN changes/            present
+#   src/hooks/use-required-gate.ts                              IN changes/            present
+#   src/layouts/tab.tsx                                         REMOVED-team built it  team owns layouts/tab.tsx; pendingTab restored by fe16467d (#79 DONE)
+#   src/resources/data-grid.tsx                                 IN changes/            drop-in at changes/src/components/ui/data-grid.tsx (real POC path resources/data-grid.tsx)
+#   src/stores/focus-store.ts                                   REMOVED-team built it  team DELETED focus-store (81e0b7ea); folded into global-vars-store (#79)
+#   src/stores/global-vars-store.ts                             REMOVED-team built it  team's fe16467d restored pendingTab (#79 DONE) - patch withdrawn
+#   src/stores/pristine-store.ts                                POC target / n-a       the TEAM's store (referenced in the #77/#55 VERIFY note) - not a change file
+#   src/stores/session-store.ts                                 IN changes/            present
+#   src/stores/tree-store.ts                                    IN changes/            present
+#   src/utils/security-resolver.ts                              IN changes/            present
+#
+################################################################################
+
 ================================================================================
    MAIN_ISLLSYS_20010101.vbs → poc (aqs-web-ui)
    GAP ANALYSIS — RE-EVALUATED AGAINST poc
