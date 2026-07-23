@@ -4,6 +4,17 @@
    Date: July 22, 2026
 ================================================================================
 
+   *** UPDATE 2026-07-23: reconciled against team commit 81e0b7ea (PR !30196) ***
+   See RECONCILIATION_team-commit-81e0b7ea.md for details. Summary:
+   - Team CLOSED: #30 breadcrumb (pathLabel header), #54 FocusFirstControl,
+     #77/#55 pristine (pristine-store), most of #70/#74 focus round-trip,
+     Eebrowser ADD-mode dirty, tab-from-cycling. Change files removed:
+     breadcrumb.tsx, use-pristine-snapshot.ts, focus-store.ts, my tab.tsx.
+   - Team BROKE #79: unified global-vars-store dropped pendingTab but tab.tsx
+     still imports usePendingTab → TS2305. FIX: stores/global-vars-store.patch.ts.
+   - REBASE onto unified GlobalVarsStoreApi: field-renderer.tsx, command.ts,
+     session-store.ts (keep windowTitle; team already added pathLabel).
+
    85 VBS routines checked. Only GAPS shown below.
    DONE: 34 | PARTIAL: 10 | GAP: 22 | N/A: 19
 

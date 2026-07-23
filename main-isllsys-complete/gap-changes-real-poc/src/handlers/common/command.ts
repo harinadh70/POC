@@ -1,9 +1,10 @@
 // MODIFIED — original: src/handlers/common/command.ts
 // GAP #84 SetIconImages (VBS 9025-9090): new SET_ICON verb -> tree-store updateNodeImage
 // GAP #8  OpenLink      (VBS 731-826):   new OPEN_LINK verb -> window.open
+// REBASED onto team commit 81e0b7ea: that commit swapped the command gate's store
+// from BrowserCmdStoreApi to GlobalVarsStoreApi (browser-cmd-store was deleted).
 // Changes are wrapped in GAP markers; everything outside them matches the original.
 
-import { BrowserCmdStoreApi } from '@stores/browser-cmd-store';
 import { SessionStoreApi } from '@stores/session-store';
 import { ModalStoreApi } from '@stores/modal-store';
 import { GlobalVarsStoreApi } from '@stores/global-vars-store';
@@ -57,7 +58,8 @@ export function handlerForBrowserCommands(
 ): boolean {
     const sessionStore = SessionStoreApi.getState();
     const modalStore = ModalStoreApi.getState();
-    const commandStore = BrowserCmdStoreApi.getState();
+    // REBASED (team 81e0b7ea): commandsEnabled now lives on the unified store
+    const commandStore = GlobalVarsStoreApi.getState();
 
     if (!commandStore.commandsEnabled) {
         return false;

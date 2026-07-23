@@ -1,7 +1,10 @@
 // MODIFIED — original: src/stores/session-store.ts
-// GAP #17 — SetFrameTitle support (eebrowser.vbs lines 1440-1519):
-// adds windowTitle + pathLabel state with setWindowTitle / setPathLabel actions,
-// wired into clearSession and the selector exports. See GAP markers.
+// GAP #17 — SetFrameTitle support (eebrowser.vbs lines 1440-1519).
+// REBASED onto team commit 81e0b7ea: that commit ALREADY added `pathLabel`
+// to session state (defaultSession `pathLabel: ''` + `pathLabel: string | null`
+// on the Session type in common.ts). So this change adds ONLY `windowTitle`
+// (+ setWindowTitle + useWindowTitle) and a `usePathLabel` selector that reads
+// the team's existing field. Do NOT re-declare pathLabel. See GAP markers.
 
 import { create } from 'zustand';
 
@@ -26,19 +29,18 @@ interface SessionAction {
 	clearXmlDetailItem: (name: string) => void;
 	toPayload: () => Omit<SessionPayload, 'EEData'>;
 	clearSession: () => void;
-	// >>> GAP #17: SetFrameTitle actions
+	// >>> GAP #17: SetFrameTitle action (windowTitle only; pathLabel added by team 81e0b7ea)
 	setWindowTitle: (windowTitle: string) => void;
-	setPathLabel: (pathLabel: string) => void;
 	// <<< GAP #17
 }
 
 // define the shape of our session state
 interface SessionState extends Session {
 	// >>> GAP #17: SetFrameTitle state — document.title = windowTitle + " - " + pathLabel
+	//     `pathLabel` already comes in via `extends Session` (team 81e0b7ea added it
+	//     to the Session type); only `windowTitle` is new here.
 	/** Application title (windowTitle user option, served via the Navigation API) */
 	windowTitle: string;
-	/** Current page path description (mstrPathLabel from the cycling response) */
-	pathLabel: string;
 	// <<< GAP #17
 	actions: SessionAction;
 }
@@ -60,8 +62,8 @@ const defaultSession: Omit<Session, never> = {
 	expiredNumber: '0',
 };
 
-// >>> GAP #17: SetFrameTitle defaults (merged into store init + clearSession below)
-const defaultTitleState = { windowTitle: '', pathLabel: '' };
+// >>> GAP #17: SetFrameTitle default (windowTitle only; team's defaultSession sets pathLabel: '')
+const defaultTitleState = { windowTitle: '' };
 // <<< GAP #17
 
 // create the session store
@@ -175,12 +177,11 @@ const useSessionStore = create<SessionState>()((set, get) => ({
 				},
 			};
 		},
-		// >>> GAP #17: SetFrameTitle actions — consumed by the frame-title effect
+		// >>> GAP #17: SetFrameTitle action — consumed by the frame-title effect
+		//     (pathLabel is written by the team's setSession(...) from the cycling
+		//     response, so no separate setPathLabel is added here)
 		setWindowTitle: (windowTitle: string) => {
 			set({ windowTitle });
-		},
-		setPathLabel: (pathLabel: string) => {
-			set({ pathLabel });
 		},
 		// <<< GAP #17
 	},
