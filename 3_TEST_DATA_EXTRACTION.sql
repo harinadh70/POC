@@ -1,0 +1,251 @@
+-- =============================================================================================================
+-- Test data extraction for SP_RETRIEVE_VA_PAYMENT_POLICY_DTLS_LIFE_RLS (VADesign v0.9 slide 28 branches).
+-- Read-only, SELECT only. Every policy number comes from the database; nothing is hard-coded.
+-- Each block returns a handful of policy numbers that exercise one branch of the SP / one rule.
+-- To run the SP logic on any of them WITHOUT creating the SP, use 2_TEST_SP_WITHOUT_CREATING.sql.
+-- Datavault, schema L_HK_CACHE. Adjust TOP (n) as needed.
+-- =============================================================================================================
+
+-------------------------------------------------------------------------------------------------------------
+-- A. FLATTENED LOOKUP FOR A SAMPLE OF POLICIES PICKED FROM THE DATABASE  (read-only, no SP needed)
+--    Same chained lookup as the SP (policy master -> application master -> history), one row per policy.
+--    The sample is one policy per branch taken from the tables below; change TOP (1) to widen it.
+-------------------------------------------------------------------------------------------------------------
+WITH P AS (
+    SELECT PNO FROM (SELECT TOP (1) PNO FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+                     WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F') AND PEFF <> PPTD AND PPTD > 0 ORDER BY PPTD DESC) R
+    UNION ALL
+    SELECT PNO FROM (SELECT TOP (1) PNO FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+                     WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F') AND PEFF = PPTD AND PEFF > 0 ORDER BY PEFF DESC) V
+    UNION ALL
+    SELECT PNO FROM (SELECT TOP (1) PNO FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+                     WHERE RTRIM(PSTU) NOT IN ('1','2','5','6','B','F') ORDER BY PEFF DESC) I
+    UNION ALL
+    SELECT PNO FROM (SELECT TOP (1) A.PNO FROM [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK)
+                     WHERE NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK) WHERE PNO = A.PNO)
+                     AND   NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMD] WITH (NOLOCK) WHERE PNO = A.PNO)
+                     AND   NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMG] WITH (NOLOCK) WHERE PNO = A.PNO)
+                     AND   NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMH] WITH (NOLOCK) WHERE PNO = A.PNO)
+                     ORDER BY A.PEFF DESC) A
+),
+PM AS (
+    SELECT X.PNO, X.SRC_FILE, X.PSTU, X.PEFF, X.PPTD, X.PCCY, X.POWNRF, X.POWNER, X.PNAMF, X.PNAME,
+           ROW_NUMBER() OVER (PARTITION BY X.PNO ORDER BY X.SRC_PRIORITY) AS RN
+    FROM (
+        SELECT PNO, PSTU, PEFF, PPTD, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPPML' AS SRC_FILE, 1 AS SRC_PRIORITY FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTU, PEFF, PPTD, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPPMD', 2 FROM [L_HK_CACHE].[MR_LFPPMD] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTU, PEFF, PPTD, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPPMG', 3 FROM [L_HK_CACHE].[MR_LFPPMG] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTU, PEFF, PPTD, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPPMH', 4 FROM [L_HK_CACHE].[MR_LFPPMH] WITH (NOLOCK)
+    ) X
+    WHERE X.PNO IN (SELECT PNO FROM P)
+),
+AM AS (
+    SELECT X.PNO, X.SRC_FILE, X.PSTUA, X.PEFF, X.PCCY, X.POWNRF, X.POWNER, X.PNAMF, X.PNAME,
+           ROW_NUMBER() OVER (PARTITION BY X.PNO ORDER BY X.PEFF DESC, X.SRC_PRIORITY) AS RN
+    FROM (
+        SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPL' AS SRC_FILE, 1 AS SRC_PRIORITY FROM [L_HK_CACHE].[MR_LFPAPPL_M] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPH', 2 FROM [L_HK_CACHE].[MR_LFPAPPH_M] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPG', 3 FROM [L_HK_CACHE].[MR_LFPAPPG_M] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPD', 4 FROM [L_HK_CACHE].[MR_LFPAPPD_M] WITH (NOLOCK)
+    ) X
+    WHERE X.PNO IN (SELECT PNO FROM P)
+),
+AH AS (
+    SELECT X.PNO, X.SRC_FILE, X.PSTUA, X.PEFF, X.PCCY, X.POWNRF, X.POWNER, X.PNAMF, X.PNAME,
+           ROW_NUMBER() OVER (PARTITION BY X.PNO ORDER BY X.PEFF DESC, X.SRC_PRIORITY) AS RN
+    FROM (
+        SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPL' AS SRC_FILE, 1 AS SRC_PRIORITY FROM [L_HK_CACHE].[MR_LFPAPPL_H] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPH', 2 FROM [L_HK_CACHE].[MR_LFPAPPH_H] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPG', 3 FROM [L_HK_CACHE].[MR_LFPAPPG_H] WITH (NOLOCK)
+        UNION ALL SELECT PNO, PSTUA, PEFF, PCCY, PNAMF, PNAME, POWNRF, POWNER, 'LFPAPPD', 4 FROM [L_HK_CACHE].[MR_LFPAPPD_H] WITH (NOLOCK)
+    ) X
+    WHERE X.PNO IN (SELECT PNO FROM P)
+)
+SELECT  P.PNO,
+        CASE WHEN PM.PNO IS NOT NULL THEN 'POLICY_MASTER'
+             WHEN AM.PNO IS NOT NULL THEN 'APPLICATION_MASTER'
+             WHEN AH.PNO IS NOT NULL THEN 'APPLICATION_HISTORY'
+             ELSE 'NONE' END                                                  AS RECORD_SOURCE,
+        COALESCE(PM.SRC_FILE, AM.SRC_FILE, AH.SRC_FILE)                       AS SRC_FILE,
+        RTRIM(COALESCE(PM.PSTU, AM.PSTUA, AH.PSTUA))                          AS STAT_CD,
+        CONVERT(varchar(8), COALESCE(PM.PEFF, AM.PEFF, AH.PEFF), 112)         AS POLICY_EFF_DT,
+        CONVERT(varchar(8), PM.PPTD, 112)                                     AS PAID_TO_DT,
+        RTRIM(COALESCE(PM.PCCY, AM.PCCY, AH.PCCY))                            AS CURRENCY_CD,
+        RTRIM(COALESCE(PM.POWNRF, AM.POWNRF, AH.POWNRF))                      AS OWNER_FIRST_NAME,
+        RTRIM(COALESCE(PM.POWNER, AM.POWNER, AH.POWNER))                      AS OWNER_LAST_NAME,
+        RTRIM(COALESCE(PM.PNAMF, AM.PNAMF, AH.PNAMF))                         AS INSURED_FIRST_NAME,
+        RTRIM(COALESCE(PM.PNAME, AM.PNAME, AH.PNAME))                         AS INSURED_LAST_NAME,
+        CASE WHEN PM.PNO IS NOT NULL THEN
+             (SELECT COUNT(*) FROM [L_HK_CACHE].[MR_LFPBNFY] B WITH (NOLOCK) WHERE B.BNPNO = P.PNO AND NULLIF(LTRIM(RTRIM(B.BNBNFY)), '') IS NOT NULL)
+             WHEN AM.PNO IS NOT NULL THEN
+             (SELECT COUNT(*) FROM [L_HK_CACHE].[MR_LFPAPPBNFY] B WITH (NOLOCK) WHERE B.I10PNO = P.PNO AND NULLIF(LTRIM(RTRIM(B.I10NAME)), '') IS NOT NULL)
+             ELSE 0 END                                                       AS BENEFICIARY_COUNT
+FROM    P
+LEFT JOIN PM ON PM.PNO = P.PNO AND PM.RN = 1
+LEFT JOIN AM ON AM.PNO = P.PNO AND AM.RN = 1 AND PM.PNO IS NULL
+LEFT JOIN AH ON AH.PNO = P.PNO AND AH.RN = 1 AND PM.PNO IS NULL AND AM.PNO IS NULL;
+
+-- A2. Beneficiary names for the policies in the sample above (read-only)
+SELECT B.BNPNO AS PNO, 'POLICY' AS RECORD_TYPE, RTRIM(B.BNBNFF) AS BENF_FIRST_NAME, RTRIM(B.BNBNFY) AS BENF_LAST_NAME, RTRIM(B.BNBAFL) AS BENF_TRUSTEE_FLAG
+FROM   [L_HK_CACHE].[MR_LFPBNFY] B WITH (NOLOCK)
+WHERE  B.BNPNO IN (SELECT TOP (1) PNO FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+                   WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F') AND PEFF <> PPTD AND PPTD > 0 ORDER BY PPTD DESC)
+UNION ALL
+SELECT B.I10PNO, 'APPLICATION', RTRIM(B.I10NAMEF), RTRIM(B.I10NAME), RTRIM(B.I10BAFL)
+FROM   [L_HK_CACHE].[MR_LFPAPPBNFY] B WITH (NOLOCK)
+WHERE  B.I10PNO IN (SELECT TOP (1) A.PNO FROM [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK)
+                    WHERE NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK) WHERE PNO = A.PNO)
+                    ORDER BY A.PEFF DESC);
+
+-------------------------------------------------------------------------------------------------------------
+-- B. POLICY MASTER BRANCH  (RECORD_SOURCE = POLICY_MASTER)
+-------------------------------------------------------------------------------------------------------------
+-- B1. Renewal: valid status, PEFF <> PPTD  -> expected DCR type 3, K47DUE = PPTD
+SELECT TOP (10) 'LFPPML' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY, POWNER, PNAME
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  RTRIM(PSTU) IN ('1','2','5','6','B','F') AND PEFF <> PPTD AND PPTD > 0
+ORDER BY PPTD DESC;
+
+-- B2. Application reversal: valid status, PEFF = PPTD  -> expected DCR type 1
+SELECT TOP (10) 'LFPPML' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  RTRIM(PSTU) IN ('1','2','5','6','B','F') AND PEFF = PPTD AND PEFF > 0
+ORDER BY PEFF DESC;
+
+-- B3. Invalid policy status (lapsed / surrendered / etc.)  -> expected POLICY_STATUS_INVALID
+SELECT TOP (10) 'LFPPML' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  RTRIM(PSTU) NOT IN ('1','2','5','6','B','F')
+ORDER BY PEFF DESC;
+
+-- B4. Non-HKD policy currency  -> for PAYMENT_CURRENCY_MATCH and K47EXRTPC tests
+SELECT TOP (10) 'LFPPML' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  RTRIM(PSTU) IN ('1','2','5','6','B','F') AND RTRIM(PCCY) <> 'HKD'
+ORDER BY PEFF DESC;
+
+-- B5. HNW prefix 888-  -> AML threshold 999,000,000 path
+SELECT TOP (10) 'LFPPML' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  PNO LIKE '888-%' AND RTRIM(PSTU) IN ('1','2','5','6','B','F')
+ORDER BY PEFF DESC;
+
+-- B6. Policies from the other three files (SRC_FILE LFPPMD / LFPPMG / LFPPMH)
+SELECT TOP (5) 'LFPPMD' AS SRC_FILE, PNO, PSTU, PEFF, PPTD, PCCY FROM [L_HK_CACHE].[MR_LFPPMD] WITH (NOLOCK) WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F')
+UNION ALL
+SELECT TOP (5) 'LFPPMG', PNO, PSTU, PEFF, PPTD, PCCY FROM [L_HK_CACHE].[MR_LFPPMG] WITH (NOLOCK) WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F')
+UNION ALL
+SELECT TOP (5) 'LFPPMH', PNO, PSTU, PEFF, PPTD, PCCY FROM [L_HK_CACHE].[MR_LFPPMH] WITH (NOLOCK) WHERE RTRIM(PSTU) IN ('1','2','5','6','B','F');
+
+-- B7. Policy with beneficiaries  -> BENEFICIARIES array populated, payer-name beneficiary rule
+SELECT TOP (10) P.PNO, P.PSTU, P.POWNER, P.PNAME, COUNT(*) AS BENEFICIARY_COUNT
+FROM   [L_HK_CACHE].[MR_LFPPML] P WITH (NOLOCK)
+JOIN   [L_HK_CACHE].[MR_LFPBNFY] B WITH (NOLOCK) ON B.BNPNO = P.PNO
+WHERE  RTRIM(P.PSTU) IN ('1','2','5','6','B','F') AND NULLIF(LTRIM(RTRIM(B.BNBNFY)), '') IS NOT NULL
+GROUP BY P.PNO, P.PSTU, P.POWNER, P.PNAME
+ORDER BY COUNT(*) DESC;
+
+-- B8. Policy where owner and insured differ  -> payer-name owner vs insured flags
+SELECT TOP (10) PNO, PSTU, POWNRF, POWNER, PNAMF, PNAME
+FROM   [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK)
+WHERE  RTRIM(PSTU) IN ('1','2','5','6','B','F') AND RTRIM(POWNER) <> RTRIM(PNAME) AND NULLIF(RTRIM(POWNER), '') IS NOT NULL
+ORDER BY PEFF DESC;
+
+-------------------------------------------------------------------------------------------------------------
+-- C. APPLICATION MASTER BRANCH  (RECORD_SOURCE = APPLICATION_MASTER: in an _M file, NOT in any policy master)
+-------------------------------------------------------------------------------------------------------------
+-- C1. Application not yet issued, status NOT in the block-list  -> expected DCR type 1, STP allowed
+SELECT TOP (10) 'LFPAPPL' AS SRC_FILE, A.PNO, A.PSTUA, A.PEFF, A.PCCY, A.POWNER, A.PNAME
+FROM   [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK)
+WHERE  RTRIM(A.PSTUA) NOT IN ('03','09','11','X','Y')
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMD] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMG] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMH] WITH (NOLOCK) WHERE PNO = A.PNO)
+ORDER BY A.PEFF DESC;
+
+-- C2. Application with a block-listed status (03 / 09 / 11 / X / Y)  -> expected APPLICATION_STATUS_INVALID
+SELECT TOP (10) 'LFPAPPL' AS SRC_FILE, A.PNO, A.PSTUA, A.PEFF, A.PCCY
+FROM   [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK)
+WHERE  RTRIM(A.PSTUA) IN ('03','09','11','X','Y')
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMD] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMG] WITH (NOLOCK) WHERE PNO = A.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMH] WITH (NOLOCK) WHERE PNO = A.PNO)
+ORDER BY A.PEFF DESC;
+
+-- C3. Distribution of application statuses (to see which codes actually occur)
+SELECT RTRIM(PSTUA) AS PSTUA, COUNT(*) AS CNT FROM [L_HK_CACHE].[MR_LFPAPPL_M] WITH (NOLOCK) GROUP BY RTRIM(PSTUA) ORDER BY CNT DESC;
+
+-- C4. Applications from the other _M files
+SELECT TOP (5) 'LFPAPPH' AS SRC_FILE, PNO, PSTUA, PEFF, PCCY FROM [L_HK_CACHE].[MR_LFPAPPH_M] WITH (NOLOCK)
+UNION ALL SELECT TOP (5) 'LFPAPPG', PNO, PSTUA, PEFF, PCCY FROM [L_HK_CACHE].[MR_LFPAPPG_M] WITH (NOLOCK)
+UNION ALL SELECT TOP (5) 'LFPAPPD', PNO, PSTUA, PEFF, PCCY FROM [L_HK_CACHE].[MR_LFPAPPD_M] WITH (NOLOCK);
+
+-- C5. Application with beneficiaries (LFPAPPBNFY)
+SELECT TOP (10) A.PNO, A.PSTUA, COUNT(*) AS BENEFICIARY_COUNT
+FROM   [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK)
+JOIN   [L_HK_CACHE].[MR_LFPAPPBNFY] B WITH (NOLOCK) ON B.I10PNO = A.PNO
+WHERE  NULLIF(LTRIM(RTRIM(B.I10NAME)), '') IS NOT NULL
+GROUP BY A.PNO, A.PSTUA
+ORDER BY COUNT(*) DESC;
+
+-- C6. Same policy number in BOTH policy master and application master  -> SP must return POLICY_MASTER (step 1 wins)
+SELECT TOP (10) P.PNO, P.PSTU, A.PSTUA
+FROM   [L_HK_CACHE].[MR_LFPPML] P WITH (NOLOCK)
+JOIN   [L_HK_CACHE].[MR_LFPAPPL_M] A WITH (NOLOCK) ON A.PNO = P.PNO;
+
+-------------------------------------------------------------------------------------------------------------
+-- D. APPLICATION HISTORY BRANCH  (RECORD_SOURCE = APPLICATION_HISTORY: in an _H file only)
+-------------------------------------------------------------------------------------------------------------
+-- D1. In history, not in any master  -> expected APPLICATION_NOT_IN_MASTER flag, DCR type 1
+SELECT TOP (10) 'LFPAPPL_H' AS SRC_FILE, H.PNO, H.PSTUA, H.PEFF, H.PCCY
+FROM   [L_HK_CACHE].[MR_LFPAPPL_H] H WITH (NOLOCK)
+WHERE  NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML]     WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMD]     WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMG]     WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMH]     WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPL_M]  WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPH_M]  WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPG_M]  WITH (NOLOCK) WHERE PNO = H.PNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPD_M]  WITH (NOLOCK) WHERE PNO = H.PNO)
+ORDER BY H.PEFF DESC;
+
+-- D2. Policy number with several history rows  -> SP must pick the newest PEFF
+SELECT TOP (10) PNO, COUNT(*) AS ROWS_IN_HISTORY, MAX(PEFF) AS NEWEST_PEFF, MIN(PEFF) AS OLDEST_PEFF
+FROM   [L_HK_CACHE].[MR_LFPAPPL_H] WITH (NOLOCK)
+GROUP BY PNO HAVING COUNT(*) > 1
+ORDER BY COUNT(*) DESC;
+
+-------------------------------------------------------------------------------------------------------------
+-- E. NOT FOUND  (RECORD_SOURCE = NONE)
+-------------------------------------------------------------------------------------------------------------
+-- E1. Registered in LFPREG but in no master / history file  -> POLICY_REGISTERED passes, POLICY_APPLICATION_FOUND fails
+SELECT TOP (10) R.REPNO AS PNO
+FROM   [L_HK_CACHE].[MR_LFPREG] R WITH (NOLOCK)
+WHERE  NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPML]     WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMD]     WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMG]     WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPPMH]     WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPL_M]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPH_M]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPG_M]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPD_M]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPL_H]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPH_H]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPG_H]  WITH (NOLOCK) WHERE PNO = R.REPNO)
+AND    NOT EXISTS (SELECT 1 FROM [L_HK_CACHE].[MR_LFPAPPD_H]  WITH (NOLOCK) WHERE PNO = R.REPNO);
+
+-- E2. Sanity: the SP must return RECORD_SOURCE = NONE, never an error, for NULL / blank / a number that is
+--     in no file. Use 2_TEST_SP_WITHOUT_CREATING.sql with @SCENARIO = 'NONE', or after the SP is created:
+--     EXEC [L_HK_CACHE].[SP_RETRIEVE_VA_PAYMENT_POLICY_DTLS_LIFE_RLS] @IN_POLICY_NO = NULL;
+--     EXEC [L_HK_CACHE].[SP_RETRIEVE_VA_PAYMENT_POLICY_DTLS_LIFE_RLS] @IN_POLICY_NO = '';
+
+-------------------------------------------------------------------------------------------------------------
+-- F. VA-SPECIFIC: policies that already have a Virtual Account (MamDb PAYMENT.VA_INVENTORY, separate connection)
+-------------------------------------------------------------------------------------------------------------
+-- Run on MamDb, then feed the policy numbers into A3 above on Datavault.
+-- SELECT TOP (20) policy_number, full_va_number, va_type, processing_status, created_at
+-- FROM   [PAYMENT].[VA_INVENTORY] WITH (NOLOCK)
+-- WHERE  is_active = 1 AND processing_status = 'ACTIVE'
+-- ORDER BY created_at DESC;
